@@ -1,0 +1,483 @@
+{% extends "albatross_app/base.html" %}
+{% load static %}
+
+{% block title %}診断チャート{% endblock %}
+
+<!-- ========================================================== -->
+<!-- (1) メインコンテンツの開始 -->
+<!-- ========================================================== -->
+
+{% block content %}
+<div class="container mt-3">
+
+    <!-- ページタイトル -->
+    <p class="text-end">こんにちは、{{ user.username }} さん！</p>
+    <h2 class="mb-4 text-center">診断チャート：{{ chart_type.name }}</h2>
+
+    <!-- タブ切り替えボタン  -->
+    <div class="chart-tab-container">
+        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-beginner-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">初級</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-intermediate-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">中級</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-advanced-tab" data-bs-toggle="pill" data-bs-target="#pills-advanced" type="button" role="tab">上級</button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- タブの中身のエリア -->
+    <div class="tab-content" id="pills-tabContent">
+
+        <!-- (A) 初級/中級用のタブパネル -->
+        <div class="tab-pane fade show active" id="pills-chart-area" role="tabpanel">
+            {% if chart_steps %}
+                <div id="chart-area">
+                    {% for step in chart_steps %}
+                        {% if not step.is_final_step %}
+                            <div class="card mb-5 chart-step" data-step-id="{{ step.id }}" style="display: block;" data-text-beginner="{{ step.question_text_beginner }}" data-text-intermediate="{{ step.question_text_intermediate }}">
+                                <div class="card-header">ステップ {{ forloop.counter }}</div>
+                                <div class="card-body">
+                                    <p class="card-text step-question-text"></p>
+                                    {% if step.detailed_explanation %}
+                                        <div class="accordion accordion-flush" id="accordion-{{ step.id }}">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ step.id }}">詳細解説</button></h2>
+                                                <div id="collapse-{{ step.id }}" class="accordion-collapse collapse" data-bs-parent="#accordion-{{ step.id }}"><div class="accordion-body">{{ step.detailed_explanation|linebreaksbr }}</div></div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div class="mt-3 chart-action d-flex gap-4">
+                                        <button type="button" class="btn btn-light btn-yes flex-fill border" data-next-step-id="{{ step.yes_next_step.id|default_if_none:'' }}">はい、改善しました</button>
+                                        <button type="button" class="btn btn-light btn-no flex-fill border" data-next-step-id="{{ step.no_next_step.id|default_if_none:'' }}">いいえ、改善なし</button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- ============================================== -->
+                    <!-- 2. 最終ステップの表示 (is_final_step が True のもの) -->
+                    <!-- ============================================== -->
+                    {% for step in chart_steps %}
+                        {% if step.is_final_step %}
+                            <div class="card mb-5 chart-step" data-step-id="{{ step.id }}" style="display: block;" data-is-final-step="true" data-solution-type="{{ step.solution_type_for_js|default:'unknown' }}">
+                                <div class="card-header">最終ステップ</div>
+                                <div class="card-body">
+                                    <p class="card-text">{{ step.question_text_intermediate|default:step.keyword_advanced }}</p>
+                                    {% if step.solution_text %}
+                                        <div class="alert alert-info solution-text">
+                                            <strong>解決策/メッセージ：</strong><br>
+                                            {{ step.solution_text|linebreaksbr }}
+                                        </div>
+                                    {% endif %}
+                                    <!-- ★★★ 初級/中級の最終ステップにも、ちゃんと解説アコーディオンを付ける！ ★★★ -->
+                                    {% if step.detailed_explanation %}
+                                        <div class="accordion accordion-flush" id="accordion-{{ step.id }}">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ step.id }}">詳細解説</button></h2>
+                                                <div id="collapse-{{ step.id }}" class="accordion-collapse collapse" data-bs-parent="#accordion-{{ step.id }}"><div class="accordion-body">{{ step.detailed_explanation|linebreaksbr }}</div></div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- --- 診断完了ボタン --- -->
+                    <div class="mt-5 text-center">
+                        <button type="button" id="save-log-button" class="btn btn-lg btn-primary"><i class="bi bi-pencil-square"></i> 診断を完了して記録する</button>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-center">このチャートにはまだステップが登録されていません。</p>
+            {% endif %}
+        </div>
+
+        <!-- --- (B) 上級用のタブパネル --- -->
+        <div class="tab-pane fade" id="pills-advanced" role="tabpanel">
+            <div class="advanced-chart-wrapper border rounded p-3">
+
+                <!-- --- 1. 通常タイルの表示エリア --- #} -->
+                {% if grouped_steps_for_advanced %}
+                    <!-- grouped_steps_for_advanced をループして、リスクレベルごとにブロックを作る #} -->
+                    {% for risk_label, steps_in_risk_group in grouped_steps_for_advanced.items %}
+                        <div class="risk-block {% if not forloop.first %}mt-4{% endif %}">
+                            <div class="row g-3">
+                                <!-- ... (タイル表示のループ部分は変更なし) ... #} -->
+                                {% for step in steps_in_risk_group %}
+                                    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                                        <div class="tile card h-100 tile-risk-{{ step.risk_level }}" data-step-id="{{ step.id }}">
+                                            <div class="card-body text-center d-flex flex-column justify-content-center">
+                                                <span class="tile-order-number">{{ step.display_order }}</span>
+                                                <p class="tile-keyword card-title mb-0">
+                                                    {{ step.keyword_advanced|default:"(キーワード未設定)" }}
+                                                </p>
+                                                <span class="tile-timestamp small text-muted mt-2"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- ▼▼▼ grouped_stepsがない場合の表示 ▼▼▼ #} -->
+                    <p class="text-center text-muted">このチャートには、表示できる通常ステップがありません。</p>
+                {% endif %}
+
+
+                <!-- --- 2. 最終ステップの専用表示エリア --- #} -->
+                {% if final_steps_for_advanced %}
+                    <hr class="my-4">
+                    <div class="row g-3 justify-content-center">
+                        {% for final_step in final_steps_for_advanced %}
+                            <div class="col-12 col-md-5">
+                                <div class="card h-100 
+                                    {% if final_step.solution_type == 'improved' %}border-success border-2{% endif %}
+                                    {% if final_step.solution_type == 'unresolved' %}border-danger border-2{% endif %}
+                                ">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ final_step.keyword_advanced|default:"(最終ステップ)" }}</h6>
+                                        <p class="card-text small text-muted">{{ final_step.solution_text|linebreaksbr }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+
+                <!-- --- ▼▼▼ ログ記録ボタンは、両方のifの外、一番下に置く！ ▼▼▼ --- #} -->
+                <div class="mt-4 text-center">
+                    <button id="advanced-save-button" class="btn btn-primary" style="min-width: 400px;">
+                        <i class="bi bi-pencil-square"></i> この内容で記録する
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    <!-- ★★★ 完成形コードはここまで！ ★★★ #} -->
+
+
+    <!-- ↓↓↓ メッセージ表示モーダルのHTML ↓↓↓ -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"> <!-- ← modal-dialog-centered で上下中央寄せ！ -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageModalLabel">情報</h5> <!-- ← タイトルは固定でも、JSで変えてもOK -->
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="messageModalText"></p> <!-- ← メッセージ本文はJSでここに入れる！ -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                        id="messageModalOkButton">OK</button> <!-- ← OKボタン -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 確認モーダル -->
+    <div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmSaveModalLabel">確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>この診断結果を記録しますか？</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">いいえ</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveButton">はい、記録する</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- メッセージ表示モーダル -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageModalLabel">情報</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="messageModalText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkButton">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+
+<!-- ========================================================== -->
+<!-- (2) このページ専用のJavaScript -->
+<!-- ========================================================== -->
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- ページ読み込み時に、保存されたタブの状態を復元する処理 ---
+const savedTabId = localStorage.getItem('activeChartTabId');
+if (savedTabId) {
+    console.log(`保存されたタブ (${savedTabId}) を復元します。`);
+    
+    // Bootstrapのタブを、JavaScriptから操作するための、おまじない！
+    const tabToActivate = document.getElementById(savedTabId);
+    if (tabToActivate) {
+        const tab = new bootstrap.Tab(tabToActivate);
+        tab.show(); // これで、指定したタブがアクティブになる！
+    }
+}
+
+    // ==========================================================
+    // 1. このページで共通して使う要素や変数を、最初にまとめて準備！
+    // ==========================================================
+    const beginnerIntermediatePane = document.getElementById('pills-chart-area');
+    const advancedTabPane = document.getElementById('pills-advanced');
+    
+    // モーダル関連も、ここで一回だけ準備しておく！
+    const confirmSaveModalElement = document.getElementById('confirmSaveModal');
+    let confirmSaveModal = confirmSaveModalElement ? new bootstrap.Modal(confirmSaveModalElement) : null;
+    const messageModalElement = document.getElementById('messageModal');
+    let messageModal = messageModalElement ? new bootstrap.Modal(messageModalElement) : null;
+    const messageModalLabel = document.getElementById('messageModalLabel');
+    const messageModalText = document.getElementById('messageModalText');
+    const confirmSaveButton = document.getElementById('confirmSaveButton');
+    const okButton = document.getElementById('messageModalOkButton');
+
+
+    // ==========================================================
+    // 2. 初級/中級モード用の処理
+    // ==========================================================
+    if (beginnerIntermediatePane) {
+        console.log("初級/中級モード用のJavaScriptを初期化します。");
+
+        const allStepElements = beginnerIntermediatePane.querySelectorAll('.chart-step');
+        let userAnswers = {};
+        allStepElements.forEach(step => { userAnswers[step.dataset.stepId] = null; });
+        
+        const allQuestionTextElements = beginnerIntermediatePane.querySelectorAll('.step-question-text');
+        const beginnerTab = document.getElementById('pills-beginner-tab');
+        const intermediateTab = document.getElementById('pills-intermediate-tab');
+        let improvementWasFound = false;
+
+        function switchChartText(level) {
+            allQuestionTextElements.forEach(p => {
+                const card = p.closest('.chart-step');
+                let newText = (level === 'beginner') ? card.dataset.textBeginner : card.dataset.textIntermediate;
+                p.innerHTML = newText.replace(/\n/g, '<br>');
+            });
+        }
+
+        function updateStepAppearance(stepElement, yesButton, noButton, currentAnswer) {
+            yesButton.classList.remove('selected-button');
+            noButton.classList.remove('selected-button');
+            if (currentAnswer) {
+                stepElement.classList.add('answered-step');
+                if (currentAnswer === 'yes') yesButton.classList.add('selected-button');
+                else noButton.classList.add('selected-button');
+            } else {
+                stepElement.classList.remove('answered-step');
+            }
+        }
+        
+        function updateFinalStepStyles() {
+            const finalCards = beginnerIntermediatePane.querySelectorAll('.chart-step[data-is-final-step="true"]');
+            finalCards.forEach(card => {
+                card.classList.remove('final-step-improved', 'final-step-unresolved');
+                if (improvementWasFound) {
+                    if (card.dataset.solutionType === 'improved') card.classList.add('final-step-improved');
+                } else {
+                    if (card.dataset.solutionType === 'unresolved') card.classList.add('final-step-unresolved');
+                }
+            });
+        }
+
+        function handleAnswer(buttonType, stepElement, yesButton, noButton) {
+            const currentStepId = stepElement.dataset.stepId;
+            const previousAnswer = userAnswers[currentStepId];
+            userAnswers[currentStepId] = (previousAnswer === buttonType) ? null : buttonType;
+            
+            improvementWasFound = Object.values(userAnswers).includes('yes');
+            updateStepAppearance(stepElement, yesButton, noButton, userAnswers[currentStepId]);
+            updateFinalStepStyles();
+
+            if (userAnswers[currentStepId]) {
+                const nextStepId = (userAnswers[currentStepId] === 'yes') ? yesButton.dataset.nextStepId : noButton.dataset.nextStepId;
+                if (nextStepId) {
+                    const nextStepElement = document.querySelector(`.chart-step[data-step-id="${nextStepId}"]`);
+                    if (nextStepElement && !nextStepElement.classList.contains('answered-step')) {
+                        nextStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }
+        }
+        
+        allStepElements.forEach(stepElement => {
+            const yesButton = stepElement.querySelector('.btn-yes');
+            const noButton = stepElement.querySelector('.btn-no');
+            if(yesButton && noButton) {
+                yesButton.addEventListener('click', () => handleAnswer('yes', stepElement, yesButton, noButton));
+                noButton.addEventListener('click', () => handleAnswer('no', stepElement, yesButton, noButton));
+            }
+        });
+
+        if (beginnerTab) beginnerTab.addEventListener('click', () => switchChartText('beginner'));
+        if (intermediateTab) intermediateTab.addEventListener('click', () => switchChartText('intermediate'));
+
+        const saveLogButton = document.getElementById('save-log-button');
+        if (saveLogButton && confirmSaveModal) {
+            saveLogButton.addEventListener('click', function() {
+                confirmSaveModal.show();
+                const newConfirmBtn = confirmSaveButton.cloneNode(true);
+                confirmSaveButton.parentNode.replaceChild(newConfirmBtn, confirmSaveButton);
+                newConfirmBtn.addEventListener('click', () => {
+                    confirmSaveModal.hide();
+                    fetchData(userAnswers);
+                }, { once: true });
+            });
+        }
+        
+        switchChartText('beginner');
+        updateFinalStepStyles();
+    }
+
+    // --- タブの状態をlocalStorageに保存するための処理 ---
+const allTabs = document.querySelectorAll('#pills-tab .nav-link'); // 全てのタブボタンを取得
+
+allTabs.forEach(function(tab) {
+    tab.addEventListener('click', function(event) {
+        // クリックされたタブのID（pills-beginner-tab とか）を取得
+        const activeTabId = event.target.id; 
+        
+        // localStorageに保存！
+        localStorage.setItem('activeChartTabId', activeTabId);
+        console.log(`タブの状態を保存しました: ${activeTabId}`);
+    });
+});
+
+// ▲▲▲ ここまで追加！ ▲▲▲
+
+    // ----------------------------------------------------------
+    // B. 上級モード用の処理
+    // ----------------------------------------------------------
+    if (advancedTabPane) {
+        console.log("上級モード用のJavaScriptを初期化します。");
+
+        const allTiles = advancedTabPane.querySelectorAll('.tile');
+        const advancedSaveButton = document.getElementById('advanced-save-button');
+        let advancedAnswers = {}; 
+
+        allTiles.forEach(function(tile) {
+            const stepId = tile.dataset.stepId;
+            if (!stepId) return;
+
+            // ▼▼▼ タイムスタンプ表示用の要素も、ここで見つけとく！ ▼▼▼
+            const timestampElement = tile.querySelector('.tile-timestamp');
+
+            advancedAnswers[stepId] = null; 
+
+            tile.addEventListener('click', function() {
+                if (tile.classList.contains('tile-checked')) {
+                    tile.classList.remove('tile-checked');
+                    advancedAnswers[stepId] = null;
+
+                    // ▼▼▼ タイムスタンプを消す！ ▼▼▼
+                    if (timestampElement) {
+                    timestampElement.textContent = '';
+                    }
+
+                } else {
+                    tile.classList.add('tile-checked');
+                    advancedAnswers[stepId] = 'yes';
+
+                    // ▼▼▼ タイムスタンプを記録＆表示！ ▼▼▼
+                    if (timestampElement) {
+                        const now = new Date();
+                        const hours = now.getHours().toString().padStart(2, '0');
+                        const minutes = now.getMinutes().toString().padStart(2, '0');
+                        const timestampText = `${hours}:${minutes}`; // "16:05"みたいな形式
+                        
+                        timestampElement.textContent = timestampText;
+                    }
+                }
+            });
+        });
+
+        if (advancedSaveButton && confirmSaveModal) {
+            advancedSaveButton.addEventListener('click', function() {
+                confirmSaveModal.show();
+                const newConfirmBtn = confirmSaveButton.cloneNode(true);
+                confirmSaveButton.parentNode.replaceChild(newConfirmBtn, confirmSaveButton);
+                newConfirmBtn.addEventListener('click', () => {
+                    confirmSaveModal.hide();
+                    fetchData(advancedAnswers);
+                }, { once: true });
+            });
+        }
+    }
+    
+    // ----------------------------------------------------------
+    // C. 共通ヘルパー関数 (fetch処理を共通化！)
+    // ----------------------------------------------------------
+    function fetchData(answers) {
+        fetch("{% url 'albatross_app:save_chart_log' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ chart_type_id: "{{ chart_type.id }}", answers: answers })
+        })
+        .then(response => {
+            // ▼▼▼ ここを修正！ ▼▼▼
+            if (response.ok) {
+                // 成功したら、もう何もせずに、すぐにリダイレクト！
+                console.log("ログの保存に成功しました。チャート選択画面に戻ります。");
+                window.location.href = "{% url 'albatross_app:chart_type_list' %}";
+            } else {
+                // 失敗した時だけ、エラーモーダルを出すようにする
+                return response.json().then(data => {
+                    messageModalLabel.textContent = 'エラー';
+                    messageModalText.textContent = '記録に失敗しました：' + (data.message || 'サーバーエラー');
+                    messageModal.show();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageModalLabel.textContent = '通信エラー';
+            messageModalText.textContent = 'サーバーとの通信中にエラーが発生しました。';
+            messageModal.show();
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

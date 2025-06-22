@@ -1,0 +1,76 @@
+/* chart_styles.css (とか、マサ君が使ってるCSSファイル) のどこか分かりやすい場所に追記 */
+
+/* --------------------------------------------- */
+/* Accounts App - Account Delete Form Styles     */
+/* (アカウント削除フォームのスタイル)              */
+/* --------------------------------------------- */
+
+/* ユーザー名ラベルを折り返さないようにする */
+
+.username-label-nowrap {
+    white-space: nowrap; /* テキストを折り返さずに1行で表示する */
+} 
+
+ .form-card h2 { /* ← .login-form-card h2, .signup-form-card h2 の両方に適用されるように */
+      margin-top: 0; /* カードのパディングで調整するなら、h2自体のマージンは0にしたり */
+      margin-bottom: 1.5rem; /* 下のマージンはBootstrapのデフォルト (mb-4) と合わせるか調整 */
+    }
+
+
+    /* =============================================== */
+/* ヘルプテキスト (注意書き) のためのスタイル       */
+/* (主に signup.html で使う想定)                 */
+/* =============================================== */
+
+.help-text-custom {
+    /* 文字の大きさを少し小さくする */
+    font-size: 0.875em; /* Bootstrapの .form-text と同じくらいのサイズ感 */
+
+    /* 文字の色を少し薄いグレーにする */
+    color: #6c757d !important; /* Bootstrapの .text-muted と同じ色 */
+                            /* !important は、他のスタイルに負けないように念のため付けてるけど、
+                                  なくても効くなら外してもOK！ */
+
+    /* ブロック要素として表示して、入力欄の下に来るようにする */
+    /* (HTML側で <small> タグとか <p> タグで囲んでれば、
+       デフォルトでブロックっぽく表示されることも多いけど、念のため) */
+    display: block;
+
+    /* 上の要素 (入力欄とか) との間に少し余白を空ける */
+    margin-top: 0.25rem;
+
+    /* ★★★ ここが今回のキモ！ ★★★ */
+    /* 親要素の幅を超えないように、最大幅を100%に設定 */
+    width: 100%;
+    max-width: 100%;
+
+    /* もし、特定の幅で必ず折り返したいなら、こんな感じでピクセル指定もできるよ */
+    /* max-width: 300px; */ /* ← この値は、実際の入力欄の幅とかに合わせて調整してね！ */
+                           /*    でも、レスポンシブデザインを考えると、まずは 100% で試すのがオススメ！ */
+
+    /* 長い単語やURLなどがはみ出すのを防ぐために、強制的に折り返す設定 */
+    /* (基本的には、日本語ならあまり気にしなくても大丈夫だけど、念のため) */
+    word-wrap: break-word;     /* 古いブラウザ向け */
+    overflow-wrap: break-word; /* 新しい標準的な書き方 (両方書いとくと安心) */
+    /* background-color: yellow !important; 
+    border: 2px solid red !important;    */
+    width: 100%; 
+    box-sizing: border-box !important; 
+}
+
+/* もし、ヘルプテキストが ul > li 構造になってる場合 (パスワードの注意書きとか) のスタイル */
+.help-text-custom ul {
+    padding-left: 1.2rem;  /* 箇条書きの左側のインデントを調整 */
+    margin-bottom: 0;      /* 下の余白をなくす (もしあれば) */
+    list-style-type: disc; /* 点のマーカーにする (デフォルトかもだけど念のため) */
+}
+
+.help-text-custom ul li {
+    margin-bottom: 0.1rem; /* 各箇条書き項目の下の余白をほんの少し */
+}
+
+.password-change-form .d-grid .btn { /* パスワード変更フォーム内のボタンに限定 */
+    max-width: 150px; /* ← この値を調整 (例: 300ピクセル) */
+    margin-left: auto;  /* 中央揃えにするおまじない */
+    margin-right: auto; /* 中央揃えにするおまじない */
+}

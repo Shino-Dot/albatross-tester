@@ -1,0 +1,20 @@
+/* static/albatross_app/css/chart_styles.css */
+.chart-step {
+    border: 1px solid #ccc;
+    /* opacity: 0.7; */
+    transition: opacity 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+/* .chart-step.active-step {
+    border: 2px solid blue;
+    opacity: 1;
+    background-color: #e7f3ff;
+}
+.chart-step.answered-step {
+    border: 1px solid #ddd;
+    opacity: 0.5;
+    background-color: #f8f9fa;
+}
+.chart-step.answered-step .btn {
+    pointer-events: none;
+    opacity: 0.6;
+} */

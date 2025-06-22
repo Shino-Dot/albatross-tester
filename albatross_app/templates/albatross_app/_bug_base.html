@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}アルバトロス{% endblock %}</title> <!-- 各ページで上書きできるようblockタグで囲う -->
+
+    <!-- ブートストラップ等共通で使うCSSを読み込む場所 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+
+    <!-- プロジェクト共通のファイルがあればここで読み込む -->
+    {% load static %}<!-- staticファイルを使うためのコード-->
+    <!-- <link rel="stylesheet" href="{% static 'css/base.css' %}"> -->
+    <!-- static/css/base.cssを読み込む場合 -->
+    <link rel="stylesheet" href="{% static 'accounts/css/accounts_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'albatross_app/css/albatross_app_chart.css' %}">
+
+    {% block extra_head %}{% endblock %}
+    <!-- 各ページで追加のcssやHEADタグを入れたいとき用 -->
+
+
+    <!-- <link rel="stylesheet" href="{% static 'albatross_app/css/top_styles.css' %}"> -->
+
+</head>
+
+
+<!-- 5/14ヘッダー中身追記 -->
+
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navber-light bg-light"> <!-- ここからナビゲーションバー -->
+            <div class="container-fluid">
+                <a class="navbar-brand fw-light text-primary fs-4"
+                    href="{% if user.is_authenticated %}{% url 'albatross_app:chart_type_list' %}{% else %}{% url 'accounts:login' %}{% endif %}">
+                    <!-- 以下画像の場所 -->
+                    <img src="{% static 'albatross_app/images/flap.png' %}" alt="albatrossロゴ" width="40" height="40"
+                        class="d-inline-block align-text-top me-2">
+                    <!-- ↑↑↑ srcは仮のパス、altは代替テキスト、width/heightで仮のサイズ、classで見た目調整 -->
+                    Albatross
+                </a>
+                <div class="ms-auto">
+                    {% if user.is_authenticated %}
+                    <!-- <span class="navbar-text me-3">
+                        こんにちは、{{ user.username }} さん！
+                    </span> -->
+                    <ul class="navbar-nav flex-row">
+                        <li class="nav-item me-2">
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#screenSettingsModal">
+                                <i class="bi bi-gear-fill"></i> <!-- ← Bootstrap Icons の歯車アイコン -->
+                                画面設定<!-- ← 大きい画面の時だけ文字も表示 (任意) -->
+                            </button>
+                        </li>
+                        <li class="nav-item me-2">
+                            <div class="btn-group"><!-- ボタン余白のためme-2追加 -->
+                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">アカウント設定</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <!-- 今、まさに見ているページが「パスワード変更ページ (URL名が 'password_change')」だったら… -->
+                                    <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}" 
+                                        {% if request.resolver_match.url_name !="password_change" 
+                                        and request.resolver_match.url_name !='account_delete' %} target="_blank" {% endif %}>
+                                            パスワード変更</a>
+                                    </li>
+                                    <!-- ↑ target="_blank" を付けない！ (同じタブで再読み込み、または何も起こらないようにする)  -->
+
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li><!-- 区切り線 -->
+
+                                    <!-- 今、まさに見ているページが「アカウント削除ページ (URL名が 'account_delete')」だったら… -->
+                                    <li><a class="dropdown-item" href="{% url 'accounts:account_delete'%}" 
+                                        {% if request.resolver_match.url_name !="account_delete" 
+                                        and request.resolver_match.url_name !="password_change" %} target="_blank" {% endif %}>
+                                        アカウント削除</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'accounts:logout'%}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    ログアウト
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+
+                    {% else %}
+                            <!-- 未ログインユーザー向けの表示 -->
+                            <ul class="navbar-nav flex-row">
+                                <li class="nav-item">
+                                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">ログイン</a>
+                                </li>
+                                <li class="nav-item ms-2">
+                                    <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-sm ms-2">新規登録</a>
+                                </li>
+                                <!-- この「新規登録」ボタンは、user.is_authenticated が False の時だけ表示される -->
+                            </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mt-4"><!-- メインコンテンツ表示 -->
+        {% block content %}
+        <!-- ここに各ページの中身が入る -->
+        {% endblock %}
+    </main>
+
+    <footer class="mt-auto py-3 bg-light text-center">
+        <div class="container">
+            <span class="text-muted">© 2025 アルバトロス</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ↑ Popper.js も一緒に入ってるバンドル版を使うと楽ちん！ -->
+
+    {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>

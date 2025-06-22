@@ -1,0 +1,192 @@
+/* albatross_app/static/albatross_app/css/chart_display_styles.css */
+
+/* =============================================== */
+/* Chart Display Page Styles (チャート表示画面のスタイル) */
+/* =============================================== */
+
+/* --- 回答済みの質問ステップのスタイル --- */
+.chart-step.answered-step {
+    opacity: 0.6;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* --- 選択されたボタンのスタイル --- */
+.btn.selected-button {
+    background-color: #0d6efd; /* 例：青色 */
+    border-color: #0a58ca;
+    color: white !important;
+}
+
+/* 改善が見つかった最終ステップのスタイル */
+.chart-step.final-step-improved { /* またはカード全体 .final-step-improved に直接 */
+    border: 3px solid #198754 !important; /* 緑色の太枠 */
+    /* (他のスタイル: 背景色とか、角丸とか、お好みで) */
+}
+
+/* 解決しない最終ステップのスタイル (デフォルトで適用されるイメージ) */
+.chart-step.final-step-unresolved { /* またはカード全体 .final-step-unresolved に直接 */
+    border: 3px solid #dc3545 !important; /* 赤色の太枠 */
+    /* (他のスタイル) */
+}
+
+/* albatross_app/static/albatross_app/css/chart_styles.css */
+
+/* --- 上級モード専用スタイル --- */
+
+/* 全体を囲む枠 */
+.advanced-chart-wrapper {
+    background-color: #f8f9fa; /* 例: 薄いグレー (テーマカラーの影響を受けないように) */
+}
+
+/* タイルの基本スタイル */
+.tile {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.tile:hover {
+    transform: translateY(-5px); /* ちょっと浮き上がる感じ */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ★★★ リスクレベルごとの枠線の色！ ★★★ */
+.tile.tile-risk-low {
+    border-color: #0d6efd; /* 青 (情報) */
+}
+.tile.tile-risk-medium {
+    border-color: #ffc107; /* 黄 (警告) */
+}
+.tile.tile-risk-high {
+    border-color: #dc3545; /* 赤 (危険) */
+}
+
+/* ★★★ アイコンの色も、リスクレベルに合わせる！ ★★★ */
+.tile.tile-risk-low .tile-icon::before {
+    content: "\f431"; /* bi-info-circle-fill */
+    color: #0d6efd;
+}
+.tile.tile-risk-medium .tile-icon::before {
+    content: "\f33b"; /* bi-exclamation-triangle-fill */
+    color: #ffc107;
+}
+.tile.tile-risk-high .tile-icon::before {
+    content: "\f570"; /* bi-radioactive とか、もっと危険そうなやつ！ */
+    color: #dc3545;
+}
+
+
+/* タイル内の各要素のスタイル */
+.tile-order-number {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.5rem;
+    font-size: 0.8em;
+    color: #6c757d; /* グレー */
+}
+
+.tile-icon {
+    font-size: 2rem; 
+    margin-bottom: 0.5rem;
+}
+
+.tile-keyword {
+    font-weight: 500;
+}
+
+/* albatross_app/static/albatross_app/css/chart_styles.css */
+
+/* --- タブ関連のスタイル調整 --- */
+
+/* タブ全体のコンテナを、左寄せにする */
+#chart-tab-container {
+    width: 100%; /* 横幅いっぱいを使うように明示 */
+    display: flex; /* Flexboxを強制的に適用 */
+    justify-content: flex-start !important; /* 何がなんでも左寄せ！ */
+}
+
+/* ulタグ自体のマージンをリセット */
+#chart-tab-container > ul.nav-pills {
+    margin-left: 0;
+    margin-right: auto;
+}
+/* 各タブボタンのスタイルを調整 */
+#pills-tab .nav-link {
+    padding: 0.5rem 0.8rem; /* パディングを少し狭くして、タブの幅を詰める (値はお好みで調整してね！) */
+    font-size: 0.9rem;     /* 文字の大きさを少しだけ小さくする (これも任意) */
+}
+
+/* --- 詳細解説アコーディオンのボタンスタイル調整 --- */
+.accordion-button.collapsed {
+    color: #6c757d; /* 閉じてる時の文字色を、Bootstrapの .text-muted と同じ、少し薄いグレーに！ */
+    background-color: #f8f9fa; /* 閉じてる時の背景色も、ほんのりグレーにすると馴染むかも (任意) */
+}
+
+/* (任意) 開いた時のスタイルも変えたいなら、これも追加 */
+.accordion-button:not(.collapsed) {
+    color: #0c63e4; /* 開いた時の文字色 (Bootstrapのデフォルトの青っぽい色) */
+    background-color: #e7f1ff; /* 開いた時の背景色 (Bootstrapのデフォルト) */
+    box-shadow: none; /* 開いた時の周りの影を消して、スッキリさせる (任意) */
+}
+
+/* (任意) ボタンにマウスを乗せた時に、下線が出ないようにする */
+.accordion-button:hover {
+    text-decoration: none;
+}
+
+/* --- 診断完了ボタンのスタイル調整 --- */
+#save-log-button {
+    /* ▼▼▼ 幅を、画面の横幅の50%にする！ ▼▼▼ */
+    width: 50%; /* 画面幅の半分！ */
+    max-width: 600px; /* でも、PCの大画面で見た時に、広がりすぎないように上限も付けとく */
+    min-width: 300px; /* 逆に、スマホとかで見た時に、小さくなりすぎないように下限も！ */
+
+    /* ▼▼▼ 高さと文字サイズも、もっとデカく！ ▼▼▼ */
+    font-size: 1.8rem; /* もう、h2タグくらいのデカさ！ */
+    padding: 1rem 1.5rem; /* 内側の余白も、超たっぷり取る！ */
+    font-weight: bold;
+    letter-spacing: 2px; /* 文字間も広げて、堂々とした感じに！ */
+
+    /* ▼▼▼ 見た目は、さっきのカプセル型を継承！ ▼▼▼ */
+    border-radius: 50px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+    border: none; /* (任意) 枠線はいらないかも？ */
+}
+
+/* (任意) マウスを乗せた時の動きも、もっとダイナミックに！ */
+#save-log-button:hover {
+    transform: translateY(-3px) scale(1.02); /* ちょっと拡大もさせちゃう！ */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+/* ... (既存のCSS) ... */
+
+/* --- チェック済みのタイルのスタイル --- */
+.tile.tile-checked {
+    /* opacity: 0.5; */
+    /* 代わりに、背景色を、白にする！ */
+    background-color: white !important;
+
+    transform: scale(0.95); /* ちょっとだけ小さくして、押した感を出す */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.tile.tile-checked:hover {
+    transform: scale(0.95); /* ホバーしても大きくならないように */
+}
+/* --- タイムスタンプのスタイル調整 --- */
+.tile-timestamp {
+    color: #FF0000 !important; /* Bootstrapの「危険」を示す赤色！ !importantで確実に上書き！ */
+    font-weight: bold; /* (任意) 文字を太くして、もっと目立たせる！ */
+    
+}
+
+/* チェックされたタイルの中の、「キーワード」だけを、薄くする！ */
+.tile.tile-checked .tile-keyword {
+    color: #adb5bd; /* Bootstrapの、いい感じの薄いグレー！ */
+    transition: color 0.3s ease;
+}
+
+/* チェックされたタイルの中の、「表示順の数字」も、薄くする！ */
+.tile.tile-checked .tile-order-number {
+    color: #adb5bd; /* キーワードと同じ色に！ */
+    transition: color 0.3s ease;
+}

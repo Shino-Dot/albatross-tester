@@ -1,0 +1,35 @@
+/* albatross_app/static/albatross_app/css/common_styles.css */
+/* button, input, select, textarea, 
+.btn {
+    font-size: inherit !important;
+} */
+/* 他にも、アプリ全体で共通して使いたいスタイルがあれば、ここに追加していく！ */
+
+
+/* common_styles.css (または他の適切なCSSファイル) */
+
+.btn {
+    --bs-btn-font-size: inherit; /* Bootstrapのボタン用フォントサイズ変数を 'inherit' に上書き！ */
+}
+
+
+/* もし !important が必要そうなら (通常はこれだけでOKなはずだけど) */
+/* 
+.btn {
+    --bs-btn-font-size: inherit !important;
+} */
+
+/* base.html の <style> タグ内、または common_styles.css など */
+.modal-body .btn-group .btn {
+    min-width: 80px; /* ← この値を調整して、ボタンの最小幅を決める (例: 60px) */
+    /* text-align: center; は .btn に元々あるはず */
+}
+
+
+/* Bootstrapのピル用の変数を、アタシたちのテーマ変数で上書きしちゃう！ */
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--theme-tab-bg-active) !important;
+    --bs-nav-pills-link-active-color: var(--theme-tab-text-active) !important;
+    --bs-nav-link-color: var(--theme-tab-text) !important;
+    --bs-nav-link-hover-color: var(--theme-tab-bg-active) !important;
+}

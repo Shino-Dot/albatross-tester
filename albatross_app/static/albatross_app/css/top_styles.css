@@ -1,0 +1,41 @@
+/* ログインページ専用のスタイル */
+.login-page-container {
+    min-height: calc(100vh - 56px - 56px); /* 画面の高さ - ヘッダーの高さ - フッターの高さ (もしあれば) */
+    /* ↑ 56pxはBootstrapのnavbarのデフォルトの高さの目安。実際の高さに合わせて調整してね！ */
+    /* もしフッターがなければ、calc(100vh - 56px) とか、もっとシンプルに 80vh とかでもOK */
+    background-color: #e9ecef; /* 背景を少しグレーにする例 (お好みで) */
+}
+
+.login-form-card {
+    background-color: #ffffff; /* カードの背景を白に */
+    border-radius: 0.75rem;    /* 角を丸く */
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1); /* 影を付ける */
+}
+
+/* {{ form.as_p }} を使う場合の入力欄の調整 (もし入力欄が幅いっぱいになってなかったら) */
+.login-form-card form p input[type="text"],
+.login-form-card form p input[type="password"] {
+    width: 100%;             /* 入力欄を親要素の幅いっぱいに広げる */
+    /* padding: 0.75rem;        Bootstrapの.form-controlが適用されてれば不要かも */
+    /* border: 1px solid #ced4da; Bootstrapの.form-controlが適用されてれば不要かも */
+    /* border-radius: 0.25rem;  Bootstrapの.form-controlが適用されてれば不要かも */
+    box-sizing: border-box;    /* paddingとborderをwidthに含める */
+}
+/* もし form.as_p で出力される <p> タグの余白が気になるなら */
+.login-form-card form p {
+    margin-bottom: 1rem; /* 例えばこれくらいに調整 */
+}
+.login-form-card form p label {
+    margin-bottom: 0.25rem; /* ラベルの下の余白を少し詰める例 */
+    font-weight: 500; /* ラベルの文字を少し太くする例 */
+}
+
+
+/* ログインボタン (d-gridで横幅いっぱいになってるはずだけど、念のため) */
+.login-form-card .d-grid .btn {
+    font-weight: bold;
+    /* ここでさらにボタンの見た目を調整できるよ */
+    /* 例: font-weight: bold; */
+    /* 例: letter-spacing: 0.5px; */
+}
+

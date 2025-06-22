@@ -1,0 +1,207 @@
+{% extends "albatross_app/base.html" %}
+
+{% block title %}アカウント削除{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <p class="text-end">こんにちは、{{ user.username }} さん！</p>
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="mb-0">アカウント削除</h2>
+                </div>
+                <div class="card-body">
+                    {% if user_deleted_and_needs_logout %}
+                    <!-- パスワードおっけーの場合 5/21---↑ユーザーが消えてない条件追加-->
+
+                    <!-- アカウント削除が完了した場合の表示 -->
+                    <div class="alert alert-success" role="alert">
+                        アカウントは正常に削除されました。
+                    </div>
+                    <p>お疲れさまでした。このタブは自動的に閉じられます。</p>
+                    <!-- <p><a href="{% url 'accounts:login' %}" class="btn btn-primary">ログインページへ</a></p> -->
+                    <!-- 上の行は自動で閉じる設定にするためコメントアウト -->
+
+                    <!-- ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ -->
+                    <!-- ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ダミー▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ -->
+                    {% elif show_delete_modal_on_load %}
+                    <p>アカウントを削除するには、セキュリティのため、現在のパスワードを入力してください。</p>
+                    <div class="row mb-3 align-items-baseline g-0">
+                        <label class="col-sm-3 col-form-label">ユーザー名：</label>
+                        <div class="col-sm-9">
+                        <strong>{{ request.user.username }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password_dummy" class="form-label">パスワード</label> 
+                        <!-- {# ↓↓↓ パスワード入力欄は表示するけど、入力不可 (readonly) にしておくとか、値を空にするとか #} -->
+                        <input type="password" class="form-control" id="id_password_dummy" readonly value="********">
+                        <!-- {#valueは適当なダミー #} -->
+                        <!-- {# または、単に {{ form.password }} を表示するだけ (ビューから空のフォームが渡ってれば) #} -->
+                    </div>
+                    <!-- {# <button type="submit" class="btn btn-warning">パスワード認証</button> ← このボタンは不要 #} -->
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href = '{% url 'accounts:account_delete' %}';">キャンセル（タブを閉じる）</button>
+                    <!-- {# </form> #}
+                    {# ▲▲▲ ここまでが「以前のパスワード入力画面」の再現 ▲▲▲ #} -->
+
+                    {% else %}
+                    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ダミー▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+                    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+
+                    <!-- 通常時入力フォーム表示 -->
+                    <p>アカウントを削除するには、セキュリティのため、現在のパスワードを入力してください。</p>
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <p>入力内容に誤りがあります：</p>
+                        {{ form.non_field_errors }}
+                        {% for field in form %}
+                        {% if field.name == "password" %}
+                        {% for error in field.errors %}
+                        <p>{{ field.label_tag }} {{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <!-- ↓はパスワード認証用のフォーム -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <!-- 5/19---ここからユーザー名表示部分変更 -->
+                        <div class="row mb-3 align-items-baseline g-0">
+                            <label class="col-sm-3 col-form-label">ユーザー名：</label>
+                        <div class="col-sm-9">
+                            <strong>{{ request.user.username }}</strong>
+                            <!-- ログイン中のユーザーを表示するだけに変更 -->
+                        </div>
+                        </div>
+                        <!-- 5/19---パスワード入力部分ラベル表示調整 -->
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">パスワード</label>
+                            <input type="password" name="password" class="form-control" required id="id_password">
+                        </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger w-50">パスワード認証</button>
+                        <button type="button" class="btn btn-secondary w-50" onclick="window.close();">キャンセル</button>
+                        <!-- キャンセルボタンのリンク先は、適切な場所（例：設定画面とか）に後で変更 -->
+                    </div>
+                    </form>
+                    {% endif %}
+                    <form method="post" id="actualDeleteForm" style="display: none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="execute_delete" value="true">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteAccountConfirmModal" tabindex="-1" aria-labelledby="deleteAccountConfirmModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountConfirmModalLabel">アカウント削除の最終確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                本当にアカウントを削除してもよろしいですか？<br>
+                この操作は取り消せません。
+            </div>
+            <div class="modal-footer">
+                <!-- {# ▼▼▼ モーダルのキャンセルボタンにidを付与！ ▼▼▼ #} -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    id="cancelDeleteFromModalButton">キャンセル</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteExecuteButton">はい、削除します</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- アカウント削除完了＆ログアウト処理 ---
+        {% if user_deleted_and_needs_logout %}
+        console.log("アカウント削除完了メッセージ表示中。5秒後にログアウトしてタブを閉じます。");
+        setTimeout(function () {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            fetch("{% url 'accounts:logout' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("ログアウトリクエスト成功。タブを閉じます。");
+                    } else {
+                        console.warn("ログアウトリクエストは成功しませんでしたが、タブを閉じます。Status:", response.status);
+                    }
+                    window.close();
+                })
+                .catch(error => {
+                    console.error('ログアウトリクエスト中にエラー:', error);
+                    window.close();
+                });
+        }, 5000);
+        {% endif %}
+
+        // --- パスワード認証成功時のモーダル自動表示 ---
+        {% if show_delete_modal_on_load %}
+        const deleteModalElement = document.getElementById('deleteAccountConfirmModal');
+        if (deleteModalElement) {
+            const deleteModal = new bootstrap.Modal(deleteModalElement);
+            deleteModal.show();
+            console.log("パスワード認証成功。アカウント削除確認モーダルを自動表示しました。");
+
+            // モーダル内の「キャンセル」ボタンが押された時の処理
+            const cancelBtnModal = document.getElementById('cancelDeleteFromModalButton');
+            if (cancelBtnModal) {
+                cancelBtnModal.addEventListener('click', function () {
+                    console.log("モーダルのキャンセルボタンが押されました。アカウント削除ページにリダイレクトします。");
+                    // モーダルを明示的に隠す (data-bs-dismiss="modal" があれば通常は不要だけど念のため)
+                    // const myModalInstance = bootstrap.Modal.getInstance(deleteModalElement);
+                    // if (myModalInstance) {
+                    //     myModalInstance.hide();
+                    // }
+                    // ページをリロードしてパスワード入力画面に戻る (ビューのGETが呼ばれる)
+                    window.location.href = "{% url 'accounts:account_delete' %}";
+                });
+            }
+            // (オプション) モーダルの右上の×ボタンやEscキーで閉じられた時の処理も入れたいなら、
+            // deleteModalElement.addEventListener('hidden.bs.modal', function (event) { ... }); を使う。
+            // ただし、その場合は「はい、削除します」で閉じられた場合と区別するロジックが必要になる。
+        }
+        {% endif %}
+
+        // --- モーダル内の「はい、削除します」ボタンの処理 (これは常時設定) ---
+        const confirmDeleteExecuteBtn = document.getElementById('confirmDeleteExecuteButton');
+        if (confirmDeleteExecuteBtn) {
+            confirmDeleteExecuteBtn.addEventListener('click', function () {
+                const actualDeleteForm = document.getElementById('actualDeleteForm');
+                if (actualDeleteForm) {
+                    console.log("モーダル経由でアカウント削除を実行します。");
+                    actualDeleteForm.submit();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

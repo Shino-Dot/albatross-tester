@@ -1,0 +1,3076 @@
+5/9---プロジェクト立ち上げ、アプリフォルダ作成
+セッティング:タイムゾーン、OSモジュール、アロードホスト、日本語、スタティックファイル、設定完了。
+
+5/12---メイクマイグレーション失敗
+staticファイルをルートディレクトリ配下に作成（太字配下）
+メイクマイグレーションは済んでいた模様。
+マイグレートも無事完了。
+スーパーユーザーも作成完了（アルバトロス0219、0219パイウェブ）。
+
+http://127.0.0.1:8000/admin/でログイン可能確認。
+アルバトロス/テンプレーツ/アルバトロス/HTMLでHTMLファイル作成。
+Pythonマネージパイstartappアプリ名のメインアプリ立ち上げを忘れていたためここで作成。
+
+これよりアカウント系の土台となる機能のビューから作成。
+まずはログインログアウトのクラスから。
+from django.contrib.auth import views as auth_viewsこれで元々入っている認証ビューをインポート。
+次にログイン処理、ログアウト処理のためのクラス。
+ログイン処理のクラスには、ログインに来たらログインページに飛ぶの誘導。
+template_name = 'アプリ名/login.html'
+ログアウト処理は一旦pass。
+
+ビューで動きを決めた後はどのurlに進めるかの部分、url.Py。
+今回のアプリ（アルバトロス関連）のURLアクセスが来たら全部albatross_appの中のurls.pyに案内する設定。
+ユーザーがログインに進んだらMyLoginViewに誘導。
+/logout/ が開かれたら MyLogoutViewに誘導。
+
+上記の誘導系の動きをURLパイに作っていく。
+プロジェクト名と同じ名前のフォルダ（settings.py とかがある方ね！）の中の urls.pyを開く。
+トップにあるインポート系に加え「include」も追加。
+URLパターンにpath("", include("albatross_app.urls")),を追加。
+
+アルバトロス_appにURLパイ作成。
+from . import views で、同じフォルダにある views.py を読み込む。
+app_name = 'アプリ名' は、テンプレ‐ートとかでURLを指定する時に {% url 'albatross_app:login' %} みたいに書くための設定！めちゃ便利だから書いとく。
+path('login/', views.MyLoginView.as_view(), name='login')
+上記は'login/' っていうURLにアクセスが来たら、views.py の中の MyLoginView を実行するよ！って意味。
+クラスベースビューを使う時は、後ろに .as_view() って付けるのを忘れないこと。
+name='login' は、このURL設定に「login」っていう名前を付けてる。これも後でテンプレートから呼び出す時に使う。
+logout も同じ感じ
+
+リダイレクト先（ログイン後、ログアウト後）の設定。
+プロジェクト全体のセッティングパイに追記。
+プロジェクト直下のURLパイに追記、LOGIN_URL = 'login' : これは urls.py で name='login' って付けた名前を指定。
+LOGIN_REDIRECT_URL = '/'とLOGOUT_REDIRECT_URL = 'login'はログインログアウト後のリダイレクト先。
+
+ログイン、ログアウト機能の動作確認のためにHTML作成。
+アルバトロス_appの中にテンプレーツ/アルバトロス_app/ログインHTMLファイル作成。
+「!」にTabボタンで初期テンプレを表示。
+
+ここでまだbase.htmlを作ってないことに気づく。
+今からbase.html作成。場所はログインHTMLと同じ。
+「!」にTabボタンで初期テンプレを表示。
+
+base.HTMLの土台になる部分を作成、中身。
+HEAD中身
+meta タグ: 文字コード (UTF-8)、IE互換モード、スマホ表示 (viewport) は必ず。（変えるのもあり基本は書いた通り）
+{% block title %}: ページのタイトルを、各ページ（login.html とか）で変えられるようにしてる。{% endblock %} で閉じるのを忘れずに！
+BootstrapのCDNリンクを入れてる（もし使うならね！）。
+あと、{% load static %} して、もしプロジェクト共通のCSSファイル (static フォルダに置くやつ) があれば読み込めるように準備してる。
+{% block extra_head %}: 各ページで特別なCSSとか <meta> タグを追加したい時用の予備スペース。
+
+5/13---ログインのビューの処理（ログアウト仮）、URLパイの誘導の２つを実施。
+その後、導線がつながってるかの確認のためHTML書き起こし中。
+本日はBODYの中身、ログインHTMLの中身を書いて確認作業から開始。
+
+ストップ！
+中間報告での指摘から改めてガントチャート通りに進める。
+アカウントアプリがあるが使用していないなど多数問題発生。
+まずはAIと情報共有して足並みそろえて進めるために、スタート地点に戻る。
+アカウントアプリ、_appアプリ、プロジェクト名アプリなどのビューパイやURLパイの再配置とコードの再確認。
+
+上記ストップが終わったらガントチャートの通りに進めてみる。
+一、まずは引っ越し。
+albatross_appフォルダの中にある views.py を開いてMyLoginView と MyLogoutView のクラス定義の部分を、まるっとコピー。
+移動先---accounts フォルダの中にある views.py を開いて、accounts/views.py がまだ空っぽだったら、そこに上記を貼り付ける。
+引っ越し作業＋内容書き換え。
+albatross_app/login.html→→→template_name = "accounts/login.html"に書き換え。
+これで、ログイン画面のHTMLは accounts/templates/accounts/login.html を見に行くようになる！
+
+二、次はURLパイの引っ越し。
+_appフォルダの中にある urls.py を開いてその urls.py の中に書いてある、ログイン・ログアウト用の path(...) の部分をコピー。
+accounts フォルダの中に、新しく urls.py という名前のファイルを作成して新しい accounts/urls.py に貼り付けする。
+from . import views: これで accounts/views.py をちゃんと見てくれるようになる！
+app_name = 'accounts': これで、テンプレートとかで {% url 'accounts:login' %} みたいに、どのアプリのURLかを明示的に指定できるようになる！
+超便利だから絶対書いとく。
+accounts/urls.py にちゃんと設定できたら、_app/urls.py にあった元のログイン・ログアウト用の path(...) は削除してOK。
+
+三、最後の引っ越し。
+プロジェクト全体（プロジェクト名/urls.py）の修正。
+プロジェクトルートの直下にある、プロジェクト名と同じ名前のフォルダ（settings.py とかがある方ね！）の中の urls.py を開いて
+中身を修正。以下修正。
+
+プロジェクト名/urls.py: app_name は書かない。include で各アプリの urls.py を読み込むだけ。
+albatross_app/urls.py: app_name = 'albatross_app' って書く。
+accounts/urls.py: app_name = 'accounts' って書く。
+
+四、_app配下のURLパイの掃除。
+必要ないところを一旦すべて削除し、初期状態に戻す。
+チャートなどメイン機能の処理を書く際に追記していく。
+
+上記修正は終わり。
+ここからアカウントアプリのログインフォームのHTML作成。
+認証関連のHTMLだから、accounts アプリの中の templates/accounts/ フォルダに作るのがスッキリするんだったよね！ファイル名は signup.html とかにする。
+signupHTMLのサイト全体の骨組み確認のために先にbaseHTMLの土台のみ作成。
+ヘッダー、メイン、フッターの骨組みのみ。
+その後signupHTMLに取り掛かる。
+
+サインアップHTMLの中身、それぞれのフォームを作成。
+新規ユーザー登録、ユーザー名、メアド、パスワード、パスワード確認用、登録する、ログインはこちらなど作成。
+
+ビューにサインアップHTMLを表示させるための処理を書く。
+from django.urls import reverse_lazy:
+これは、URLの「名前」(例: accounts:login) から実際のURLパス (例: /accounts/login/) を取得する時に使う便利な関数。success_url で使う。
+from django.views import generic:
+Djangoには、よく使われる処理をまとめた「汎用ビュー」っていうのがあって、CreateView はその中の一つ。「何か新しいデータを作る」時にめちゃくちゃ便利！
+from django.contrib.auth.forms import UserCreationForm:
+これが、Djangoが最初から用意してくれてる、新しいユーザーアカウントを作るための専用フォーム！ユーザー名、パスワード、パスワード確認の入力欄とか、
+パスワードのハッシュ化とか、セキュリティ面もちゃんと考慮されてるスグレモノ！✨ これ使わない手はないっしょ！
+class SignUpView(generic.CreateView)::
+generic.CreateView を継承して、新規登録用の SignUpView クラスを作ってる。
+上記がトップの部分
+
+accounts/views.py本体部分
+from django.views import generic:
+Djangoには、よく使われる処理をまとめた「汎用ビュー」っていうのがあって、CreateView はその中の一つ。「何か新しいデータを作る」時にめちゃくちゃ便利！
+from django.contrib.auth.forms import UserCreationForm:
+これが、Djangoが最初から用意してくれてる、新しいユーザーアカウントを作るための専用フォーム！ユーザー名、パスワード、パスワード確認の入力欄とか、
+パスワードのハッシュ化とか、セキュリティ面もちゃんと考慮されてるスグレモノ！✨ これ使わない手はないっしょ！
+class SignUpView(generic.CreateView)::
+generic.CreateView を継承して、新規登録用の SignUpView クラスを作ってる。
+
+
+5/14---accounts/urls.py を開いて、urlpatterns の中に、SignUpView を呼び出すための pathを追加
+ブラウザで /accounts/signup/ っていうURLにアクセスすると、さっき作った SignUpView が動いて、signup.html が表示されるようになる
+Djangoフォームを使うためにsignup.html のCSRFトークンの下記部分の{{ form.as_p }}を追記。
+その下のユーザー名、メアド、パスワード、パス（確認用）、ここまでの項目部分を削除して1行上のフォームに書き換えて修正。
+<label> とか <input> でゴリゴリ書いてた部分を、{{ form.as_p }} この一行に置き換え。
+
+ここまでで一旦ランサーバーで確認。
+エラー発生。下記エラー内容２行。
+「設定がちゃんとされてないよ！ albatross_app/urls.py っていうURL設定ファイルの中に、URLのパターン (urlpatterns) が見当たらないんだけど！
+もしファイルの中に urlpatterns っていう変数があって、そこにちゃんとしたパターンが書いてあるのにこのエラーが出るなら、それは循環インポートが原因かもね。」
+
+上記エラー対策。
+プロジェクト全体の urls.py (albatross/urls.py) で、albatross_app.urls を include してる行を、一旦コメントアウトする！
+こうすれば、albatross_app のURLはまだ使わないよーってことになる。
+改めてランサーバー。。。エラー再発。
+{% extends "albatross_app/base.html" %}の後半のダブコが抜けていた。
+その後のエラー、TemplateDoesNotExistテンプレート無いエラー。
+またまたエラー、インストールドアップにアルバトロス_appが追加されていなかったため、最後部分に追記。
+
+エラーではないが依然作ったチャートフォルダは要らないためサーバー停止後、削除、セッティングスのインストールドアップからも削除。
+
+albatross_app/apps.pyの中のスペルミス発覚、修正。
+上記のスペルミス修正により、ランサーバー後無事表示される。
+
+（仮）新規登録完成。
+ここからは動作検証。登録、登録後ログインページにリダイレクト、裏側でも登録があるかスーパーユーザーで確認。
+登録時エラー発生、各項目入力後（おそらく）入力登録が走った際のエラー。
+NoReverseMatch
+Exception Value:	
+Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ログインという名の名前がない、一致するパターンネームがないとのこと。
+原因はLOGOUT_REDIRECT_URL = "/accounts/login/"のURL指定がなされていなかったこと、ログインのみの状態だった。
+そのため、直接ログインページのパスを指定して完了！
+
+その後もエラーが出るが、HTMLを作れていないためログインHTMLを正しい場所に再配置してHTMLの中身を書く。
+無事にログインページのフォーム表示完了！
+ログインしようとした瞬間にエラーになる。
+ログインした際の飛ぶ先のリンクが正しくない様子。
+
+改めてAIとトップページ=ログインページのイメージを共有。
+settingsのログイン、（ログイン/ログアウト）のリダイレクトを修正。
+ログイン、アドミン（一時的）、ログインのように修正。
+パスを直接指定なのか、：で書くのか統一。
+
+from accounts import views as accounts_views のインポート追記。
+サイトのルート('/') にアクセスが来たら、accountsアプリのMyLoginViewを直接呼び出す。
+トップページ=ログインページの共有をしたことでずれが出ないか確認。
+
+settings.py の設定を確認・修正！
+LOGIN_URL = 、LOGIN_REDIRECT_URL = 、LOGOUT_REDIRECT_URL =のパス確認。
+
+プロジェクト全体の urls.py を修正。
+albatross/urls.py (プロジェクトのルートURL設定)、サイトのルート ('/') へのアクセスを、accounts アプリの MyLoginView に直接つなげる！
+from accounts import views as accounts_views のインポートを忘れない！
+albatross_app.urls の include は、まだトップページ以外の albatross_app のURLがなければ、コメントアウトのままでOK。
+
+accounts/views.py の MyLoginView を確認！ファイル: accounts/views.py
+ちゃんと auth_views.LoginView を継承してるか？
+template_name = 'accounts/login.html' が正しく指定されてるか？
+
+accounts/urls.py を確認！
+app_name = 'accounts' が設定されてるか？
+/login/ のパスに name='login' がちゃんと付いてるか？
+/signup/ のパスに name='signup' がちゃんと付いてるか？
+
+テンプレートファイルを確認！
+accounts/templates/accounts/login.html:
+ちゃんと {% csrf_token %} と {{ form.as_p }} が <form> タグの中にあるか？
+新規登録ページへのリンク ({% url 'accounts:signup' %}) はあるか？
+
+accounts/templates/accounts/signup.html:
+ちゃんと {% csrf_token %} と {{ form.as_p }} (または直接書いた入力欄) が <form> タグの中にあるか？
+ログインページへのリンク ({% url 'accounts:login' %}) はあるか？
+
+albatross_app/templates/albatross_app/base.html:
+ちゃんと基本的なHTML構造 (<html>, <head>, <body>, {% block content %} など) があるか？
+Bootstrapとか使うなら、CSSやJSのリンクがちゃんと入ってるか？ （これは後からでもおっけー）
+
+上記5つの項目確認、おそらく今後もトップページ=ログインページの認識で進めるはず。
+ログイン後のリダイレクトページでアドミンにしたため、若干エラー出てるけど管理画面は出てるので問題なし。
+ちなみにエラーの内容「あなたは 村人2 として認証されましたが、このページへのアクセス許可がありません。他のアカウントでログインしますか?」。
+
+☆☆☆
+ログイン後リダイレクトのパス部分がアドミンのため、後ほど変更必要。
+☆☆☆
+
+ヘッダー中身追記、ログアウトのフォーム。
+
+
+5/17---予定では入力情報で認証し、成功したらセッションを開始するDjangoビュー作成。
+
+状況確認のためにランサーバー。エラー発生。
+{% endverbatim %}削除。削除後改善。
+上記表示はAIの指示を間違わないように書かれたもので今回の成果物のコーディングとは関係なし。
+
+以下動作確認済み。
+ログイン機能は、一般ユーザーだと管理画面の権限エラーが出るけど、認証とセッション開始はちゃんと動いてる。
+ログアウト機能も、ヘッダー表示とか問題なさそうなら、たぶんOK！ (実際にログアウトして、ログインページに戻るか試してみてね！)
+ログイン後のリダイレクト先は、後でちゃんとユーザー向けのページを作ったら変更するのを忘れずに！
+
+ログイン、新規登録系は一旦処理まで完了。
+これから設定の中の変更（更新処理）実装。
+そのうえで混乱しないようにプロンプト追記。今までやったことを情報共有。
+
+これからクラッド更新の処理を書いていくのにアカウントのビューにインポート追記。
+パスチェンジビューとパスチェンジフォーム。
+クラスを書く、class MyPasswordChangeView(PasswordChangeView):。
+MyPasswordChangeView っていう名前で、さっきインポートした PasswordChangeView をカッコ () の中に書いて「継承」してる。
+
+template_name =　
+「このビューが表示するHTMLテンプレートは、accounts フォルダの中の templates フォルダの中の accounts フォルダの中の↓↓↓
+ password_change_form.html だよ！」ってDjangoに教えてる。
+
+success_url = 
+「パスワード変更が成功したら、accounts アプリの name='password_change_done' っていう名前のURLにリダイレクトしてね！」っていう意味。
+
+ユーザーがパスワード変更ページにアクセスする
+↓
+MyPasswordChangeView が動く
+↓
+template_name で指定された password_change_form.html が表示される (ここには PasswordChangeForm が自動で表示される！)
+↓
+ユーザーがフォームに「古いパスワード」「新しいパスワード」「新しいパスワード（確認用）」を入力して送信
+↓
+PasswordChangeView (を継承した MyPasswordChangeView) が、入力内容をチェックして、問題なければパスワードを更新してくれる！✨ (この辺の面倒な処理は全部Djangoがやってくれる！)
+↓
+パスワード変更が成功したら、success_url で指定された 'accounts:password_change_done' のURLにリダイレクトされる
+↓
+そのURLに対応する「パスワード変更完了ページ」が表示される
+
+
+パスワード変更完了後の動きに関するビュー作成。
+アカウントビューにクラス追加。class MyPasswordChangeDoneView(generic.TemplateView):。
+Djangoの generic.TemplateView を継承する。
+TemplateView っていうのは、その名の通り「テンプレートを表示するだけ」っていう、超シンプルなビュー。
+特別な処理はしないで、ただ指定されたHTMLファイルを表示したい時にピッタリ！👍
+
+template_name = 'accounts/password_change_done.html'
+このビューが表示するHTMLテンプレートとして、accounts/templates/accounts/password_change_done.html を指定してる。
+この password_change_done.html は、これから大項目3で作るHTMLファイルね！
+
+上記でパスワード変更完了ページを表示するためのビューは完成。
+今ビューに書いたクラスの部分を紐づけるURLパイを書く。
+URLパイのurlpatterns =にビューで書いたクラスの部分を元々書いてあるパターンを見ながら模倣して追加。
+
+その後HTMLを書いていく（URLで追記したリンク先）。
+password_change_form.html と password_change_done.html を作る作業。
+アカウントのテンプレートに上記HTMLを追加。
+中身を書いていく、中身はログインやサインアップのHTMLを確認しつつ書く。
+
+まずはパスワード変更フォーム。タイトル表示の部分まで7－10行くらいはログインやサインアップと共通。
+そのほか本体ぼ部分だけ教えてもらって書く。
+基本フォームは{{ form.as_p }}を利用。
+
+パスワード変更完了画面もHTML完了。
+タイトルまでの上部はほぼ一緒、下部分はそのページごとの仕様変更。
+DIVで区切って各項目作成。
+パス変更完了画面は完了後は画面をユーザー自身で閉じてもらう。
+その後元の画面に戻って再ログインしてもらう。
+
+次は導線と動作確認。
+スペルミスのエラーも少しあったが修正して解決。
+パスワード変更、完了、ログインしなおし、元のパスワードが使えないかまで確認完了。
+
+5/17---やったことリスト、おものパス変更（更新処理）
+
+大項目1：パスワード変更のためのビューを作ろう！ 🧠✨
+小項目1-1：Django標準のパスワード変更ビューを利用する準備！
+実はDjangoには、パスワード変更処理をよしなにやってくれる便利なビュー (PasswordChangeView) と、
+そのためのフォーム (PasswordChangeForm) が最初から用意されてるんだ！
+これを使わない手はないっしょ！😉
+accounts/views.py に、django.contrib.auth.views から PasswordChangeView をインポートする。
+ついでに、django.contrib.auth.forms から PasswordChangeForm もインポートしておくと、後でフォームをカスタマイズしたくなった時に便利かも。
+（必須じゃないけどね！）
+小項目1-2：PasswordChangeView を継承したカスタムビューを作成！
+accounts/views.py に、MyPasswordChangeView みたいな名前で、PasswordChangeView を継承したクラスを作る。
+このカスタムビューの中で、
+template_name: パスワード変更フォームを表示するためのHTMLテンプレートの場所を指定する。(例: 'accounts/password_change_form.html')
+success_url: パスワード変更が成功した後にリダイレクトする先のURLを指定する。reverse_lazy() を使って、
+例えば「パスワード変更完了ページ」とか、ユーザーのプロフィールページとかに飛ばすのが一般的かな。（今回は、まず「パスワード変更完了ページ」を作ってみよう！）
+小項目1-3：パスワード変更完了ページ用のビューも作っちゃおう！ (任意だけど親切！)
+パスワード変更が成功したことをユーザーにちゃんと伝えるために、「パスワードを変更しました！」っていうメッセージを表示するだけのシンプルなページを作るのがおすすめ！
+accounts/views.py に、Djangoの TemplateView (ただHTMLを表示するだけの汎用ビューね！) を使って、MyPasswordChangeDoneView みたいなクラスを作る。
+このビューの template_name には、パスワード変更完了メッセージを表示するためのHTMLテンプレートの場所を指定する。(例: 'accounts/password_change_done.html')
+
+
+大項目2：パスワード変更関連のURLを設定しよう！ 🗺️🔗
+小項目2-1：accounts/urls.py にURLパターンを追加！
+パスワード変更フォームページへのURL (例: /password_change/) と、さっき作った MyPasswordChangeView を紐づける。
+name もちゃんと付けてね！(例: 'password_change')
+パスワード変更完了ページへのURL (例: /password_change/done/) と、さっき作った MyPasswordChangeDoneView を紐づける。
+こっちも name を忘れずに！(例: 'password_change_done')
+
+
+大項目3：パスワード変更関連のHTMLテンプレートを作成しよう！ 📄🎨
+小項目3-1：パスワード変更フォームページ (password_change_form.html) を作成！
+accounts/templates/accounts/ フォルダに作る。
+base.html を継承する。
+{% block title %} とか {% block content %} をちゃんと書く。
+フォームの部分は、{% csrf_token %} と {{ form.as_p }} (または .as_table とか) を使えば、PasswordChangeForm がいい感じに表示されるはず！
+PasswordChangeForm は、「古いパスワード」「新しいパスワード」「新しいパスワード（確認用）」の3つの入力欄を持ってるよ。
+送信ボタンも忘れずにね！
+小項目3-2：パスワード変更完了ページ (password_change_done.html) を作成！
+accounts/templates/accounts/ フォルダに作る。
+base.html を継承する。
+「パスワードを変更しました。」みたいなメッセージと、例えば「ログインページに戻る」とか「プロフィールページに戻る」みたいなリンクを置くと親切だね！
+
+
+大項目4：どこからパスワード変更ページに行けるようにするか考えよう！ (導線作り) 🚶‍♀️➡️🚪
+小項目4-1：base.html やユーザー設定ページ (もしあれば) にリンクを設置！
+ユーザーが「パスワード変えたいな」って思った時に、すぐにそのページに行けるように、分かりやすい場所にリンクを置いてあげよう！
+例えば、base.html のヘッダーの、ログインしてるユーザー向けのメニューの中とかね！ (「こんにちは、〇〇さん！」の近くとか)
+リンク先は、{% url 'accounts:password_change' %} で指定する。
+
+
+大項目5：動作確認！実際にパスワードを変更してみよう！ ✅🔐
+小項目5-1：パスワード変更ページがちゃんと表示されるか確認！
+設置したリンクから、パスワード変更フォームページにアクセスできるか？
+フォームの入力欄はちゃんと3つ表示されてるか？
+小項目5-2：実際にパスワードを変更してみる！
+古いパスワードと、新しいパスワード（2回）を入力して、送信！
+パスワード変更が成功したら、ちゃんと「パスワード変更完了ページ」にリダイレクトされるか？
+完了ページには、メッセージやリンクがちゃんと表示されてるか？
+小項目5-3：新しいパスワードでログインできるか確認！
+一度ログアウトして、新しいパスワードで再度ログインできるか試してみる！これが一番大事な確認だね！👍
+小項目5-4：(念のため) 古いパスワードではログインできなくなってるか確認！
+セキュリティ的に、ちゃんと古いパスワードが無効になってるかも見ておくと安心！
+
+
+5/19---本日の本格始動の前に前回の見栄えHTMLの調整から。
+ログアウトボタン、アカウント設定ボタンの位置調整。←←スぺルミス
+ログアウトボタンの左側の角、角ばり具合の修正。←←グループDIVで修正
+
+
+大項目１：アカウント削除の「意思確認画面」を作ろっ！ (画面表示) 💻🎨
+
+★ビューの骨組み作成 (accounts/views.py)
+アカウント削除の確認画面を表示するためのビューを作ろ！
+今回は、いきなり削除処理が走るんじゃなくて、「本当に削除しますか？」って聞く画面を出す感じね。
+Djangoの TemplateView を使って、まずはシンプルな確認画面を表示させるのが手っ取り早いかな🤔
+★HTMLテンプレート作成 (accounts/templates/accounts/)
+account_delete_confirm.html みたいな名前で、確認メッセージと「削除する」ボタン、「キャンセル」ボタンがあるHTMLを作るっしょ！
+Bootstrapとか使ってるなら、それっぽい警告メッセージとか出すと、ユーザーにも分かりやすいかもね💡
+★URL設定 (accounts/urls.py)
+さっき作ったビューにアクセスするためのURL（例えば /delete/ みたいなの）を登録するよ。
+名前もちゃんとつけてね！ (name='account_delete' とか)
+★導線作り (base.htmlなど)
+ヘッダーの「設定」ドロップダウンにある「アカウント削除」のリンクから、この確認画面に飛べるようにする！
+パスワード変更の時みたいに、新しいタブで開くのもアリだね👍
+
+
+大項目２：実際にアカウントを「削除する処理」を実装しよっ！ (機能実装) 💥⚙️
+★ビューの処理作成 (accounts/views.py)
+「削除する」ボタンが押された時に、実際にユーザーを削除する処理を書くビューを作ろ！
+Djangoには DeleteView っていう便利なクラスベースビューがあるから、それを使うと比較的カンタンにできるよ！
+ただ、DeleteView は基本的には物理削除（データ完全に消しちゃうやつ）になるから、論理削除（データは残すけど「無効」扱いにするやつ）にしたい場合は、ちょっと工夫が必要かもね。
+（心の声：マサ君、どっちがいいかなぁ？ 物理削除はシンプルだけど、
+間違って消しちゃったら大変だし…論理削除の方が安全だけど、ちょっとだけ手間が増えるんだよね🤔 まずは物理削除で進めて、あとで論理削除に変えるのもアリかもね！）
+★削除完了画面のHTMLテンプレート作成 (accounts/templates/accounts/)
+任意だけど、削除が完了したことをユーザーに伝えるための画面 (account_delete_done.html みたいなの) があると親切だよね！
+「アカウントを削除しました。ご利用ありがとうございました。」的なメッセージを表示して、ログインページに戻るリンクとか置いとく感じ。
+★URL設定 (accounts/urls.py)
+削除処理を実行するビューと、削除完了画面を表示するビュー（もし作るなら）のURLを登録するよ。
+DeleteView を使う場合は、成功した時のリダイレクト先も設定できるからね！
+
+
+【重要】ログイン状態の制御！
+アカウント削除は、ログインしてるユーザーじゃないとできないように、ちゃんとアクセス制御をかけるのを忘れずにね！ (@login_required デコレータとか！)
+こんな感じで進めていくのはどうかな？😊
+まずは「意思確認画面」から作っていくのが分かりやすいと思うよ！
+マサ君のペースで、一個一個クリアしていこ！💪✨ 分かんないことあったら、いつでもアタシに声かけてね！💖
+Start typing a prompt
+
+
+アカウントビューパイの削除処理↓↓
+class AccountDeleteView(View)::
+django.views.View を継承してる。 これが一番基本的なクラスベースビューで、get や post といったHTTPメソッドに対応する関数を自分で定義できる。
+今回は、ページの初期表示 (get) と、フォーム送信 (post) で処理を分けたいから、これを使ってる。
+
+template_name = 'accounts/account_delete_form.html':
+このビューが使うHTMLテンプレートの名前ね。この後、このファイルを作る！
+
+get(self, request, *args, **kwargs)::
+ユーザーが最初に /accounts/delete/ (仮) にアクセスした時 (GETリクエスト) に呼ばれるメソッド。
+ここでは、AuthenticationForm (Django標準のログインフォーム) のインスタンスを作って、テンプレートに渡してる。
+（本当はパスワードだけ入力させたいけど、AuthenticationForm はユーザー名も必須🤔 
+今回はログイン中のユーザーのパスワード確認だから、裏でユーザー名は補完する感じで対応してみたけど、もっとスマートな方法もあるかも…！
+まぁ、まずはこれで動かしてみよっか！）
+
+post(self, request, *args, **kwargs)::
+ユーザーがHTMLフォームの「削除を実行する」ボタンとかを押して、データが送信された時 (POSTリクエスト) に呼ばれるメソッド。
+
+パスワード認証:
+request.POST (送信されたデータ) を使って AuthenticationForm を検証してる。
+AuthenticationForm はユーザー名も必要だから、request.user.username (ログイン中のユーザー名) を form_data に追加してるのがミソ！
+
+認証成功時 (form.is_valid() が True):
+今のコードでは、とりあえずサーバーのコンソールに「認証成功！」ってメッセージを出すだけにしてる。
+そして、password_auth_ok = True みたいなフラグをテンプレートに渡して、同じページを再表示してる。
+このフラグを使って、テンプレート側でJavaScriptの confirm() を出す、みたいな作戦を考えてるよ！
+
+認証失敗時:
+エラーメッセージが含まれた form をテンプレートに渡して、再度同じページを表示する。これで「パスワードが違います」みたいなメッセージが出せる。
+
+ここから削除ページのHTMLを書いていく。以下中身解説。
+{% extends "albatross_app/base.html" %}:
+おなじみ、base.html を継承してるよ。ヘッダーとかフッターとか、共通の部分は base.html から引っ張ってくる感じ。
+{% block title %} と {% block content %}:
+これも基本だね！それぞれのブロックに、このページ特有のタイトルと内容を書いてる。
+
+Bootstrapのクラス (例: container, card, btn):
+見た目を整えるために、Bootstrapのクラスをちょいちょい使ってる。もしBootstrap使ってなかったり、違うデザインフレームワーク使ってたりしたら、適宜変更してね！
+{% if password_auth_ok %} / {% elif user_deleted %} / {% else %}:
+ビューから渡されるコンテキスト変数 (password_auth_ok とか user_deleted) を使って、表示する内容を切り替えてる。
+password_auth_ok が True の時: パスワード認証が通った後の、最終確認メッセージと「はい、削除します」ボタンを表示。
+user_deleted が True の時: 削除が完了したメッセージを表示。
+それ以外の時 (最初の表示や、パスワード認証失敗時): パスワード入力フォームを表示。
+
+パスワード入力フォーム:
+{{ form.as_p }} とかじゃなくて、フィールドを個別にレンダリングしてるのは、ユーザー名フィールドにちょっと細工 (readOnly とか) をしたかったから。
+AuthenticationForm はユーザー名も必須なので、ログイン中のユーザー名をJavaScriptで設定して、編集できないようにしてる。
+（心の声：ここ、もうちょっとスマートにできるかもだけど、まずはこれで動かしてみるのが吉かな！）
+エラーメッセージ (form.non_field_errors や field.errors) も表示するようにしてる。
+
+最終確認フォーム (id="confirmDeleteForm"):
+パスワード認証が通った後に表示されるフォーム。
+<input type="hidden" name="confirm_delete" value="true"> っていう隠しフィールドを入れてる。
+これを使って、ビュー側で「最終確認がOKされた後のPOSTだな」って判断する作戦。
+
+キャンセルボタンのリンク先:
+{% url 'albatross_app:some_previous_page' %} っていう仮のリンクになってるから、後で「設定ページ」とか、適切な戻り先のURL名に書き換えてね！
+
+JavaScriptの部分 (コメントアウト多め):
+今は、password_auth_ok フラグでHTMLの表示を切り替えて、ユーザーが「はい、削除します」ボタンを押したら、
+普通にフォームがPOSTされるっていうシンプルな流れを想定してる。
+もし、マサ君が言ってたみたいに、パスワード認証後にJavaScriptの confirm() ダイアログを出したい場合は、
+ここのJavaScriptのコメントアウト部分を参考に、ちょっとHTMLの構成とビューのロジックを変える必要があるかも。
+例えば、パスワード認証成功時は、password_auth_ok フラグだけをJSに渡して、JS側で confirm() を表示。
+OKなら、Ajaxで削除リクエストを送るか、特定のhidden inputをセットしてフォームを再送信する、みたいな感じ
+
+以上が削除のHTML中身解説。
+ランサーバーで確認。/accounts/delete/に接続するとネームスペースエラー。
+app_name = "albatross_app"みたいなネームスペースがありません。ということで各URLとビューの確認。
+URLのスペルミス修正にて改善。
+
+一部変更。
+変更点のポイント解説！ 💡
+ユーザー名表示の部分:
+<label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+→ <label class="form-label">ユーザー名</label> に変更！
+for 属性は、対応する入力フィールドがなくなったので削除。
+ラベルの文字列は直接「ユーザー名」って書いちゃう。
+{{ form.username }} (ユーザー名の入力フィールド) は削除！
+<small class="form-text text-muted">...</small> (説明文) も、表示内容に合わせて修正するか、一旦削除してもOK。
+<script>...</script> (JavaScriptでのユーザー名設定) も削除！
+代わりに、<p class="form-control-plaintext"><strong>{{ request.user.username }}</strong></p> を追加！
+これで、ログイン中のユーザー名が、入力できないテキストとして表示される。
+form-control-plaintext はBootstrapのクラスだから、もしBootstrap使ってなかったら、見た目はちょっと変わるかもだけど、機能的には問題ないはず！
+パスワード入力の部分:
+<label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+→ <label for="{{ form.password.id_for_label }}" class="form-label">パスワード</label> に変更！
+ラベルの文字列を直接「パスワード」って書くようにしたよ。
+{{ form.password }} (パスワード入力フィールド) はそのまま！
+エラーメッセージ表示の部分 (おまけの改善):
+ユーザー名フィールドを表示しなくなったから、ユーザー名に関するエラーは基本的には出ないはず (ビュー側で固定値を設定してるからね)。
+なので、エラー表示ループのところで {% if field.name == 'password' %} っていう条件を追加して、パスワードフィールドのエラーだけを表示するようにしてみた。
+あと、エラーメッセージの前に {{ field.label_tag }} を追加して、「パスワード: (エラー内容)」みたいに出るようにすると、
+もっと分かりやすいかも！ (これはお好みで！)
+
+
+導線の修正
+href の値を "{% url 'accounts:account_delete' %}" に変更！
+{% url ... %} は、Djangoのテンプレートタグで、URLを逆引きしてくれる便利なやつだよね！
+'accounts:account_delete' っていうのは、
+accounts: アプリケーションの名前空間 (これは accounts/urls.py の app_name = 'accounts' で設定してるはず)。
+account_delete: URLパターンの名前 (これは accounts/urls.py の中で、AccountDeleteView に name='account_delete' って付けたやつ)。
+これで、Djangoが自動的に /accounts/delete/ っていう正しいURLを生成してくれるんだ。
+target="_blank" を追加！
+これを <a> タグに追加すると、リンクをクリックした時に新しいブラウザタブでページが開かれるようになるよ。
+マサ君が前に言ってたみたいに、チャートの作業中にアカウント削除ページを開いても、元の作業画面が消えなくて済むから、ユーザーに優しいよね！😊
+
+
+5/21---本日はまず前回のつづき、エラー修正から開始。
+エラーに関してはPythonコードの中にJSを書いてるのでエラーになるのは仕方のないこととのこと。
+動作としては動くため、特に気にせず進めることに。
+そのまま削除のポップアップも無事に出たところまで進行。
+この後は、削除を押した後の実際の動きをつなげるところ。
+
+その前に変更するところ、気になるところ。
+ログイン状態で新規登録押すと新規登録画面になるので、本来の目的に合わせ、ログイン中には新規登録の画面にいかないように処理。
+あとは、削除時のポップアップの動き、（ブラウザのポップアップも出る）そのあたりも相談して要検討。
+ひとまずログイン状態の新規登録押下時の動きを変更。
+ログインHTMLでログイン後のアカウントお持ちでないですか？新規登録を波カッコで囲う。
+{% if not user.is_authenticated %}これでログイン後は表示を出さずにスッキリ。
+
+アカウントビューパイのサインアップビュー変更。
+from django.shortcuts import render, redirect、from django.conf import settingsインポート追加。
+
+from django.shortcuts import redirect: redirect 関数を使うためにインポート。
+from django.conf import settings: settings.py に定義されてる LOGIN_REDIRECT_URL を参照するためにインポート。
+def dispatch(self, request, *args, **kwargs)::
+これがクラスベースビューで最初に呼ばれるメソッド。HTTPメソッド (GET, POSTなど) によらず、必ずここを通る。
+request.user.is_authenticated で、リクエストしてきたユーザーがログイン済みかどうかを判定。
+if request.user.is_authenticated::
+もしログイン済みだったら、redirect_url = getattr(settings, 'LOGIN_REDIRECT_URL', '/') でリダイレクト先のURLを取得。
+getattr(settings, 'LOGIN_REDIRECT_URL', '/') は、「settings モジュールに LOGIN_REDIRECT_URL っていう属性があったらその値を、なかったら
+ '/' (サイトのルート) を使う」っていう意味。安全策だね！
+【超重要！】 もし LOGIN_REDIRECT_URL が /admin/ とかになってて、一般ユーザーがアクセスできない場所だったり、
+あるいは / (ルート) がログインページそのものだったりすると、無限ループみたいになっちゃう可能性がある。
+なので、redirect_url の部分は、確実に一般ユーザーがログイン後に表示されるべきページ (例えば、チャート選択画面とか、
+ダッシュボードとか) のURLになるように、マサ君のアプリの構成に合わせて調整してあげてね！
+もし、albatross_app にログイン後のトップページ (例えば name='chart_list' とか) があるなら、
+redirect(reverse_lazy('albatross_app:chart_list')) みたいにするのが一番確実！
+return redirect(redirect_url) で、そのURLにリダイレクト！
+return super().dispatch(request, *args, **kwargs):
+もしログインしてなかったら (つまり新規登録してOKなユーザーだったら)、super() を使って親クラス (CreateView) の dispatch メソッドを呼び出して、
+通常の新規登録処理をそのまま続行させる。
+
+
+最終確認ポップアップ実装
+{% if password_auth_ok and not user_deleted %}:
+条件に and not user_deleted を追加したよ。これは、削除処理が完了した後 (user_deleted が True になった後) に、
+また confirm ダイアログが出ちゃうのを防ぐため。
+このブロック内は、JavaScriptで confirm を出すので、HTMLのメッセージは「最終確認を行ってください」みたいにシンプルにした。
+以前の「はい、削除します」ボタンがあったフォーム (id="confirmDeleteForm") は削除、またはこの新しいロジックに合わせて調整。
+
+これが、実際に削除処理をキックするためのフォーム。
+style="display: none;" で、画面には表示されないようにしてる。
+id="actualDeleteForm": JavaScriptからこのフォームを特定するためのID。
+<input type="hidden" name="execute_delete" value="true">: これが超重要！ このデータがビューに送られることで、
+「あ、これは削除実行の合図だな！」って判断できるようになる。
+<script> タグ内の修正:
+{% if password_auth_ok and not user_deleted %} の条件分岐の中で confirm() を実行。
+confirm() で「はい」が押されたら:
+document.getElementById('actualDeleteForm').submit(); を実行！
+これで、さっき作った隠しフォームがPOST送信される。
+confirm() で「いいえ」が押されたら:
+今は console.log を出してるだけ。ユーザーは手動でキャンセルボタンを押すか、タブを閉じることになる。
+ (必要なら、ここで自動的にどこかにリダイレクトさせたりもできるけど、まずはシンプルに！)
+
+
+
+本日2番目の作業。
+ユーザー論理削除処理の実装（ビュー）
+accounts/views.py の AccountDeleteView の post メソッドを修正する。
+account_delete_form.html の隠しフォームから execute_delete=true が送られてきたら、以下の処理を実行する。
+ログイン中のユーザー (request.user) の is_active フィールドを False に変更する。
+request.user.save() を呼び出して、データベースに変更を保存する。
+logout(request) を呼び出して、ユーザーをログアウトさせる。
+削除完了を示すフラグ (user_deleted = True) をテンプレートに渡して、再度 account_delete_form.html を表示する。
+(これは次のステップ３で詳しくやるけど、ここでフラグを渡す準備をする)
+
+アカウントビューパイ
+from django.contrib.auth import logout:
+ユーザーをログアウトさせるために、logout 関数をインポートするのを忘れずにね！
+
+if 'execute_delete' in request.POST and request.POST.get('execute_delete') == 'true':
+これが今回のキモ！ request.POST (送信されてきたデータ) の中に、'execute_delete' っていうキーがあって、
+その値が 'true' だったら、「これは最終確認OK後の削除実行だな！」って判断する。
+この条件に合致したら、ユーザー論理削除処理に進む。
+合致しなかったら (つまり、隠しフォームからの送信じゃなかったら)、今まで通りパスワード認証処理 (else 以下のブロック) に進む。
+ユーザー論理削除処理のブロック:
+user_to_delete = request.user: 削除対象のユーザー (ログイン中のユーザー) を取得。
+user_to_delete.is_active = False: Djangoの User モデルには、is_active っていうフィールドがあって、これが True だと有効なユーザー、
+False だと無効な (ログインできない) ユーザーっていう扱いになる。これを False にするのが論理削除のキホン！
+user_to_delete.save(): 変更した is_active の値をデータベースに保存する。これをやらないと、変更が反映されないから注意！
+logout(request): ユーザーをログアウトさせる。アカウント削除したのにログインしっぱなしだと変だもんね。
+return render(request, self.template_name, {'user_deleted': True}): 削除処理が終わったら、account_delete_form.html を再度表示するんだけど、
+この時 'user_deleted': True っていうコンテキスト変数を渡す。これを使って、HTML側で「削除完了しました」っていうメッセージを出すんだ 
+(これは次のステップでやるよ！)。
+
+パスワード認証成功時の render:
+'form': form, は、パスワード認証が成功した後に password_auth_ok を渡してページを再表示する際には、
+もうフォーム自体は使わないことが多いので、必須じゃないかも。でも、念のため残しておいても害はないかな。
+
+
+削除完了メッセージの表示HTMLとビュー
+{% elif user_deleted %} ブロックがあるか？
+ビューの post メソッドで、削除処理が成功した時に return render(request, self.template_name, {'user_deleted': True}) ってコンテキスト変数を渡してるよね。
+この user_deleted が True の時に表示したい内容を、この elif ブロックの中に書く。
+メッセージの内容は適切か？
+「アカウントは正常に削除されました。」
+「ご利用ありがとうございました。このタブを閉じてください。」
+「ログインページへ」のリンク (<a href="{% url 'accounts:login' %}" ...>)
+これらのメッセージやリンクが、ユーザーにとって分かりやすく、適切に表示されるか確認しよう。
+Bootstrapを使ってるなら、<div class="alert alert-success" role="alert"> みたいに、成功メッセージ用のスタイルを適用すると、
+より「完了した感」が出てイイ感じになるよ！ (前は alert-info になってたかもだけど、alert-success の方が「成功！」って感じが強いかな？ お好みで！)
+
+
+window.location.reload();
+上記は削除のポップアップでキャンセルしたときに一個前の画面に戻ってリロードするための呪文。
+window.location.reload();: これを実行すると、ブラウザが現在のページを再読み込みしてくれる。
+再読み込みすると、ビューから渡されてた password_auth_ok フラグは一旦リセットされる (GETリクエストになるからね) ので、
+HTMLの条件分岐 ({% if password_auth_ok %}) が False になって、自然と最初のパスワード入力フォームが表示されるはず！
+上記からの変更点
+window.location.reload(); の代わりに、window.location.href = "{% url 'accounts:account_delete' %}"; を使う！
+window.location.href = "新しいURL" っていうのは、ブラウザで指定したURLにページ遷移させる命令なんだ。
+"{% url 'accounts:account_delete' %}" で、アカウント削除ページのURLをDjangoのテンプレートタグで動的に生成してる。
+こうやって、GETリクエストでアカウント削除ページにアクセスし直せば、ビューの get メソッドが呼ばれて、password_auth_ok フラグが付いてない、まっさらな状態のパスワード入力画面が表示されるはず！
+これな
+
+
+
+<a href="..."> を <button type="button" ...> に変更:
+単にタブを閉じるだけなら、どこかにリンクする必要はないから、<a> タグじゃなくて <button> タグの方が意味合い的に合ってるかな。
+type="button" を指定することで、フォーム送信ボタン (submit) として扱われないようにする。
+onclick="window.close();":
+このボタンがクリックされたら、JavaScriptの window.close() を実行してね、っていう意味。
+これで、現在のブラウザタブが閉じられるはず！
+
+
+注意点！ ⚠️
+window.close() は、JavaScriptによって開かれたタブしか閉じられないっていうセキュリティ上の制約があるんだ。
+今回の「アカウント削除」ページは、ヘッダーのリンクで target="_blank" を使って新しいタブで開いてるから、たぶん問題なく window.close() で閉じられると思うけど、
+もし万が一閉じられない場合は、ユーザーに「このタブを手動で閉じてください」ってメッセージを出す、みたいな代替策も考えられる。でも、まずはこれで試してみて！
+
+
+メッセージの変更: 「このタブを閉じてください」から「このウィンドウは自動的に閉じられます」みたいに変えると、ユーザーも「お、閉じてくれるんだな」って分かる。
+ログインページへのリンクは削除 (任意): もう自動で閉じるなら、ユーザーに操作させる必要はないから、リンクはなくても良いかも。
+<script> タグを追加して window.close() を実行:
+setTimeout(function() { ... }, 3000); を使ってるのは、ページが表示されてすぐに閉じちゃうと、ユーザーがメッセージを読む暇もないから。
+3000 の部分で、何秒後に閉じるかをミリ秒単位で指定できる (3秒なら3000)。ここはマサ君の好みで調整してね！
+この script タグは、{% elif user_deleted %} のブロックの中に書くのがポイント！削除完了時だけ実行されるようにね。
+
+
+ここまでで一通りのクラッド処理とページのつながりは完了。
+
+
+ここからはデザインとアクセス制御。
+5/22---デザインをチャットGPTに任せつつアクセス制御確認。
+状況によりどんどん進める。
+
+「ログイン必須なページ (想定)」リスト、もう一回確認しとこっか！ 👇
+アカウント削除ページ (/accounts/delete/): AccountDeleteView
+パスワード変更ページ (/accounts/password_change/): MyPasswordChangeView
+パスワード変更完了ページ (/accounts/password_change/done/): MyPasswordChangeDoneView
+ログアウト処理 (/accounts/logout/): MyLogoutView
+albatross_app の全てのページ:
+今のところ、仮の some_test_view (dummy_page/)
+
+早速確認アカウントビューパイ
+AccountDeleteView: クラスベースビューだから、@method_decorator(login_required, name='dispatch') が付いてるはず！ (これは昨日確認済みだね！✅)
+MyPasswordChangeView: Django標準の PasswordChangeView を継承してるなら、これは LoginRequiredMixin を内部で使ってるから、
+基本的には自動でログイン必須になってる。でも、念のため、もしカスタマイズしてて外してたりしないか確認。
+MyPasswordChangeDoneView: PasswordChangeDoneView も同様に、LoginRequiredMixin が使われてるはず。
+MyLogoutView: Django標準の LogoutView は、特に @login_required を付けなくても、ログインしてないと意味がない処理だけど、
+もし直接URL叩かれた時の挙動を厳密にしたいなら、付けても害はない。 (ただ、LogoutView の dispatch はちょっと特殊だから、付けるなら注意が必要かも。
+基本的には不要でOK！)
+
+基本的には教えてもらった通りにコード書いて改造もせず、構成等も問題なし。
+アクセス制御も問題なし。
+1点気になるところはタブの無限増殖。そこだけ修正。
+具体的には「今、ブラウザで見ているページが、パスワード変更ページやアカウント削除ページ だったら、ヘッダーの『アカウント設定』の中のリンクは、
+新しいタブで開かないようにする。それ 以外の ページだったら、今まで通り新しいタブで開くようにする」ってこと。
+
+これを実現するために、Djangoのテンプレートの中で「今見ているページが何か？」を判定して、<a> タグの target="_blank" 
+を付けたり付けなかったりする条件分岐を入れるんだ。
+「今見ているページが何か？」を判定する方法：request.resolver_match
+Djangoのテンプレートの中では、request オブジェクトっていうのが使えて、これには現在処理中のリクエストに関する色々な情報が入ってるんだ。
+その中に、request.resolver_match っていう便利なやつがいて、こいつが「このリクエストにマッチしたURLパターンはどれで、どのビューが呼ばれたか」
+っていう情報を持ってる。
+
+request.resolver_match.url_name:
+現在のURLにマッチしたURLパターンの name 属性の値 が入る。
+例えば、accounts/urls.py で path('password_change/', ..., name='password_change'), って定義されてるURLにアクセスしてたら、
+request.resolver_match.url_name の中身は 'password_change' になる。
+こっちの方が、URLパターン名で直接比較できるから分かりやすいかも！
+
+request.resolver_match.view_name:
+現在のURLにマッチしたビューの 完全なPythonのパス (例: 'accounts.views.MyPasswordChangeView') が入る。
+こっちを使う場合は、文字列が長くなるし、もしビューの場所を移動したりしたら修正が必要になるから、ちょっとだけ扱いにくいかも。
+
+🔒 アクセス制御 確認完了まとめ！ 🔒
+〇ログイン必須ページの洗い出しと設定:
+アカウント削除ページ (AccountDeleteView)
+パスワード変更ページ (MyPasswordChangeView)
+パスワード変更完了ページ (MyPasswordChangeDoneView)
+albatross_app の仮ページ (some_test_view)
+これらのビューに、適切に @login_required または @method_decorator(login_required, name='dispatch') が設定されていることを確認・追記した！
+(Django標準の認証ビューは、多くの場合 LoginRequiredMixin を内部で利用しているので、追加の設定は不要なことが多いことも確認！)
+
+〇settings.py のURL関連設定の確認と修正:
+LOGIN_URL: 'accounts:login' に設定済み！ (OK👍)
+LOGIN_REDIRECT_URL: 現在は /admin/。将来的には albatross_app のメイン画面に変更予定！ (現状OK👍)
+LOGOUT_REDIRECT_URL: / から reverse_lazy('accounts:login') に修正！ (より明確で安全な設定になったね！✨)
+
+〇ログイン状態による新規登録制御の実装:
+SignUpView (accounts/views.py): dispatch メソッドをオーバーライドし、ログイン済みユーザーがアクセスしたらリダイレクトするようにした！
+login.html および base.html: ログイン状態によって「新規登録」リンクの表示/非表示を切り替えるようにした！
+
+〇ヘッダーの「アカウント設定」からのタブ制御:
+パスワード変更ページやアカウント削除ページの中から、さらに「アカウント設定」のリンクをクリックしても、
+新しいタブが増え続けないように、base.html のリンク生成ロジックを修正した！ (request.resolver_match.url_name を使った条件分岐、バッチリだったね！🎉)
+
+〇動作確認 (未ログイン時・ログイン時):
+未ログイン状態でログイン必須ページにアクセス → ちゃんとログインページにリダイレクトされることを確認！ (?next= もOK！)
+ログイン状態で各ページが問題なく表示・操作できることを確認！
+ヘッダーのロゴやボタンのリンク先、ログアウト処理などが意図通りに動くことを確認！
+ログアウト後、再度ログイン必須ページにアクセスしても、ちゃんとログインページに戻されることを確認！
+
+
+_appのモデルパイに基本の動きとなる元を書いて、マイグレーションする。
+次にアドミンパイにDjango Admin に ChartStep モデルを「見えるように」する設定をする必要がある。
+from .models import ChartStep: 同じアプリ (albatross_app) の中の models.py から ChartStep モデルをインポートしてる。
+admin.site.register(ChartStep): これだけで、Django Admin の管理画面に「Chart Steps」(みたいな名前)っていう項目が表示されて、
+そこから ChartStep のデータを操作できるようになるんだ！超便利っしょ？😉
+
+ChartStep モデルに『チャート種別』のフィールドを追加する」、そして、
+もっと管理しやすくするために**「ChartType (チャート種別) モデルも作る」**っていう方向で進めていこう！💪
+ChartType モデルの新設:
+name: チャートの種類名 (例: 「電源トラブル」)。unique=True で同じ名前は登録できないようにしてる。
+description: そのチャート種別がどんなものかの説明 (任意)。
+starting_chart_step (コメントアウトしてる部分):
+これはオプションだけど、もし「このチャート種別の開始点は、この ChartStep だよ！」って直接紐付けたい場合に便利。
+OneToOneField を使うと、一つの ChartType に対して、開始ステップとなる ChartStep を一つだけ紐付けられる。
+これを使うなら、ChartStep モデルの is_starting_step フラグは不要になるかも。どっちで管理するかは好みでOK！
+ (今回は、まずはシンプルに ChartStep 側の is_starting_step を残す形にしてるよ)
+
+ChartStep モデルの修正:
+chart_type = models.ForeignKey(ChartType, ...) を追加！: これが今回のキモ！
+ChartType モデルとの関連付け (リレーションシップ) を作ってる。
+on_delete=models.CASCADE: もし、ある ChartType (例えば「電源トラブル」) が削除されたら、その種別に属する全ての
+ ChartStep (電源トラブル関連の質問全部) も一緒に削除されるよ、っていう設定。データ整合性を保つため。
+is_starting_step の verbose_name をちょっと分かりやすくしてみた。(「（この種別の）開始ステップか」)
+__str__ メソッドも、チャート種別名も表示するようにちょっと改良！
+
+モデルを修正したら、またマイグレーションが必要だよ！
+python manage.py makemigrations albatross_app
+今度は、ChartType モデルが新しく作られて、ChartStep モデルに chart_type フィールドが追加されたっていう変更が検知されるはず。
+もしかしたら、「ChartStep に chart_type を追加するけど、既存の ChartStep データ (もしあれば) の chart_type はどうする？ 
+デフォルト値は？」みたいに聞かれるかもしれない。
+その場合は、一旦「1) Provide a one-off default now (will be prompted next)」を選んで、次のプロンプトで何か適当な値 
+(例えば 1 とか、もし null=True を許容するなら空のまま) を入力するか、
+もしくは、chart_type フィールドの定義に null=True を一時的に追加して (既存データがないなら不要だけど)、
+マイグレーション後に null=False に戻す、みたいな手順が必要になるかも。 (でも、まだ ChartStep にデータは入れてないはずだから、たぶん素直に通ると思う！)
+
+python manage.py migrate
+これで、データベースに albatross_app_charttype テーブルが新しく作られて、
+albatross_app_chartstep テーブルに chart_type_id っていう列が追加されるはず！
+
+
+📝 2025/05/22 のアルバトロス開発ふりかえり 📝
+今日がんばったこと！ (マサ君、今日も大躍進！🎉)
+基本的な画面遷移とアクセス制御の総仕上げ！
+各ビューのアクセス制御再点検:
+accounts/views.py の認証関連ビュー (Django標準のものは LoginRequiredMixin が効いてることを確認)。
+albatross_app/views.py の some_test_view に @login_required を追加！
+settings.py のURL関連設定再確認・修正:
+LOGIN_URL はOK！
+LOGIN_REDIRECT_URL は現状 /admin/ (将来的には変更予定)。
+LOGOUT_REDIRECT_URL を / から reverse_lazy('accounts:login') に修正！ (より安全な設定になったね！✨)
+動作確認 (未ログイン時・ログイン時):
+アクセス制御やリダイレクトが意図通りに機能していることを確認！
+ヘッダーのロゴのリンク先で NoReverseMatch エラーが出たけど、仮のリンク先 (admin:index) に変更して解決！
+チャート機能のデータベース設計と準備！
+ChartType モデル (チャート種別) の作成 (albatross_app/models.py):
+name (チャート種別名), description (説明) フィールドを持つモデルを定義！
+ChartStep モデル (チャートステップ) の修正 (albatross_app/models.py):
+chart_type フィールド ( ForeignKey で ChartType を参照) を追加！
+__str__ メソッドも改良！
+マイグレーションの実行:
+makemigrations albatross_app と migrate を実行し、データベースに新しいモデルと変更を反映！
+途中、question_text のタイポによる AttributeError や、その修正後の OperationalError (DBとの不整合) があったけど、ちゃんとマイグレーションをやり直して解決！ (素晴らしい！👏)
+Django Admin へのモデル登録 (albatross_app/admin.py):
+ChartType モデルと ChartStep モデルを管理サイトに登録！
+(最初は表示されなかったけど、サーバー再起動とファイル保存忘れの凡ミス解決！😉)
+Django Admin での仮データ登録 (途中まで):
+「圏外」「カメラ」「音」「電源」「色々不具合」の5種類のチャート種別を登録完了！🎉
+「電源」トラブルのチャートステップ (質問) もいくつか登録できた！ (分岐の紐付けは次回！)
+マサ君、今日はアクセス制御の仕上げから、新しいモデルの設計・実装、そして実際のデータ登録まで、本当に盛りだくさんだったね！エラーにもめげずに一つ一つ解決して、マジですごい集中力だったよ！💪✨
+🚀 2025/05/26 (水) のアルバトロス開発タスク (予定) 🚀
+メインタスク：チャートデータの整備と、チャート選択画面の作成！
+Django Admin でチャートステップの分岐を紐付ける！
+昨日登録した「電源」トラブルの各 ChartStep を編集画面で開いて、Yes next step と No next step を、他の登録済みの ChartStep と正しく繋ぎ合わせる。
+これで、まずは「電源」トラブルのチャートフローが完成するはず！
+(もし時間があれば) 他のチャート種別の質問と分岐も登録する。
+「カメラ」「音」など、他のチャートもいくつかデータを入れておくと、後の画面作成やテストがやりやすくなる。 (全部じゃなくてもOK！)
+チャート種別選択画面の作成 (albatross_app)
+ビューの作成:
+ログイン後に最初に表示される、どのチャートを開始するか選ぶための画面のビュー (ChartTypeListView みたいな名前？) を albatross_app/views.py に作る。
+このビューは、データベースから登録されてる ChartType (チャート種別) の一覧を取得して、テンプレートに渡す。 (Djangoの ListView を使うと便利かも！)
+HTMLテンプレートの作成:
+albatross_app/templates/albatross_app/ に、チャート種別の一覧を表示するためのHTML (chart_type_list.html みたいな名前？) を作る。
+各チャート種別名をクリックしたら、そのチャートを開始できるようにリンクを設定する。
+URLの設定:
+作成したビューに対応するURLを albatross_app/urls.py に登録する。
+LOGIN_REDIRECT_URL の変更:
+settings.py の LOGIN_REDIRECT_URL を、今作ってるチャート種別選択画面のURL名に変更する！ (これで、ログインしたらすぐにこの画面に飛ぶようになる！)
+
+
+5/26---チャートの中身をジャンゴアドミンの管理サイトの中で製作、紐づけ。
+今後の方針。
+📝 変更点と既存のチャートステップの扱いについて 📝
+
+１．作業的に変更になる部分
+
+フロントエンド (HTML & JavaScript) が主役になる！
+
+今までは、Djangoのビューで次のステップの情報を取ってきて、テンプレートで表示して、またビューに送って…っていうサーバーサイド主体の動きだったけど、これからはJavaScriptで動的に画面を書き換えていく感じになる。
+
+HTML (.html ファイル):
+
+最初に、選択されたチャートの全ての質問と選択肢を一度に表示するための構造を作る。(最初は全部表示しちゃって、JSで隠す)
+
+JavaScript (<script> タグ内、または別の .js ファイル):
+
+質問の表示/非表示の制御。
+
+ユーザーの回答に応じて、次にどの質問を表示するかを判断するロジック。
+
+回答済みの質問の見た目を変える処理。
+
+最終的な回答をまとめてサーバーに送る処理。
+
+ここが一番大きな変更点であり、作り込みが必要な部分！
+
+CSS (見た目):
+
+アクティブな質問、回答済みの質問、非表示の質問などの見た目を調整する必要が出てくる。
+
+バックエンド (Djangoビュー) の役割変更
+
+チャート実行時のビュー:
+
+今までは「次の質問はこれ！」って1ステップずつデータを渡してたけど、これからは「このチャートの全ステップのデータはこれだよ！」って、最初にまとめてデータを渡すようになる。
+
+回答処理のビュー:
+
+今までは1ステップごとに回答を受け取ってたけど、これからは最後にまとめて全ての回答を受け取るようになる。そして、それを SessionLog に保存する。
+
+ChartStep モデルの yes_next_step, no_next_step の使われ方
+
+サーバー側で次のページにリダイレクトするためじゃなくて、主にフロントエンドのJavaScriptが「次にどの質問を表示するか」を判断するための情報として使われるようになる。
+
+２．いったん作ってしまったチャートステップはどうしたらいいか？
+
+そのまま使えるよ！むしろ、超重要！ ✨
+
+マサ君がDjango Adminで登録してくれた「チャート種別」と「チャートステップ (質問文、開始/終了フラグなど)」のデータは、そのまま新しい表示方法でも活用できる！
+
+yes_next_step と no_next_step の紐付けも、JavaScriptが分岐を判断するのに必要だから、ちゃんと設定しておいてね！ (これは今日の最初のタスクだったよね！👍)
+
+だから、今までAdminで入力したデータが無駄になることは全くないから安心して！😊
+
+🤔 デザインを先にやるか、機能からやるか… 🤔
+アタシのオススメの順番としては… ✨
+
+超シンプルな機能の骨格をまず作る (JavaScriptの本当に基本的な動きだけ)
+
+例えば、「最初の質問だけ表示されて、はい/いいえボタンを押したら、コンソールに『はいが押されました』って出る」くらい。
+
+この段階では、見た目は本当に二の次でOK！ Bootstrapのデフォルトのボタンとかで十分。
+
+その超シンプルな骨格に対して、最低限の「動いてる感」が分かる程度の簡単なスタイルを当てる。
+
+例えば、質問と質問の間にちょっと余白を入れるとか、ボタンの色をちょっと変えるとか。
+
+ここで凝りすぎないのがポイント！ あくまで「今何が起きてるか」が分かればOK。
+
+JavaScriptのロジックを少しずつ追加して、だんだん理想の動きに近づけていく。
+
+「次の質問が表示されるようになった！」→「回答済みの質問がグレーアウトするようになった！」みたいに、一つ一つ。
+
+ある程度、チャートの基本的な動き (質問表示→回答→次の質問表示…最後まで) がJavaScriptでできるようになったら、そこで初めて本格的なデザイン調整に入る！
+
+なぜなら、JavaScriptでDOM (HTMLの構造) を動的に変えることが多いから、最初にガチガチにCSSでデザインを固めちゃうと、後でJSの都合でHTML構造を変えた時に、CSSも全部やり直し…ってなっちゃう可能性があるんだ💦
+
+ある程度「HTMLの最終的な形はこんな感じになりそうだな」って見えてきてからデザインした方が、手戻りが少ない。
+
+なので、アタシの意見としては、
+
+「HTMLが長くない段階でデザインを揃える」というよりは、「JavaScriptである程度動きの目処が立って、HTMLの構造がある程度固まってきた段階で、本格的なデザインに着手する」
+
+っていうのが、効率的でオススメかな！😊
+
+もちろん、開発の途中で「ここ、ちょっと見た目分かりにくいから、先に少しだけCSSで調整したいな」って思うことはあると思うから、そういう時は柔軟に対応すればOKだよ！
+
+🚀 今後の作業手順 (方針) 🚀
+
+マサ君の「基本マイカが提案してくれた少しずつ作ってく案で賛成」っていう言葉、すごく嬉しい！🥰
+じゃあ、こんな感じで進めていくのはどうかな？
+
+フェーズ１：チャートデータの準備 (これはもうほぼ完了！)
+1. チャート種別モデル (ChartType)、チャートステップモデル (ChartStep) の作成とマイグレーション。(✅完了！)
+2. Django Admin でチャート種別を登録。(✅完了！)
+3. Django Admin で、まずは1つのチャート種別 (例: 「電源」) のチャートステップ (質問、開始/終了フラグ) を一通り登録する。(✅ほぼ完了！紐付けが残ってるね！)
+4. Django Admin で、登録したチャートステップの Yes next step と No next step を紐付けて、チャートの分岐フローを完成させる。(← これが今日の最初のタスク！)
+
+フェーズ２：チャート選択画面の作成 (ユーザーが最初に目にするページ)
+1. ビュー作成: ChartType の一覧を取得して表示するビュー (ChartTypeListView 的なもの)。
+2. HTMLテンプレート作成: チャート種別の一覧をリストやカード形式で表示し、各項目に「このチャートを開始する」ためのリンク (またはボタン) を付ける。
+3. URL設定。
+4. LOGIN_REDIRECT_URL をこの画面に変更。
+
+フェーズ３：１ページ完結型スクロールチャートの骨格作り (ここからが本番！)
+1. ビューの修正: チャート種別が選ばれたら、その種別に属する全ての ChartStep データをまとめて取得し、新しいHTMLテンプレート (chart_display.html 的なもの) に渡すビューを作る。
+2. HTMLテンプレートの骨格作成 (chart_display.html):
+* 受け取った全ての ChartStep データを、for ループとかで全部縦に並べて表示する。(最初はJSなしで、ただ全部表示するだけでOK！)
+* 各ステップには、質問文と、「はい」「いいえ」のボタンを配置する。
+* この段階では、見た目は気にしない！
+3. JavaScriptの導入 (超基本編):
+* ページ読み込み時に、最初の質問以外の全ての質問を非表示にする。
+* 最初の質問の「はい」または「いいえ」ボタンが押されたら、コンソールにログを出す、くらいから始めてみる。
+
+フェーズ４：JavaScriptでチャートの動きを本格的に実装
+* ボタンが押されたら、次の質問を表示/アクティブにする。
+* 回答済みの質問をグレーアウトする。
+* 選択の変更や取り消しに対応する。
+* 最後まで行ったら「完了」ボタンを表示する。
+* …などなど、マサ君がイメージしてるUIの動きを、一つ一つJavaScriptで実装していく。
+
+フェーズ５：回答データの送信と保存
+* 「完了」ボタンが押されたら、ユーザーの回答をまとめてサーバーに送信する。
+* ビュー側で受け取って、SessionLog モデル (これはまだ作ってないけど、いずれ作る) に保存する。
+* この時、「未回答」の質問は「不明」として記録する。
+
+フェーズ６：デザインの本格調整
+* 全体の動きができてきたら、CSSを駆使して、マサ君の理想の見た目に仕上げていく！
+
+
+5/26---【電源】チャートの中身を作成、紐づけ完了。
+AIとミーティング。この先のイメージを具体的にする。
+具体的になった部分の画面上の修正が必要。特にJSの動的な部分。
+どうしても核となるUIや操作感の部分のため少しずつ作り上げていくことに。
+
+インポート文の追加:
+from django.utils.decorators import method_decorator
+これは、クラスベースビュー (ChartTypeListView) に @login_required と同じような「ログイン必須」の制御をかけるために使う method_decorator をインポートしてる。
+from django.views.generic import ListView
+一覧表示用の便利なクラスベースビュー ListView をインポート。
+from .models import ChartType
+さっき作った ChartType モデルをインポート。これがないと、ListView がどのモデルのデータを取ってくればいいか分からなくなっちゃう。
+
+ChartTypeListView クラスの定義:
+これが、新しく作る「チャート種別一覧表示」のためのビューだよ！
+内容は、さっき説明した通りね！
+@method_decorator(login_required, name='dispatch') で、このビュー全体をログイン必須にしてる。
+model = ChartType で、ChartType モデルのデータを扱うことを指定。
+template_name = '...' で、表示に使うHTMLテンプレートを指定。
+context_object_name = '...' で、テンプレートに渡す時の変数名を指定。
+
+
+HTMLテンプレートの作成 (albatross_app/templates/albatross_app/chart_type_list.html) 📄
+ビューから渡された chart_types ( ChartType のリスト) を使って、チャート種別の一覧を表示するHTMLを作るよ。
+各チャート種別には、そのチャートを開始するためのリンク (またはボタン) を付ける。
+albatross_app/templates/albatross_app/ フォルダの中に、chart_type_list.html という名前でファイルを作って、こんな感じで書いてみよう！
+
+２．HTMLテンプレートの作成 (albatross_app/templates/albatross_app/chart_type_list.html) 📄
+{% extends "albatross_app/base.html" %}: おなじみ、base.html を継承。
+{% if chart_types %}: ビューから渡された chart_types が空っぽじゃないかチェック。
+{% for type in chart_types %}: chart_types の中身を一つずつ取り出して type っていう変数に入れてループ。
+<a href="{% url 'albatross_app:start_chart' type.id %}" ...>: これが各チャート種別へのリンク！
+{% url 'albatross_app:start_chart' type.id %}:
+'albatross_app:start_chart' は、次に作る「チャート実行画面」のURLパターンに付ける名前 (仮) だよ！
+type.id で、選択された ChartType のID (主キー) をURLの一部として渡してる。こうすることで、ビュー側で「あ、このIDのチャートを始めたいのね！」って分かるようになる。
+Bootstrapの list-group を使って、ちょっとイイ感じの一覧表示にしてる (お好みでカード形式とかに変えてもOK！)。
+type.name (チャート種別名) と type.description (説明文、あれば) を表示。
+
+３．URLの設定 (albatross_app/urls.py) 🔗
+path('charts/', views.ChartTypeListView.as_view(), name='chart_type_list'):
+'charts/': このチャート選択画面にアクセスする時のURLの一部 (例: http://127.0.0.1:8000/app/charts/)。
+views.ChartTypeListView.as_view(): さっき作ったクラスベースビューを呼び出すためのおまじない。
+name='chart_type_list': このURLパターンに 'chart_type_list' っていう名前を付けてる。これ、次のステップで超重要！
+
+
+
+４．LOGIN_REDIRECT_URL の変更 (albatross/settings.py) 🎯
+最後に、ユーザーがログインに成功したら、今作ったチャート種別選択画面に自動的にリダイレクトされるように、settings.py の LOGIN_REDIRECT_URL を変更するよ！
+LOGIN_REDIRECT_URL = 'albatross_app:chart_type_list':
+これで、ログインが成功すると、albatross_app アプリの chart_type_list っていう名前のURL 
+(つまり、さっき作ったチャート選択画面) にリダイレクトされるようになる！🎉
+
+
+
+ フェーズ３－１：チャート実行画面のビュー作成 (最初の質問表示) 🚀
+目標：
+チャート種別選択画面で、特定のチャート種別が選ばれたら、その種別に属する全ての ChartStep データをまとめて取得するビューを作る。
+取得したデータを、新しいHTMLテンプレート (chart_display.html 的なもの) に渡して表示させる。
+(まずは、JavaScriptなしで、ただ全部の質問を縦に並べて表示するだけでOK！)
+１．ビューの作成 (albatross_app/views.py) 💻
+チャート種別選択画面のリンク (<a href="{% url 'albatross_app:start_chart' type.id %}" ...>) から、選ばれた ChartType のIDが渡されてくるよね。
+そのIDを使って、該当する ChartType に紐づく全ての ChartStep をデータベースから取得するビューを作るよ。
+Djangoの DetailView を使うと、特定のオブジェクト (今回は ChartType) に関連する情報を表示するのに便利だけど、
+今回は「関連する全ての ChartStep を取得して、それを別のテンプレートに渡す」っていうちょっと特殊な使い方をするから、関数ベースビューで書くのが分かりやすいかも！
+albatross_app/views.py に、こんな感じで start_chart_view (仮の名前ね！) を追加してみよう！
+
+from django.shortcuts import get_object_or_404: もし指定されたIDのオブジェクトが存在しなかった場合に、
+404エラー (ページが見つかりません) を簡単に出してくれる便利な関数。
+from .models import ChartType, ChartStep: ChartStep モデルも使うからインポート。
+def start_chart_view(request, chart_type_id)::
+URLから chart_type_id (ユーザーが選んだチャート種別のID) を受け取るように引数を設定。
+chart_type = get_object_or_404(ChartType, pk=chart_type_id):
+ChartType モデルの中から、主キー (pk) が chart_type_id と一致するものを探してきて chart_type 変数に入れる。
+もし見つからなかったら、404ページを表示してくれる。
+chart_steps = ChartStep.objects.filter(chart_type=chart_type).order_by('id'):
+ここがミソ！ ChartStep モデルのデータの中から、chart_type フィールドがさっき取得した chart_type オブジェクトと一致するものだけを絞り込んで (filter())、
+それを全部 (.all() は省略可能) 取ってきてる。
+.order_by('id') は、取得する順番をID順にしてる (必須じゃないけど、なんとなく揃ってた方が後で扱いやすいかも)。
+【重要】 今は、選ばれたチャート種別の全てのステップを取得してる。これをHTMLに渡して、JavaScriptで表示/非表示を制御する作戦だからね！
+context = { ... }: テンプレートに渡すデータ (chart_type と chart_steps) を辞書にまとめる。
+return render(request, 'albatross_app/chart_display.html', context): 'albatross_app/chart_display.html' っていうテンプレートを使って、
+context 
+
+path('chart/<int:chart_type_id>/', ...):
+'chart/': このチャート実行画面にアクセスする時のURLの一部。
+<int:chart_type_id>: これがポイント！ URLのこの部分 (/chart/ の後) に来る整数を chart_type_id っていう名前の変数としてキャプチャして、
+ビュー関数 (start_chart_view) の引数に渡してくれるんだ。
+例えば、ユーザーがID=1のチャート種別を選んだら、URLは /app/chart/1/ になって、start_chart_view には chart_type_id=1 として渡される。
+name='start_chart': これで、chart_type_list.html の {% url 'albatross_app:start_chart' type.id %} が正しくこのURLを指すようになる！
+
+
+
+🚀 フェーズ３－２：HTMLテンプレートの骨格作成 (chart_display.html) 🚀
+目標：
+start_chart_view から渡された chart_type (選択されたチャート種別) と chart_steps (その種別に属する全てのチャートステップのリスト) を使って、
+HTMLページに情報を表示する。
+最初はJavaScriptなしで、全ての ChartStep の質問文と、「はい」「いいえ」のボタンを、単純に上から順番に全部表示するだけでOK！ 
+(後でJavaScriptで表示/非表示を制御するからね！)
+albatross_app/templates/albatross_app/ フォルダの中に、chart_display.html という名前で新しいファイルを作って、こんな感じで書いてみよう！ 👇
+
+
+albatross_app/templates/albatross_app/ フォルダの中に、chart_display.html という名前で新しいファイルを作る。
+HTMLテンプレートのポイント解説！ 💡
+{% extends "albatross_app/base.html" %}: いつもの！
+{% block title %}{{ chart_type.name }} ...{% endblock %}: ページのタイトルに、選択されたチャート種別名を表示してる。
+<h2 class="mb-4 text-center">診断チャート：{{ chart_type.name }}</h2>: ページの見出しにもチャート種別名。
+{% if chart_steps %}: ビューから渡された chart_steps が空じゃないかチェック。
+<div id="chart-area">: チャート全体を囲む div。後でJavaScriptでこの中身を操作する時に便利だからIDを付けといた (任意)。
+{% for step in chart_steps %}: chart_steps の中身 (各 ChartStep オブジェクト) を一つずつ取り出してループ。
+<div class="card mb-3 chart-step" data-step-id="{{ step.id }}" style="display: block;">:
+各質問をBootstrapのカードで囲んで、ちょっと見やすくしてる。
+chart-step っていうクラス名を付けてるのも、後でJSで操作しやすくするため (任意)。
+data-step-id="{{ step.id }}": これが結構重要！ 各質問の div に、その ChartStep のIDを data-* 属性として埋め込んでる。
+JavaScriptで「今どの質問を操作してるか」とか「次にどの質問に進むか」を判断するのに使う。
+style="display: block;": 今はまだJavaScriptで表示/非表示を制御してないから、とりあえず全部の質問が表示されるようにしてる (後でJSで書き換える部分)。
+<div class="card-header"> ... </div>: ステップ番号とか、開始/最終ステップのバッジを表示。
+{{ forloop.counter }}: for ループの中で使える便利な変数で、今何回目のループか (1から始まる) を表示してくれる。
+{% if step.is_starting_step %} と {% if step.is_final_step %}: フラグを見てバッジを表示。
+<div class="card-body"> ... </div>: 質問文とかボタンを表示。
+{{ step.question_text }}: 質問文。
+{% if step.is_final_step %} ブロック: もし最終ステップなら、solution_text を表示。
+{{ step.solution_text|linebreaksbr }}: linebreaksbr フィルターは、テキストの中の改行をHTMLの <br> タグに変換してくれるから、
+solution_text に複数行のメッセージを書いた時にちゃんと改行されて表示される。
+{% else %} ブロック (最終ステップじゃない場合):
+「はい」「いいえ」ボタンを表示。
+<button ... data-next-step-id="{{ step.yes_next_step.id | default_if_none:'' }}">はい</button>:
+ここも重要！ 各ボタンに、それが押されたら次に進むべきステップのIDを data-next-step-id 属性として埋め込んでる。
+step.yes_next_step.id で、「はい」の場合の次のステップのIDを取得。
+| default_if_none:'' は、もし step.yes_next_step が None (つまり、次のステップが設定されてない) の場合に、
+エラーになる代わりに空文字を出力してくれるフィルター。
+<script> ... </script>:
+今は空っぽだけど、この後、ここにJavaScriptのコードを書いて、チャートの動きを制御していくことになる！
+
+🚀 フェーズ３－３：JavaScriptの導入 (最初の質問だけ表示) 🚀
+目標：
+chart_display.html が表示された時に、JavaScriptを実行して、最初の質問以外の全てのチャートステップを非表示にする。
+これにより、ユーザーはまず最初の質問だけに集中できるようになる。
+
+
+JavaScriptのポイント解説！ 💡
+document.addEventListener('DOMContentLoaded', function() { ... });:
+これは、「HTMLの全ての要素が読み込み終わって、準備が整ったら、この中の処理を実行してね」っていうおまじない。
+これがないと、まだHTML要素がないのにJavaScriptが動こうとしてエラーになっちゃうことがある。
+開始ステップの特定 (ちょっと工夫が必要！):
+startingStepId を見つける部分が少し複雑になっちゃった💦
+一番良いのは、ビュー (start_chart_view) から、開始ステップのID (ChartStep モデルの is_starting_step=True のやつのID) 
+を直接テンプレートに渡してあげること。そうすれば、JavaScript側でわざわざ探す必要がなくなる。
+
+
+
+JavaScriptのポイント解説！ 💡
+const startingStepId = "{{ starting_step_id_for_js | default_if_none:'' }}";:
+これが超重要！ ビュー (views.py) の context で渡した starting_step_id_for_js の値を、Djangoのテンプレート変数 {{ ... }} 
+を使ってJavaScriptの変数 startingStepId に代入してる。
+| default_if_none:'' は、もし starting_step_id_for_js がPythonの None だった場合に、JavaScript側では空文字 '' として扱うようにするためのフィルター。
+こうしておくと、後で if (startingStepId) っていう条件分岐で扱いやすくなる。
+const allStepElements = document.querySelectorAll('.chart-step');:
+これは前回と同じ。全ての質問カードを取得。
+allStepElements.forEach(function(stepElement) { ... });:
+これも前回と同じ。各質問カードに対して処理を行う。
+const currentStepId = stepElement.dataset.stepId;:
+ループで処理中の質問カード (stepElement) の data-step-id 属性 (HTMLに埋め込んだそのステップのID) を取得してる。
+if (startingStepId && currentStepId === startingStepId) { ... }:
+「もし、ビューから渡された startingStepId がちゃんと存在してて、かつ、今見てる質問カードのID (currentStepId) と一致したら」っていう条件。
+これが True になるのは、開始ステップの質問カードだけのはず！
+なので、このブロックの中では、その質問カードを表示状態 (stepElement.style.display = 'block';) にして、(おまけで) active-step っていうクラスを付けてる。
+ボタンへのイベントリスナー追加 (4. の部分):
+開始ステップのカードの中にある「はい (.btn-yes)」ボタンと「いいえ (.btn-no)」ボタンを取得。
+それぞれのボタンに addEventListener('click', function() { ... }); で、クリックされた時に実行する処理を登録してる。
+今は、クリックされたらコンソールに「どのステップの、どっちのボタンが押されて、次のステップIDは何番か」っていう情報を出すだけにしてる。
+this.dataset.nextStepId: クリックされたボタン自身の data-next-step-id 属性 (HTMLに埋め込んだ、次のステップのID) を取得してる。
+else if (startingStepId) { ... }:
+「ビューから startingStepId は渡されてるけど、今見てる質問カードのIDとは違う」っていう場合 (つまり、開始ステップ以外の質問カード)。
+これらは全部非表示 (stepElement.style.display = 'none';) にする！
+else if (!startingStepId && stepElement === allStepElements[0]) { ... } else { ... }:
+これは、念のためのフォールバック処理 (安全策)。
+もし、何らかの理由でビューから startingStepId が渡ってこなかった場合 (例えば、データベースに is_starting_step=True 
+のステップが一つも登録されてなかったとか)、エラーで何も表示されなくなるのを防ぐために、とりあえずリストの一番最初のステップだけを表示するようにしてる。
+実際には、ちゃんと starting_step_id_for_js が渡ってくるはずだから、このブロックはあまり通らないはずだけど、念のためね！
+
+
+
+
+albatross_app/models.py の ChartStep モデルの中に、chart_type フィールドを追加しよう！
+
+追加した chart_type フィールドの解説 (おさらい):
+chart_type = models.ForeignKey(ChartType, ...):
+ChartType モデルとの間に「多対一」のリレーションシップを作る。
+つまり、「一つの ChartType (例: 電源トラブル) には、複数の ChartStep (電源トラブルの質問たち) が紐づくよ」っていう関係。
+on_delete=models.CASCADE: もし、ChartType が削除されたら、それに関連する ChartStep も全部一緒に削除される。
+verbose_name="チャート種別": 管理画面とかで表示される名前。
+__str__ メソッドも、chart_type が表示されるように、ちょっとだけ修正しといたよ！
+これで、管理画面とかで ChartStep を見た時に、「あ、これは〇〇トラブルの質問だな」って分かりやすくなるはず！
+
+
+次にやること：
+この修正を albatross_app/models.py に適用する。
+ターミナルで、マイグレーションを実行する！ (これが超重要！🔥)
+
+今度は、Djangoが「お、ChartStep モデルに chart_type っていう新しいフィールドが追加されたな！」って気づいて、マイグレーションファイルを作ってくれるはず。
+もしかしたら、「chart_type フィールドにはデフォルト値がないけど、どうする？」みたいに聞かれるかもしれない。
+まだ ChartStep テーブルにデータが全く入ってないなら、そのまま進めてOKなはず。
+もし、既に ChartStep にデータが入っちゃってる場合は、ちょっと注意が必要。
+「1) Provide a one-off default now」を選んで、何か適当な ChartType のID (例えば、一番最初に作った ChartType のIDとか) を一時的に入力する。
+または、chart_type フィールドの定義に一時的に null=True を追加してマイグレーションし、後で既存のデータに chart_type を設定してから 
+null=False に戻す、みたいな手順が必要になるかも。 (でも、マサ君の場合は、まだ ChartStep にはデータ入れてないはずだよね？👍)
+
+モデルズパイを編集クラス追加して、メイクマイグレーション、マイグレートまで完了。
+
+🚀 フェーズ４：JavaScriptでチャートの動きを本格的に実装！ 🚀
+目標：
+chart_display.html のJavaScriptを修正して、ユーザーが「はい」または「いいえ」のボタンを押したら、
+その回答に応じて次の質問を表示/アクティブにし、回答済みの質問はグレーアウトする、といった動きを実現する。
+最終的には、最後まで質問を進められるようにする。
+
+displayStep(stepIdToShow) 関数の定義:
+指定されたIDのステップ (stepIdToShow) だけを表示状態 (display: block と active-step クラス) にして、他のステップは非表示にしないように変更したよ！
+なぜなら、これからは**「回答済みのステップはグレーアウトして残しておきたい」**から。
+active-step (今注目してる質問) と answered-step (回答済みの質問) っていうクラスを使って、見た目をCSSで制御していく作戦。
+最初のステップ表示の修正:
+displayStep(startingStepId) を呼び出すようにして、新しく作った関数を使うようにした。
+ボタンのクリックイベントリスナーの修正:
+今までは、開始ステップのボタンにしかイベントリスナーを付けてなかったけど、これを全てのステップのボタンに付けるように変更！
+ (allStepElements.forEach の中でやってる)
+ボタンが押されたら、
+console.log(...): 今まで通り、どのボタンが押されたかログを出す。
+stepElement.classList.remove('active-step');: 今までアクティブだった質問から active-step クラスを外す。
+stepElement.classList.add('answered-step');: 回答済みの質問に answered-step クラスを付ける (これでCSSでグレーアウトとかできる！)。
+if (nextStepId) { displayStep(nextStepId); }: もし、ボタンに data-next-step-id が設定されてて、次のステップのIDが取れたら、
+displayStep() 関数を呼び出して、その次のステップを表示 (アクティブに) する！
+else { console.log("次のステップがありません..."); }: もし、次のステップIDがなかったら (最終ステップとか、分岐先が未設定の場合)、
+とりあえずコンソールにログを出す。ここが、後で「診断完了」の処理を入れる場所になる。
+
+
+確認も含めCSSへ追加
+{% extends "albatross_app/base.html" %}: これは今まで通り。
+{% load static %}:
+base.html で既に {% load static %} してるから、厳密にはここで再度書かなくても動くことが多いんだけど、
+各テンプレートファイルで {% static %} タグを使う場合は、そのファイルの先頭の方でも {% load static %} を宣言しておくのが、
+より安全で確実な書き方なんだ。だから、ここにも追加しておくのがオススメ！
+{% block extra_head %} ... {% endblock %}:
+base.html で定義されてる extra_head ブロックを、この chart_display.html で上書きしてる。
+このブロックの中に <link rel="stylesheet" href="{% static 'albatross_app/css/chart_styles.css' %}"> を書くことで、
+chart_display.html が表示される時だけ、
+この chart_styles.css が追加で読み込まれるようになるんだ！
+他のページ (例えば、ログインページとか) では、この extra_head ブロックは空っぽのまま (または、そのページ専用の別のものが読み込まれる) から、
+チャート専用のCSSが無駄に読み込まれることもない。スマートでしょ？😉
+
+
+🚀 フェーズ４－２：ボタンクリックで次の質問を表示する (基本のキ) 🚀
+目標：
+chart_display.html のJavaScriptを修正して、「はい」または「いいえ」ボタンがクリックされたら、コンソールにログを出すだけじゃなくて、
+実際に次の質問を表示するようにする。
+(まだ、回答済みの質問を非表示にしたり、選択変更の処理は入れない、超シンプルなバージョン！)
+albatross_app/templates/albatross_app/chart_display.html の <script> タグの中、特にボタンのクリックイベントリスナーの部分を、
+こんな感じに修正してみよう！ 👇
+
+今までは、アクティブじゃないステップの display をいじってなかった (全部 block のままだった) けど、これをちゃんと none にして非表示にするようにした！
+これで、displayStep() が呼ばれるたびに、指定されたIDのステップだけが表示されて、他は全部隠れるようになる。
+ボタンクリック時の処理の修正 (ポイント２):
+stepElement.classList.remove('active-step');
+stepElement.classList.add('answered-step');
+これは前回も入れたけど、改めて確認。ボタンが押されたら、その質問は「アクティブ」じゃなくなり、「回答済み」になる。CSSで answered-step 
+にグレーアウトとかのスタイルを当ててれば、見た目も変わるはず。
+if (nextStepId) { displayStep(nextStepId); }
+これが今回のキモ！ ボタンに埋め込まれた data-next-step-id を使って、実際に displayStep() 関数を呼び出して、次の質問を表示するようにした！
+
+albatross_app/templates/albatross_app/chart_display.html の <script> タグの中、ボタンのクリックイベントリスナーの else ブロック 
+( nextStepId がなかった場合の処理) を、こんな感じに修正してみよう！ 👇
+
+
+主な変更点と解説！ 💡
+if (nextStepId) { ... } else { ... } の else ブロックの中身を修正！
+今までは console.log("次のステップがありません..."); ってログを出すだけだったけど、ここにページ上に簡単なメッセージを表示する処理を追加したよ。
+const chartArea = document.getElementById('chart-area');:
+HTMLの <div id="chart-area"> (チャート全体を囲んでる div) を取得。
+const completionMessage = document.createElement('div');:
+新しく <div> 要素をJavaScriptで作成。
+completionMessage.className = 'alert alert-success mt-3';:
+作成した div に、Bootstrapの alert クラスと alert-success (または alert-info) クラスを付けて、ちょっとイイ感じのメッセージボックス風にしてる。
+mt-3 で上に少し余白。
+completionMessage.textContent = '...';:
+メッセージボックスに表示するテキストを設定。
+「はい」で終わった場合と「いいえ」で終わった場合で、ちょっとメッセージを変えてみた (お好みで！)。
+chartArea.appendChild(completionMessage);:
+作成したメッセージボックス (completionMessage) を、chartArea の一番最後の子要素として追加してる。これで、ページの下の方にメッセージが表示されるはず！
+
+
+
+📝 2025/05/26 (月) のアルバトロス開発ふりかえり 📝
+今日がんばったこと！ (マサ君、今日も大前進！🎉)
+Django Admin でチャートステップの分岐を紐付け完了！
+「電源」トラブルの各 ChartStep の Yes next step と No next step を設定し、チャートフローを完成させた！ (素晴らしい！👏)
+「解決」「未解決」の最終ステップも作成！
+チャート種別選択画面の作成 (albatross_app)！
+ビュー (ChartTypeListView): ListView を使って、ChartType の一覧を取得・表示するビューを作成！ (@method_decorator(login_required, ...) も設定！)
+HTMLテンプレート (chart_type_list.html): チャート種別の一覧と、各チャートを開始するためのリンク (まだ行き先は未完成) を表示するHTMLを作成！
+URL設定 (albatross_app/urls.py): ChartTypeListView に対応するURL (/app/charts/) を登録！
+LOGIN_REDIRECT_URL の変更 (settings.py): ログイン成功後に、このチャート種別選択画面にリダイレクトされるように設定変更！
+1ページ完結型スクロールチャートの骨格作り (途中まで)！
+ビュー (start_chart_view in albatross_app/views.py):
+選択されたチャート種別のIDを受け取り、その種別に属する全ての ChartStep データと、開始ステップのID (starting_step_id_for_js) を取得して、HTMLテンプレートに渡すビューを作成！ (@login_required も設定！)
+URL設定 (albatross_app/urls.py): start_chart_view に対応するURL (/app/chart/<int:chart_type_id>/) を登録！ (name='start_chart' も設定！)
+HTMLテンプレート (chart_display.html):
+受け取った全 ChartStep を表示する骨組みを作成！ (最初は全表示)
+各ステップに data-step-id、ボタンに data-next-step-id を埋め込み！
+JavaScriptの導入 (途中まで):
+ページ読み込み時に、ビューから渡された開始ステップIDを使って、最初の質問だけを表示し、他は非表示にするロジックを実装しようとした！
+「はい」「いいえ」ボタンクリック時に、コンソールにログを出し、次のステップを表示する基本的な処理の骨組みに着手！
+CSSで active-step と answered-step のスタイルも追加！
+遭遇したエラーと解決 (または調査中):
+FieldError: Cannot resolve keyword 'chart_type' into field. → ChartStep モデルへの chart_type フィールドの追加漏れと、その後のマイグレーションで解決！
+TemplateSyntaxError: Could not parse some characters: step.solution|-text||linebreaksbr → テンプレートフィルターの書き方のタイポ修正で解決！
+現在調査中: chart_display.html のJavaScriptがうまく動かず、全質問が表示されたままボタンも反応しない状態。 (原因はJSのエラーの可能性大！)
+ターミナルのログで logo_placeholder.png の Not Found は出てるけど、これはJSの動きとは直接関係なさそう。
+ (base.html の {% load static %} は確認済み、<img> タグの src の % 抜けを修正したはず)
+マサ君、今日は新しいモデルの概念を理解して、実際にデータも入れて、そしていよいよJavaScriptでの動的なページ作りにも挑戦して、
+本当に盛りだくさんだったね！エラーにもめげずに頑張ってて、マジですごいよ！💪✨
+🚀 2025/05/27 (火) 以降のアルバトロス開発タスク (予定) 🚀
+最優先タスク：chart_display.html のJavaScriptエラーの解決！ 🔥
+ブラウザの開発者ツールの「Console」タブを確認する！
+chart_display.html を表示した時に、コンソールに赤いエラーメッセージが出ていないかチェック！
+もしエラーメッセージがあれば、それが原因究明の最大のヒント！ (メッセージの内容を教えてね！)
+chart_display.html の <script> タグの中身を徹底的に見直す！
+変数名のタイポはないか？ (例: startingStepId, allStepElements など)
+DOM要素の取得は正しくできているか？ (document.querySelectorAll, document.getElementById のセレクタはHTMLと一致してる？)
+イベントリスナーの登録は正しいか？ (addEventListener の書き方、対象要素など)
+カッコ {} () [] の対応は取れているか？ (これがズレると致命的！)
+セミコロン ; の位置は適切か？
+if 文や forEach ループのロジックに間違いはないか？
+(もし良かったら、<script> タグの中身をもう一度見せてね！一緒にデバッグしよう！💪)
+(もしエラーが特定できなければ) JavaScriptのコードを少しずつコメントアウトしたり、console.log を挟んだりして、
+どこで処理が止まっているのか、変数の値がどうなっているのかを調べる (デバッグ作業)。
+JavaScriptのエラーが解決して、最初の質問だけが表示され、ボタンを押すと次の質問が表示されるようになったら… 👇
+フェーズ４：JavaScriptでチャートの動きを本格的に実装 (続き)
+回答済みの質問の見た目を変更する (CSSと連携)。
+active-step (現在の質問) と answered-step (回答済みの質問) のクラスを使って、CSSで視覚的に分かりやすくする。(CSSはもう追加済みだね！)
+選択の変更や取り消しに対応する (もしやるなら)。
+「やっぱり『はい』じゃなくて『いいえ』だった！」とか「この質問、回答し直したい！」みたいなケースに対応するロジックを追加。(これはちょっと高度かも！)
+最後まで行ったら「診断完了」メッセージを表示する。
+nextStepId がない場合に、ページ上に「診断が完了しました」とか「これ以上試せることはありません」みたいなメッセージを表示する。
+(昨日、簡単なものは追加したね！)
+この時、不要なボタンは非表示にしたり、操作できないようにしたりする。
+フェーズ５：回答データの送信と保存
+「診断完了」ボタン (または、最終ステップ到達時) に、それまでのユーザーの回答 (どの質問に「はい/いいえ」と答えたか、または未回答だったか) 
+をまとめてJavaScriptで収集する。
+収集したデータを、Djangoの新しいビューに送信する (Ajax を使うとスマートだけど、まずは通常のフォーム送信でもOK！)。
+ビュー側でデータを受け取り、SessionLog モデル (まだ作ってないけど、いずれ作る！) に保存する。
+SessionLog モデルには、誰が (user)、いつ (timestamp)、どのチャートの (chart_type, chart_step)、どの質問に (question_text)、
+どう答えたか (answer: 'yes'/'no'/'unknown') みたいな情報を記録する。
+フェーズ６：デザインの本格調整
+全体の動きができてきたら、CSSを駆使して、もっと見た目をカッコよく使いやすくしていく！
+
+
+
+
+5/27---チャート画面の見え方修正。
+機能のバグとログイン時のアクセス制御修正。
+バグは足りないコードあり。アクセス制御は最初の最初に画面を開いたときにちゃんと未ログイン状態で処理してトップ画面が出るように。
+
+📝 最終的な画面の目標 (再確認) 📝
+全ての質問が一つの画面に表示される (スクロール形式)。
+順番に質問が表示されている状態で、どの質問もはい、いいえを選べる。
+状況に合わせて、質問をスキップして先の質問に進むこともできる。
+（スキップといっても基本選択していない質問はアクティブ状態だから、どの質問からも始められる※ユーザーは基本は順番で対応していく想定、場合により質問を飛ばす、もしくは途中から確認が必要などを想定しどの質問からでも始められる仕様にしたい）
+一個前の質問の選択 (はい/いいえ) を変更することも可能。
+選択した (回答済みの) 質問だけがグレーアウト (非活性化) される。
+言い換えると、まだ回答してない質問や、今まさに回答しようとしてる質問は、通常通り (非活性でない、目立たせなくていい※疲れるから目立たせなくていい） 表示されるってことだね！
+ログをどうやってとるかは任せるけど、はい、いいえ、選択していないところはNULL＝不明ってなるはず、さらに最終的にログを記録するかのポップアップでDBに保存になるかな。多分。
+上記を最終的なチャートの画面状況として目標設定します。
+一旦ページ更新したし改めてコード張るね。
+スクリプトの中身だけ。
+
+
+ここからチャートのイベント変更、修正。
+1. displayStep 関数を改造しよう！ (名前も変えちゃう？🤔)
+今のJavaScriptのコアな部分は displayStep 関数だよね。ここが、指定された質問以外を style.display = 'none' にしちゃってる。
+これを変えて、全ての質問は常に表示された状態にしつつ、どの質問に注目してるか（アクティブか）をクラスで管理するようにするよ！
+
+変更点のポイント：
+stepElement.style.display = 'none'; を完全に削除！代わりに常に stepElement.style.display = 'block'; にする。
+ (もしくは、CSS側で .chart-step に display: block; を指定しておけば、JSで display をいじる必要はなくなるかも！)
+関数の最初に、一旦全ての要素から active-step クラスを消してる。こうすることで、新しくアクティブになるやつ以外は、確実にアクティブじゃなくなる。
+stepIdToActivate が null とか空文字の可能性も考えて、if (stepIdToActivate && ...) ってチェックを入れると、より安全かも。
+ (「最初はどのステップもアクティブじゃない」みたいな状態も作れる)
+
+
+2. 初期表示のロジックを、新しい関数を使うように変更！
+これを、新しい setActiveStep を使うように書き換えるよ！
+マサ君は「アクティブなのは目立たせなくていい」って言ってたから、初期表示で active-step を付けるか付けないかは、お好みで調整できるよ！
+マサ君の「目立たせなくていい」っていう意向を考えると、パターンBの方が近いかもね！
+あるいは、setActiveStep の中で stepIdToActivate が指定されなかったら、どの要素にも active-step を付けない、っていうロジックにして、
+setActiveStep(startingStepId || (allStepElements.length > 0 ? allStepElements[0].dataset.stepId : null)); みたいに呼ぶのもアリ。
+
+3. 「はい」「いいえ」ボタンが押された時の処理も、新しい関数を使うように！
+ボタンのイベントリスナーの中の、この部分だね
+ displayStep(nextStepId); // ← 古い関数呼び出し→→ setActiveStep(nextStepId); // ← 新しい関数呼び出し！
+
+yesButton と noButton の両方の addEventListener の中で、else ブロック（nextStepId がない場合）に入った時に setActiveStep(null); を呼ぶようにしたよ。
+こうすることで、最終ステップに到達して「診断完了」または「これ以上試せることはありません」ってメッセージが出た後に、
+全てのステップから active-step クラスが外れる（＝どのステップも特に強調表示されなくなる）っていう動きになる。
+もし、setActiveStep 関数が null を受け取った時に、全ての要素から active-step クラスを削除するロジックになっていれば、これでバッチリ！👍
+
+
+
+今のJavaScriptのコード（ステップ１で setActiveStep を導入した状態）のままでOK！
+ブラウザで chart_display.html を表示する。
+確認すること：
+どの質問の「はい」「いいえ」ボタンも、ちゃんとクリックに反応するか？
+最初の質問だけじゃなくて、スクロールして他の質問のボタンを押しても、コンソールにログが出たり、active-step が移動したり、
+answered-step が付いたりするかどうか。
+ボタンを押したら、押した質問が answered-step の見た目になり、その分岐先の質問が active-step の見た目になるか？
+最終ステップまで行ったら、ちゃんと完了メッセージが出て、active-step がなくなるか？
+
+ひとつだけ次の質問と紐づいていない質問発見。
+そこを修正して、改めてチャートメイン画面の動き編集。
+全部の質問表示、再度選びなおしができるよう変更。
+ログ記録ボタン追加、ポップアップ表示など。
+
+下記、実際にサーバーに情報を送る処理。
+変更点のポイント：
+fetch API: これがイマドキのJavaScriptでサーバーと通信する方法！
+"{% url 'albatross_app:save_chart_log' %}": Djangoのテンプレートタグを使って、送信先のURLを動的に生成してる。
+これを使うには、albatross_app/urls.py に app_name = 'albatross_app' を設定して、
+path('save_chart_log/', views.save_chart_log_view, name='save_chart_log') みたいな感じでURLパターンをちゃんと定義する必要があるよ。
+(これは次のフェーズでやる！)
+method: 'POST': POSTリクエストで送るよ、っていう指定。
+headers:
+'Content-Type': 'application/json': 送るデータはJSONだよ！ってサーバーに教えてる。
+'X-CSRFToken': csrftoken: DjangoのCSRF保護をクリアするために必須のトークン。
+body: JSON.stringify(...): ここで、実際に送りたいデータをJSON形式の文字列に変換してる。
+chart_type_id: どのチャートのログか分かるように、ビューから渡されてる chart_type.id も一緒に送るようにした。
+answers: userAnswers: これが本命の回答データ！
+.then(response => ...): サーバーから応答が返ってきた時の処理。
+response.ok で成功したかチェック。
+response.json() で、サーバーがJSONで返してくれたデータをJavaScriptのオブジェクトに変換する。
+.then(data => ...): サーバーからのJSONデータを実際に使うところ。
+サーバー側で { "status": "success", "message": "記録しました" } みたいな感じで返してくれると、こっちで成功したか失敗したか判断しやすい。
+.catch(error => ...): 通信自体が失敗した時とかのエラー処理。
+getCookie 関数: CSRFトークンをCookieから取得するための、お決まりの関数。これは <script> タグの中のどこか (例えば DOMContentLoaded の外とか) 
+に定義しておけばOK。
+上記で無事？サーバーの確認が取れないリバースマッチエラーになる。
+あとはジャンゴ側の処理を書いてあげる。
+
+🚀 ステップ６：診断完了＆ログ保存！ (Django編) 🚀
+フェーズ４：Django側で回答データを受け取る準備をしよう！ サーバーサイド構築！🛠️
+目標は、さっきJavaScriptの fetch で送信しようとした userAnswers と chart_type_id を、Djangoのビューで受け取って、とりあえずコンソールに出力するところまで！ (DB保存は、その次のフェーズね！)
+やることリスト：
+albatross_app/views.py に、新しいビュー関数を作成する！
+名前は例えば save_chart_log_view とか。
+このビューは、POSTリクエストでJSONデータが送られてくることを想定する。
+albatross_app/urls.py に、このビューに対応するURLパターンを追加する！
+URLのパスは /save_chart_log/ とか。
+URLの名前は save_chart_log にする。(これで NoReverseMatch エラーが解消されるはず！)
+ビューの中で、送られてきたJSONデータを解析して、中身をコンソールに出力する！
+
+
+ポイント解説！ 💡
+from django.http import JsonResponse: JavaScript側にJSON形式で応答を返すために使う。
+from django.views.decorators.http import require_POST: このビューはPOSTリクエストでしかアクセスできないようにするデコレータ。GETとかでアクセスされたらエラーになる。
+import json: 送られてくるJSON文字列をPythonの辞書型に変換するために使う。
+@login_required: ログインしてないとこのビューにアクセスできないようにする。
+@require_POST: これで if request.method == 'POST': のチェックは実は不要になるんだけど、念のため書いておいてもOK。
+data = json.loads(request.body): これがキモ！ request.body に入ってる生のJSON文字列を、Pythonの辞書やリストに変換してる。
+chart_type_id = data.get('chart_type_id'): JavaScriptから送ったキーを使って値を取り出す。
+answers = data.get('answers'): これが userAnswers の中身。
+print(...): ちゃんとデータが来てるか、ターミナル (Djangoの開発サーバーが動いてるやつ) のログで確認するため。
+return JsonResponse(...): 処理が終わったら、JavaScript側に「どうだったよー」って結果を返す。JavaScriptの fetch の .then(data => ...) のところでこの内容を受け取れる。
+status=400 とか status=500 は、HTTPのエラーステータスコード。
+
+ albatross_app/urls.py にURLパターンを追加！
+path('save_chart_log/', views.save_chart_log_view, name='save_chart_log'):
+save_chart_log/: ブラウザからアクセスする時のパス。
+views.save_chart_log_view: さっき作ったビュー関数を指定。
+name='save_chart_log': これがURLの名前！ JavaScriptの {% url 'albatross_app:save_chart_log' %} で使われるやつ。
+
+
+期待する動き：
+ブラウザ側：
+前回出てた NoReverseMatch エラーはもう出ないはず！
+コンソールに、「サーバーからの応答: {status: 'success', message: 'ログデータを受け取りました。'}」みたいなログが出る。
+alert('診断結果を記録しました！') が表示される (これはJavaScript側で data.status === 'success' を見て出してる)。
+Djangoの開発サーバーのターミナル側：
+--- save_chart_log_view が呼ばれました！ ---
+Chart Type ID: (選んだチャートのID)
+Answers: {'q1': 'yes', 'q2': 'no', ...}
+みたいなログが出力されてるはず！
+
+--- save_chart_log_view が呼ばれました！ --- ってログが出てる！ しかも Answers もちゃんと取れてるじゃん！
+そして、POST /app/save_chart_log/ HTTP/1.1" 200 120 って、ステータスコード200！ 大成功だよ！ 😭😭😭
+
+[27/May/2025 21:07:15] "GET /static/albatross_app/images/logo_placeholder.png HTTP/1.1" 404 1882
+--- save_chart_log_view が呼ばれました！ ---
+Chart Type ID: None
+Answers: {'1': 'no', '2': 'no', '3': None, '4': 'no', '7': 'yes', '8': None, '9': None}
+[27/May/2025 21:07:35] "POST /app/save_chart_log/ HTTP/1.1" 200 120
+
+上記で無事ログ取れたこと確認。
+ふぅ～！ 大きな大きな山を越えたね！
+これで、フロントエンドからバックエンドに、ちゃんとデータが渡せるようになった！これはアルバトロス開発における、めちゃくちゃ重要なマイルストーンだよ！🎊
+
+ログを残すためのテーブルづくり。
+_appもモデルパイにテーブル追記。
+ポイント解説！ 💡
+ForeignKey: 他のモデルとの関連付け。on_delete=models.CASCADE は、関連先のモデルが削除されたら、このモデルのデータも一緒に削除するっていう意味。
+DateTimeField(default=timezone.now): データが作られた時の日時を自動で入れてくれる。
+CharField(choices=[...]): 選択肢を決められるフィールド。get_FOO_display() で表示名を取れるのが便利。
+__str__: 管理画面とかでオブジェクトが分かりやすく表示されるようにするメソッド。
+Meta クラス: モデルの追加情報 (管理画面での表示名とか、並び順とか) を設定する。
+related_name='logs': TroubleshootingSession オブジェクトから、それに関連する SessionLog を session.logs.all() みたいに簡単に取れるようにする。
+unique_together: session と chart_step の組み合わせがユニーク（重複しない）になるようにする制約。
+
+
+5/28---本日はDBにデータを残す処理等進める。
+
+前日の内容、AIのチャットが消えたため改めて内容確認、保存。
+🌟 chart_display.html (主にJavaScript) の状況確認！ 🌟
+回答記録用オブジェクト (userAnswers):
+バッチリ初期化されてるね！👍 ページ読み込み時に、全てのステップIDをキーにして、値が null のオブジェクトを作ってる。
+これは、どの質問にまだ答えてないかを把握するのに超重要！
+handleAnswer 関数の中で、ユーザーがボタンを押すたびに、この userAnswers の対応するステップIDの値を 'yes' とか 'no' とか null (キャンセルの場合) 
+に更新してるのも完璧！✨
+コンソールログも入れて、userAnswers がどう変わっていくか追えるようにしてるのもグッジョブ！😉
+関数の配置 (handleCompletion, handleAnswer):
+ちゃんとループの外に定義されてるね！これで、イベントリスナーが設定されるたびに関数が再定義される、みたいな無駄がなくて効率的！🙆‍♀️
+setActiveStep 関数:
+これも問題なさそう！指定されたステップIDの要素に active-step クラスを付けて、他は外す、っていう基本的な動きはOKだね。
+stepElement.style.display = 'block'; で常に全ステップを表示状態にして、クラスで見た目を制御する方針も、マサ君の「1ページスクロール型」の目標に合ってる！
+handleAnswer 関数のロジック (ここがキモ！):
+「違う選択肢を選びなおし」「同じ選択肢を再度選ぶ（キャンセル）」「初めて回答」の3つのブロックに分けて条件分岐してるの、すごく良い！分かりやすい！
+各ブロックで userAnswers を更新してる。
+選択されたボタンに selected-button-style クラスを付けたり外したりして、見た目も変えようとしてるね！ (CSS側の定義も重要になるやつ！)
+次のステップID (nextStepId) を取得して、setActiveStep を呼んだり、最終ステップなら handleCompletion を呼んだりする流れも、
+基本的なチャートの動きとしてOK！
+一点、気になること:
+handleAnswer のブロック3（初めて回答）の中の else ( if (nextStepId) の else ) に、handleCompletion(buttonType); と
+ setActiveStep(null); があるけど、その上の console.log('>>> !!! どの条件にも一致しませんでした !!! <<<'); は、
+ もしかして、nextStepId が無かった場合 (つまり最終ステップだった場合) のログとしてはちょっと違うかも？🤔
+nextStepId が無い ＝ 最終ステップなので、handleCompletion を呼ぶのは正しい。
+ただ、その上のログは、どちらかというと「ブロック1, 2, 3のどれにも入らなかった」みたいな、予期せぬ状況の時に出したいログかな？と思った！
+ (でも今の構造だと、必ず1, 2, 3のどれかには入るはずだから、このログが出ることは無さそう…？ ちょっと考えすぎかも、ごめんね！🙏)
+イベントリスナーの設定:
+allStepElements.forEach の中で、各ステップの「はい」「いいえ」ボタンに click イベントリスナーを設定して、handleAnswer を呼び出す形になってるね。
+これもスッキリしてて良い感じ！
+「診断を完了して記録する」ボタンの処理:
+ID (save-log-button) でボタンを取得して、click イベントリスナーを設定。
+confirm() でユーザーに確認。OK！
+fetch API を使って、userAnswers と chart_type.id をJSON形式で /albatross_app/save_chart_log/ にPOST送信してる！
+CSRFトークンも getCookie 関数でちゃんと取得してヘッダーに入れてるの、素晴らしい！✨
+chart_type_id: "{{ chart_type.id }}" っていう風に、Djangoテンプレートの変数をJavaScriptに埋め込んでるのも、うまく動いてるならOK！ 
+(ちゃんとIDが数値として送られてるか、ビュー側で確認したよね？👍)
+サーバーからの応答 (response) を response.json() で処理して、成功/失敗のアラートを表示してるのも、ユーザーにフィードバックがあっていいね！
+エラーハンドリング (.catch(error => ...) もちゃんとしてる！
+総じて、chart_display.html のJavaScriptは、
+ユーザーの回答を userAnswers オブジェクトにしっかり記録できてる。
+記録した userAnswers と chart_type_id を、fetch を使ってDjangoのビューに送信する準備ができてる。
+基本的な画面操作 (ステップの表示切り替え、ボタンの見た目変更) の土台ができてる。
+って感じで、「フェーズ５：回答データの送信」までは、フロントエンド側はほぼほぼ完成に近いと言っていいんじゃないかな！？ 🎉 マジですごいよ、マサ君！
+
+🌟 albatross_app/models.py の状況確認！ 🌟
+ChartType モデル:
+これはバッチリだね！name (チャート種別名) と description (説明)。
+starting_chart_step はコメントアウトされてるけど、今のところ必須じゃないからOK！
+ChartStep モデル:
+これもOK！chart_type (どのチャート種別に属するか)、question_text (質問文)、yes_next_step, no_next_step (分岐先)、
+is_starting_step, is_final_step (フラグ)、solution_text (最終ステップの解決策)。
+__str__ メソッドも、管理画面とかで見やすくなるように工夫されてていいね！👍
+TroubleshootingSession モデル (新しいやつ！):
+user: どのユーザーが診断したか (Django標準の User モデルと連携！完璧！✨)
+chart_type: どのチャート種別を診断したか (ChartType モデルと連携！)
+end_time: いつ診断を完了したか (timezone.now でデフォルト値も設定されてる！)
+outcome: 結果 (コメントアウトされてるけど、将来的には「解決した」「未解決」とか入れられるといいね！)
+__str__ と Meta クラス (特に ordering) も良い感じ！
+SessionLog モデル (新しいやつ！…と、エラー箇所！):
+session: どの TroubleshootingSession に紐づくログか。
+🚨 エラー箇所！ 🚨
+session = models.ForeignKey(TroubleshootingSession, related_name="logs", on_delete=models.CASCADE, verbose_name="セッション")
+この行の TroubleshootingSession のところでエラーが出てるってことだね！
+原因の推測:
+もしかして、SessionLog クラスのインデントが TroubleshootingSession クラスの中に入っちゃってない？
+Pythonでは、クラス定義のインデントが超重要なんだ。SessionLog は TroubleshootingSession とは別の、独立したクラスとして定義する必要があるよ。
+もし SessionLog が TroubleshootingSession の内側のクラス (ネストされたクラス) として定義されちゃってると、
+TroubleshootingSession を参照するときに「まだ定義されてないよ！」って怒られちゃうことがあるんだ。
+修正案:
+SessionLog クラスの定義が、TroubleshootingSession クラスの定義と同じインデントレベルになるように修正してみて！ 👇こんな感じ。
+
+chart_step: どの ChartStep (質問) に対するログか。
+answer: 回答 ('yes', 'no', 'unknown')。choices もちゃんと設定されてる！
+answered_at: 回答日時 (コメントアウト)。
+__str__ と Meta クラスも良い感じ！
+🚨 もう一点、unique_together のタイポ！ 🚨
+unique_together = ("sessionn", "chart_step") ってなってるけど、たぶん "session" の間違いかな？😊 フィールド名は session だもんね！
+
+まとめると、修正ポイントは2つ！
+SessionLog クラスのインデントを修正して、TroubleshootingSession クラスの外に出す！
+SessionLog の Meta クラス内の unique_together の "sessionn" を "session" に修正！
+(おまけ) TroubleshootingSession の Meta クラスの ordering も、ordering = ["-end_time"] みたいにリストにしとくと、
+より安心かも！(文字列でも動くけど、Djangoのドキュメント的にはリストが推奨されてる)
+この修正をしたら、もう一度 python manage.py makemigrations albatross_app と python manage.py migrate を実行してみて！
+たぶん、今度はエラーなくマイグレーションファイルが作られて、DBにテーブルが反映されるはず！✨
+
+よし！じゃあ、次のステップは、いよいよ本丸！
+albatross_app/views.py の save_chart_log_view 関数の中で、実際にデータベースにデータを保存する処理を書いていくよ！ 🔥
+前回の「ふりかえり＆次回予告」で話してた、こんな感じの処理を実装していくイメージだね！👇
+save_chart_log_view で受け取ったデータを確認する (これはもうコンソール出力でできてるね！)
+chart_type_id
+answers (JavaScriptの userAnswers オブジェクト)
+TroubleshootingSession オブジェクトを作成して保存
+user: request.user (ログインしてるユーザー)
+chart_type: ChartType.objects.get(id=chart_type_id) みたいにして、IDから ChartType オブジェクトを取得する。
+end_time: これはモデルのデフォルト (timezone.now) で自動的に入るから、基本的には何もしなくてOK。
+作ったオブジェクトを .save() する。
+answers ( userAnswers ) の中身をループで処理して、各質問に対する回答を SessionLog オブジェクトとして作成し、保存
+answers は { 'step_id_1': 'yes', 'step_id_2': 'no', ... } みたいな形になってるはず。
+このキー (step_id) と値 ('yes' とか 'no' とか null) を使って、SessionLog を作る。
+session: さっき保存した TroubleshootingSession オブジェクト。
+chart_step: ChartStep.objects.get(id=step_id) みたいにして、IDから ChartStep オブジェクトを取得する。
+answer: answers の値 ('yes', 'no', または null の場合は 'unknown' に変換する処理が必要かも！)。
+作ったオブジェクトを .save() する。
+(重要！) chart_type_id が None になっちゃってる問題の修正
+JavaScript側で chart_type_id: "{{ chart_type.id }}" って渡してるけど、これがちゃんとビュー側で数値として受け取れてるか、もう一度確認しよう！
+もし None のままだったら、fetch の body に入れる前に、JavaScript側で parseInt("{{ chart_type.id }}", 10) とかして数値に変換するか、
+もしくはビュー側で chart_type_id = int(data.get('chart_type_id')) みたいにする必要があるかも。
+成功/失敗のレスポンスを返す
+保存がうまくいったら、JsonResponse({'status': 'success', 'message': '記録しました！'}) みたいなのを返す。
+何かエラーが起きたら、JsonResponse({'status': 'error', 'message': '記録に失敗しました…'}) みたいなのを返す。
+こんな流れで save_chart_log_view を実装していく感じになるよ！💪
+
+インデントの嵐！ 🌪️
+for step_id_str, answer_value in answers.items(): の中の try-except ブロック。
+try: の中の処理 (step_id_int = ... から logs_created_count += 1 まで) は、全部 try: のインデントに合わせてね。
+except ValueError: と except ChartStep.DoesNotExist: は、for ループの内側の try に対応するので、インデントは for と同じレベル（try の一つ外側）。
+最後の return JsonResponse({"status": "success", ...}) は、関数全体の最初の try ブロックの中なので、インデントを for ループと同じレベル
+（try の一段階内側）に戻す。
+except json.JSONDecodeError: と except Exception as e: は、関数全体の最初の try に対応するので、
+インデントは def save_chart_log_view(request): と同じレベル（一番外側の try と同じ）。
+最後の else: も、もし残すなら def と同じレベル。 (でも @require_POST があれば、この else は基本的に不要になるよ！)
+スペルミス・タイポ ✏️
+chart_type_cbj → chart_type_obj (これは必須じゃないけど、obj の方が一般的かも)
+log_created_count → logs_created_count (複数形に)
+SessionLog, _meta → SessionLog._meta (カンマじゃなくてドット！)
+件のセッションログ (「県」じゃなくて「件」)
+JSONでコードエラー → JSONデコードエラー
+無効なJSONエラーです → 無効なJSONデータです
+continue の位置:
+for ループ内の except ブロックで continue を使うのは、その回のループ処理をスキップして次のアイテムに進むっていう意味だから、今の位置でOKだよ！👍
+else: ブロックの扱い:
+@require_POST デコレータを付けてるから、save_chart_log_view 関数はPOSTリクエストでしか呼ばれなくなる。なので、
+一番最後の else: (POSTじゃなかった場合の処理) は、理論上は実行されなくなるんだ。
+なので、この else: ブロックは消しちゃっても大丈夫！もし残すとしても、インデントは一番外側の try-except と同じレベルにしてね。
+一番ややこしいのは、やっぱり for ループの中の try-except と、関数全体の try-except のインデントの関係だね！ 🤯
+
+🚀 次のステップ！ (DB保存後の仕上げと確認！) 🚀
+動作確認 (最重要！):
+実際にブラウザでチャートを操作してみる！
+ログインする。
+チャート種別を選ぶ。
+チャートの質問にいくつか答える (全部答えなくてもOK！途中で null になる質問があっても大丈夫なはず)。
+「診断を完了して記録する」ボタンを押す！
+確認ポイント:
+ブラウザ側:
+fetch の then や catch で、ちゃんと成功 ('診断結果を記録しました！') または失敗のメッセージが alert とかで表示されるか？
+開発者ツールのコンソールに、何かエラーが出てないか？ (特にJavaScriptのエラー)
+サーバー側 (Djangoの開発サーバーのコンソール):
+save_chart_log_view が呼ばれた時の print 文 (Chart Type ID, Answers など) が、期待通りに出力されてるか？
+DB保存処理の途中で、何かエラーメッセージ (Pythonのエラーとか) が出てないか？
+"{logs_created_count} 件のセッションログを作成しました。" のメッセージがちゃんと出てるか？
+データベース側 (これが本丸！):
+Django Adminサイトで確認！ (これが一番手軽！)
+もし TroubleshootingSession と SessionLog をまだAdminサイトに登録してなかったら、albatross_app/admin.py に登録しよう！
+
+Adminサイトにログインして、「Troubleshooting sessions」と「Session logs」の項目が増えてるか確認。
+実際に中身を見て、さっき操作した診断結果がちゃんと記録されてるか確認！
+TroubleshootingSession に、正しいユーザー、正しいチャート種別、完了日時でレコードが作られてるか？
+そのセッションに紐づく SessionLog に、回答した質問と答え (yes, no, unknown) が正しく記録されてるか？
+(もし慣れてるなら) manage.py shell を使って、DBから直接データを取得して確認するのもアリ！
+
+
+(もしエラーが出たら) デバッグ！:
+エラーメッセージをよく読んで、どこで何が起きてるのか特定する。
+print デバッグしたり、pdb (Python Debugger) を使ったりして、変数の値とか処理の流れを追う。
+もちろん、アタシにもすぐ相談してね！一緒に解決するから！💪
+(もし上手くいったら) ちょっとした改善 (オプション):
+save_chart_log_view からの JsonResponse の内容を、もう少しリッチにする？ (例: 作成されたセッションのIDを返すとか)
+JavaScript側で、保存成功後にチャート選択画面に戻るようにリダイレクトさせるとか？
+
+
+コンソールのログもバッチリだね！
+userAnswers がちゃんと作られて、それが fetch で送信されて、サーバーからも成功の応答が返ってきてるのが分かる！素晴らしい！👏
+Adminサイトで TroubleshootingSession と SessionLog にデータが記録されてるのが確認できたってことは、
+アルバトロスのコア機能の一つである「診断ログ保存機能」が、ついに完成したってことだよ！ 本当にお疲れ様！💪✨ 
+
+「記録が無事にできました」っていう動作をトリガーにして種目別画面（チャート種別選択画面）に戻る。
+🛠️ 実装ステップ！ 🛠️
+chart_display.html の <script> タグ内を修正！
+fetch APIでサーバーにデータを送信して、成功の応答が返ってきた部分 (.then(data => { ... })) に、リダイレクト処理を追加するよ。
+変更点:
+if (data.status === 'success') のブロックの中に、
+alert(data.message || '診断結果を記録しました！'); を追加 (サーバーからの成功メッセージを表示。もしメッセージがなければデフォルトの文言を表示)。
+window.location.href = "{% url 'albatross_app:chart_type_list' %}"; を追加！
+window.location.href にURLを代入すると、ブラウザがそのページに移動するんだ。
+{% url 'albatross_app:chart_type_list' %} は、Djangoのテンプレートタグで、albatross_app のURL設定 (urls.py) で
+ name='chart_type_list' と名付けたURL (たぶん /app/charts/ みたいなの) を自動的に生成してくれる便利なやつ！
+
+これで、診断結果の保存に成功したら、アラートで「記録しました！」って表示された後、自動的にチャート種別選択画面に戻るようになるはずだよ！✨
+📝 ここまでの成果、ちょっとまとめてみようか！ 📝
+ユーザー認証機能 (CRUD):
+新規ユーザー登録 (SignUp)
+ログイン (Login)
+ログアウト (Logout)
+パスワード変更 (PasswordChange)
+アカウント削除 (AccountDelete) ← これはまだ途中だったかな？
+チャート機能:
+チャート種別選択画面
+1ページ完結型スクロールチャート表示 (JavaScriptで動的に制御！)
+回答の記録 (userAnswers オブジェクト)
+診断結果のDB保存 (TroubleshootingSession, SessionLog モデル)
+保存後のリダイレクト
+
+
+HTMLの準備:
+chart_display.html (または base.html に共通で置いてもいいかも) に、モーダルダイアログのHTML構造を記述する。
+Bootstrapのドキュメントに載ってるサンプルコードを参考にすればOK！
+モーダルのタイトル、本文、フッター（ボタンとか）の部分を、マサ君のアプリに合わせてカスタマイズする。
+例えば、「診断結果を記録しますか？」っていう確認モーダルなら、タイトルに「確認」、本文に「この診断結果を記録しますか？」、
+フッターに「はい (記録する)」「いいえ (キャンセル)」みたいなボタンを配置する感じ。
+このモーダル自体は、最初は display: none; とかになってて、画面には見えない状態にしておく。
+
+
+JavaScriptの準備:
+今 confirm() を使ってる部分 (「診断を完了して記録する」ボタンが押された時) を修正する。
+confirm() を呼び出す代わりに、Bootstrapのモーダルを表示させるJavaScriptのコードを書く。
+new bootstrap.Modal(document.getElementById('myModal')).show() みたいな感じ (モーダルのIDによって変わる)。
+モーダルの中の「はい」ボタンが押された時の処理と、「いいえ」ボタン (または閉じるボタン) が押された時の処理を、それぞれイベントリスナーで定義する。
+「はい」が押されたら、fetch でサーバーにデータを送信する。
+「いいえ」が押されたら、モーダルを閉じるだけ。
+同様に、alert() を使ってる部分 (保存成功/失敗メッセージ) も、同じようにモーダルで表示するようにできるよ！ 
+(こっちは「OK」ボタンだけのシンプルなモーダルになるかな)
+
+class="modal fade": Bootstrapのモーダルだよっていうおまじない。fade はアニメーション効果。
+id="confirmSaveModal": このモーダルをJavaScriptから操作するためのID。超重要！
+tabindex="-1", aria-labelledby, aria-hidden="true": アクセシビリティ関連の属性。Bootstrapのサンプル通りでOK。
+class="modal-dialog modal-dialog-centered": modal-dialog-centered を付けると、モーダルが画面の上下中央に表示されるようになるよ！✨
+class="modal-content": モーダルの本体。
+class="modal-header": モーダルの上部。タイトルとか閉じるボタンを置く。
+class="modal-body": モーダルの本文。ここにメッセージを表示。
+class="modal-footer": モーダルの下部。操作ボタン (「はい」「いいえ」とか) を置く。
+data-bs-dismiss="modal": この属性が付いたボタンを押すと、モーダルが閉じる。
+id="confirmSaveButton": 「はい、記録する」ボタンにIDを付けておくと、JavaScriptでクリックイベントを拾いやすい！
+
+ポップアップの修正。
+ブラウザだよりや仕様でないものにする。
+変更点とポイント:
+モーダルインスタンスの作成:
+const confirmSaveModalElement = document.getElementById('confirmSaveModal'); でHTML要素を取得。
+const confirmSaveModal = new bootstrap.Modal(confirmSaveModalElement); で、Bootstrapのモーダルを操作するためのオブジェクトを作る。
+これは DOMContentLoaded の直後とか、早めにやっておくのが良いよ。
+「診断を完了して記録する」ボタンの処理:
+confirm() を呼び出す代わりに、confirmSaveModal.show(); を実行して、さっきHTMLで作ったモーダルを表示させる。
+モーダル内の「はい、記録する」ボタンの処理:
+confirmSaveButton (モーダル内の「はい」ボタン) に、新しく click イベントリスナーを設定する。
+この中で、今まで if (isConfirmed) の中に書いてた fetch 処理をまるっと移動する。
+fetch 処理の最初に confirmSaveModal.hide(); を入れて、ボタンが押されたらすぐにモーダルを閉じるようにしてみた (これはお好みでタイミング調整してね！)。
+成功/失敗メッセージの alert は、とりあえずそのまま！
+まずは確認モーダルがちゃんと動くかを見てから、次にメッセージ表示用のモーダルを作ろう！一気にやると混乱しちゃうからね😉
+
+「診断を完了して記録する」ボタンを押すと、
+画面中央にBootstrapのイケてる確認モーダルが表示されて、
+モーダル内の「はい、記録する」ボタンを押すと、
+ちゃんと診断結果がサーバーに送信されてDBに保存されて、
+成功したらチャート選択画面にリダイレクトされる
+
+
+ポイント:
+id="messageModal": このメッセージモーダル用のID。
+modal-dialog-centered: これでちゃんと中央表示になる！
+id="messageModalLabel": モーダルのタイトル部分のID。JavaScriptでタイトルを変えたい時に使う。
+id="messageModalText": モーダルの本文 (メッセージが表示される <p> タグ) のID。ここにJavaScriptで成功/失敗メッセージをセットする。
+id="messageModalOkButton": OKボタン。基本的には data-bs-dismiss="modal" で閉じるだけでOK。
+
+ステップ２：JavaScriptを修正して、alert() の代わりにメッセージモーダルを表示するようにする！
+変更点とポイント:
+メッセージモーダル用のオブジェクト取得:
+confirmSaveModal と同じように、messageModal (BootstrapのModalインスタンス)、messageModalLabel (タイトル用)、
+messageModalText (本文用) の要素とインスタンスを最初に取得しておく。
+alert() をモーダル表示に置き換え:
+fetch の then (成功時) と catch (エラー時)、そして else (記録失敗時) の中で、alert() を呼び出していた部分を、
+messageModalLabel.textContent = '適切なタイトル'; でモーダルのタイトルを設定。
+messageModalText.textContent = '表示したいメッセージ'; でモーダルの本文を設定。
+messageModal.show(); でメッセージモーダルを表示。
+という形に書き換える。
+成功時のリダイレクト処理のタイミング:
+メッセージモーダルの「OK」ボタンが押された時、またはモーダルが閉じた後にリダイレクトするように変更したよ。
+いくつかやり方があるんだけど、
+OKボタンにイベントリスナーを付ける: messageModalOkButton.addEventListener('click', ...) で、OKボタンが押されたらリダイレクトする。
+この時、リスナーが重複しないように工夫が必要 (例: cloneNode して付け直すか、{ once: true } オプションを使う)。
+モーダルが隠れたイベント (hidden.bs.modal) を使う: Bootstrapのモーダルは、表示された時 (shown.bs.modal) や隠れた時 (hidden.bs.modal) 
+にイベントが発生するんだ。これを利用して、メッセージモーダルが閉じた後にリダイレクト処理を実行するようにできる。こっちの方がシンプルかも！
+今回は両方の例をコメントで書いてみたけど、アタシ的には hidden.bs.modal イベントを使う方が、OKボタン以外の方法でモーダルが閉じられた場合
+ (×ボタンとかEscキーとか) でも対応できるからオススメかな！ (上のコードでは { once: true } を使った hidden.bs.modal の例を入れてみたよ)
+
+ 大事なポイントをおさらい！ ☝️
+{% load static %}: テンプレートの上のほう (通常は {% extends ... %} の直後とか) に、この一文がちゃんと書かれてるか確認してね！ 
+これがないと {% static %} タグが使えないんだ。
+{% static 'パス' %}:
+'albatross_app/images/【画像ファイル名】.png' の部分は、
+最初の albatross_app は、albatross_app/static/ ディレクトリの中にある、アプリ名と同じ名前のディレクトリ (albatross_app) を指してる。
+次の images は、その albatross_app ディレクトリの中に作った images フォルダ。
+最後の 【画像ファイル名】.png は、マサ君がさっき images フォルダに入れた実際の画像ファイルの名前に置き換えてね！ (拡張子も忘れずに！)
+alt 属性: alt="アルバトロス ロゴ" みたいに、画像が表示されなかった場合に代わりに表示されるテキストや、
+画像の内容を説明するテキストを書くのが推奨されてるよ。(アクセシビリティのためにも大事！)
+width と height: これは画像の表示サイズを指定するもの。実際の画像の大きさに合わせて調整したり、CSSで指定したりすると、
+もっとキレイに表示できるよ！ (とりあえず、最初は小さめの値で試してみるといいかも！)
+
+✨ 本日 (2025/05/29 と仮定するね！) のアルバトロス開発ふりかえり！ ✨
+マサ君、今日も一日お疲れ様！色んなことに挑戦して、本当にすごかったよ！👏
+ロゴ画像の表示とリンク修正、完璧にマスター！🎉
+静的ファイル (画像) の正しい配置場所 (albatross_app/static/albatross_app/images/) を理解して、そこにロゴ画像を設置できた！
+HTMLテンプレート (base.html など) で {% static %} タグを使って、そのロゴ画像をバッチリ表示できた！
+ロゴクリック時のリンク先も、{% if user.is_authenticated %} を使って、ログイン状態に応じて「チャート種別選択画面」と
+「ログイン画面」に振り分けられるように修正できた！ (これはマジで素晴らしい！✨)
+ログインフォームの見た目調整に挑戦！💪
+ログインフォーム全体をページ中央に配置したり、ログインボタンの幅を調整したりするために、HTMLの構造変更やCSSの追加にトライした！
+Bootstrapの d-grid のスペルミスを発見＆修正！ (これでボタン幅は変わったはず！)
+カスタムCSS (chart_styles.css など) をちゃんとHTMLから読み込む方法を再確認した！ (これも超重要！)
+CSSの「空のルールセット」エラーの原因と対処法を理解した！
+色々試した結果、「やっぱりもっとミニマルなデザインが良い！」っていう、マサ君自身の明確なデザイン方針が見えてきた！ (これは大きな収穫だよ！👍)
+今日のハイライトは、なんといってもロゴがちゃんと表示されて、意図した通りにリンクできるようになったことだね！🎉
+あと、CSSで色々試行錯誤した経験も、これからのデザイン調整に絶対活きてくるから、無駄なことなんて一つもないよ！😊
+（心の声：マサ君、CSSで悩んでたけど、ちゃんと原因究明して解決しようと頑張ってたの、本当にえらかった！😭💖 その粘り強さが、絶対良いアプリに繋がるよ！）
+🚀 明日以降のアルバトロス開発タスク (予定)！ 🚀
+今日の「やっぱりミニマルなデザインが良い！」っていうマサ君の気持ちを最優先に、こんな感じで進めていくのはどうかな？
+ログインフォームのデザインを、一旦シンプルな状態に戻す (今日のCSS変更を元に戻す作業)
+もし、今日の作業で chart_styles.css (とか、カスタムCSSファイル) にログインページ用のスタイル (.login-page-container, .login-form-card など) を
+たくさん追加したなら、その部分を一旦コメントアウトするか、削除する。
+HTML (login.html) も、もし今日追加した .login-page-container とか .login-form-card みたいなラッパー div が不要そうなら、それも元に戻す
+ (Bootstrapの基本的なグリッドシステム div class="row justify-content-center" と div class="col-md-6" くらいの状態に戻すイメージかな？)。
+目標: まずは、Djangoの {{ form.as_p }} で出力される、本当に素っ気ないくらいのフォーム表示に戻して、
+そこから「ミニマル」に必要な最低限のスタイルだけを足していく感じ。
+改めて「ミニマルなログインフォーム」のデザインを考える＆実装する
+中央配置:
+Bootstrapの justify-content-center は活かしつつ、縦方向の中央揃えは、無理に画面いっぱい使わなくても、container の
+ mt-5 (上のマージンを多めに取る) とか mb-5 (下のマージン) で、ある程度スッキリ見せるだけでも良いかも。
+あるいは、本当にシンプルに、フォームの max-width だけCSSで指定して、あとはブラウザのデフォルトに任せるくらいでも、「ミニマル」には合うかもね。
+フォーム要素:
+{{ form.as_p }} で出力されるままでも、Bootstrapのスタイルがある程度は効いてるはず。
+もし、入力欄の幅とか、ラベルの見た目とか、最低限調整したい部分だけを、ピンポイントでCSSで上書きする。
+ログインボタン:
+d-grid を使って横幅いっぱいにするのは、操作性的には良いと思うから、これは残してもいいかもね！
+ボタンの色とか形とかも、Bootstrapのデフォルトのままでも十分ミニマルでカッコイイと思う。
+(もしログインフォームが落ち着いたら) 次の優先タスクへ！
+ガントチャートや、マサ君が「これは絶対やらなきゃ！」って思ってる機能はなんだっけ？
+ユーザー情報の更新・削除機能の仕上げ？
+チャート種別選択画面の作り込み？
+いよいよチャート実行画面のJavaScriptロジックの続き？
+そこを一緒に確認して、次の目標を設定しよう！
+
+
+5/29---本日の予定
+アカ削除のポップアップを中央に表示させる。
+選んだボタンを選んだ状態（押下状態）みたいにわかりやすくする。
+ボタンの幅、色を一律に。
+新規登録画面をスッキリ。
+できるだけ仕様変更を優先。
+余った時間でデザインをやる。
+
+
+修正案！ (HTMLとJavaScript)
+1. HTML (account_delete_form.html) の修正
+BootstrapモーダルのHTMLを追加:
+ページの最後の方 (例えば {% endblock %} の直前とか) に、BootstrapモーダルのHTMLコードをまるっと追加する。
+既存の confirm() を呼び出してるJavaScript部分を修正:
+パスワード認証OKの時に confirm() を出すんじゃなくて、Bootstrapモーダルを表示するように変更する。
+「パスワード認証」ボタンの役割変更:
+今のままだと、「パスワード認証」ボタンを押すとフォームが送信されて、ビュー側でパスワード認証して、
+OKだったら password_auth_ok = True をテンプレートに渡して再描画…っていう流れだよね。
+この流れは基本的にそのままでOK！ モーダルを表示するのは、ビューから password_auth_ok = True が渡ってきた時になる。
+
+
+パスワード認証成功後の表示の変更 (HTML):
+{% if password_auth_ok and not user_deleted %} のブロックの中。
+以前はJavaScriptの confirm() がいきなり出てたと思うけど、その代わりに、
+「最終確認：本当にアカウントを削除しますか？」というメッセージを表示。
+「はい、削除します」ボタン (これがBootstrapモーダルを開くトリガーになる！) と、「キャンセルして戻る」ボタン を表示するようにしたよ。
+「はい、削除します」ボタンには、data-bs-toggle="modal" と data-bs-target="#deleteAccountConfirmModal" を追加。
+これで、このボタンを押すと id="deleteAccountConfirmModal" のモーダルが開くようになる！
+BootstrapモーダルのHTML構造の追加 (HTML):
+ページの最後の方 ( {% endblock %} の直前とか) に、アカウント削除確認用のモーダルのHTMLコードをまるっと追加した。
+モーダルのIDは deleteAccountConfirmModal。
+modal-dialog-centered クラスで、モーダルが画面の上下中央に表示されるように。
+モーダルのフッターに「キャンセル」ボタンと、もう一つの「はい、削除します」ボタン (id="confirmDeleteExecuteButton") を設置。
+このボタンが、実際に削除処理を実行するトリガーになる。
+JavaScriptのロジック変更:
+document.addEventListener("DOMContentLoaded", ...) の中。
+以前の confirm() を使ったロジックは、まるっと削除するかコメントアウトしてね！ (新しいモーダル方式に切り替えるから)
+新しく、モーダルの中の「はい、削除します」ボタン (id="confirmDeleteExecuteButton") がクリックされた時の処理を追加。
+このボタンが押されたら、id="actualDeleteForm" の隠しフォームを submit() するようにした。これで、ビュー側で execute_delete=true を受け取って、
+実際の削除処理が実行される流れは今までと同じ！
+この修正で期待される動き:
+ユーザーがパスワードを入力して「パスワード認証」ボタンを押す。
+パスワードが正しければ、ページが再読み込みされて、「最終確認：本当にアカウントを削除しますか？」というメッセージと、
+「はい、削除します」「キャンセルして戻る」ボタンが表示される。
+ユーザーが「はい、削除します」ボタンを押すと、Bootstrapのモーダルダイアログが画面中央に表示される。
+モーダルダイアログの中の「はい、削除します」ボタンを押すと、アカウント削除の処理が実行される。
+モーダルダイアログの「キャンセル」ボタンか、右上の「×」ボタンを押すと、モーダルが閉じて、
+前の画面 (「最終確認…」のメッセージとボタンが表示されてる状態) に戻る。
+
+
+post メソッドのパスワード認証成功時の処理:
+if form.is_valid(): のブロックの中。
+context = {} で context を初期化 (または既存の context を使う)。
+context["show_delete_modal_on_load"] = True を追加！ これで、テンプレートにモーダル表示のトリガーとなるフラグが渡るようになる！
+デバッグ用に print() も入れておいたよ。
+post メソッドのパスワード認証失敗時の処理:
+else: (つまり form.is_valid() が False の時)
+context["form"] = form で、エラーメッセージが含まれたフォームオブジェクトを context にセットして、テンプレートに渡すようにした。(これは元々やってたね！)
+post メソッドの最後の render:
+パスワード認証の if-else の後で、最終的に render(request, self.template_name, context) を呼ぶようにして、
+context の内容 ( show_delete_modal_on_load や form など) をテンプレートに渡す。
+(オマケの改善案) get メソッドと、削除完了時の処理:
+get メソッドでページを最初に表示する時にも、もしセッションに user_deleted_flag があったらそれを読み込んで 
+user_deleted としてテンプレートに渡すようにした。
+post メソッドで実際にユーザーを削除した後、直接 render するよりも、一度 redirect して同じページ (account_delete) をGETリクエストで再表示させ、
+その時にセッションから「削除完了」のフラグを読み込んでメッセージを出す方が、
+ブラウザの「戻る」ボタンとかリロード時の挙動が安全になるんだ (POSTデータの再送信を防げる)。
+ただ、今回はJavaScriptでタブを閉じる処理をしてるから、今のままでもギリギリ問題ないかもしれないけど、こういう方法もあるよってことで！😊
+この修正で、期待される動きは…
+ユーザーが正しいパスワードを入力して「パスワード認証」ボタンを押す。
+ビューの post メソッドで form.is_valid() が True になる。
+context["show_delete_modal_on_load"] が True にセットされる。
+render(request, self.template_name, context) が呼ばれ、account_delete_form.html が再描画される。
+テンプレートのJavaScript部分で {% if show_delete_modal_on_load and not user_deleted %} が True と評価される。
+JavaScriptのモーダル表示コードが実行されて、Bootstrapモーダルがドーン！と表示される！ 🎉
+
+
+目指す動きの再確認:
+ユーザーがアカウント削除ページでパスワード認証。
+認証成功 → モーダル表示。
+モーダルで「はい、削除します」をクリック。
+ビューでユーザーの is_active = False にして save()。この時点ではまだログアウトしない！
+ビューから「削除処理が完了したよ＆ログアウトもしてね」というフラグをテンプレートに渡す。
+テンプレート側で、そのフラグを受け取ったら、「アカウントは正常に削除されました。5秒後にこのタブは自動的に閉じられます。」というメッセージを表示する。
+同時に、JavaScriptで5秒のタイマーをスタートさせる。
+5秒後、JavaScriptがまずログアウト用のURLに fetch でリクエストを送信する。
+ログアウト処理の完了を待たずに (または、完了したらすぐに)、window.close() を実行してタブを閉じる。
+これなら、ユーザーは削除完了メッセージをちゃんと見れるし、その間にバックグラウンドでログアウトも行われて、最後にタブが閉じるから、スッキリするはず！
+
+
+具体的な修正箇所！
+1. ビュー (accounts/views.py の AccountDeleteView)
+post メソッド:
+* ユーザー削除処理 (user.is_active = False; user.save()) の後、logout(request) を削除する！
+* 代わりに、request.session['user_deleted_and_needs_logout_flag'] = True のようなセッションフラグをセットする。
+* そして、redirect('accounts:account_delete') する。(これは今のままでOK！)
+get メソッド:
+* user_deleted_status = request.session.pop('user_deleted_and_needs_logout_flag', False) でセッションフラグを取得する。
+* これを context['user_deleted_and_needs_logout'] (または分かりやすい名前) としてテンプレートに渡す。
+修正後のビューのイメージ:
+
+ビューの修正ポイント:
+パスワード認証成功時 (form.is_valid()) も、モーダル表示フラグ (show_delete_modal_on_load_flag) をセッションにセットして、
+redirect('accounts:account_delete') するように変更！ (こうすることで、POST後のリダイレクトパターン (PRGパターン) になって、
+ブラウザリロード時の再POSTを防げる！)
+get メソッドで、user_deleted_and_needs_logout_flag と show_delete_modal_on_load_flag の両方をセッションから読み込むようにする。
+(どっちかのフラグが立ってる可能性があるからね)
+
+
+2. HTMLテンプレート (account_delete_form.html)
+メッセージ表示部分:
+{% if user_deleted_and_needs_logout %} の条件で、削除完了メッセージと「5秒後にタブが閉じます」を表示する。
+JavaScript部分:
+{% if user_deleted_and_needs_logout %} の中で、5秒のタイマーを設定し、タイマーが切れたら fetch でログアウトURLにPOSTリクエストを送信し、
+その直後に window.close() を実行する。
+修正後のHTML/JSのイメージ:
+
+
+6/2---新規登録の画面をログイン画面と同じくスッキリに修正。
+HTMLとCSS修正。
+ポップアップが表示されてから5秒後に勝手にログインリンクに飛ぶことが判明。
+それを勝手に飛ばないように修正。
+次に新規登録画面をログインフォームに合わせる修正。
+
+
+✨ 本日 (2025/06/02 と仮定するね！) のアルバトロス開発ふりかえり！ ✨
+マサ君、今日も一日、本当にお疲れ様！特にCSSとの熱い戦い、すごかったよ！🔥
+アカウント削除フローの改善 (5秒タイマー問題の特定と原因究明)！
+パスワード認証成功後に、意図せず5秒タイマーが作動してログアウト/タブクローズされてしまう問題の原因が、
+HTMLテンプレートの if/elif の条件分岐の不整合と、ビューからのフラグ管理にあることを特定！ (これは大きな進捗！🎉)
+AccountDeleteCompleteView を新設 (または修正) し、削除完了専用ページで5秒タイマーを実行するという、よりクリーンな処理フローの設計を理解した！
+AttributeError: module 'accounts.views' has no attribute 'AccountDeleteCompleteView' というエラーを、ビューのクラス定義漏れと特定し、見事解決！✨
+新規登録画面 (signup.html) のデザイン調整 (ヘルプテキストの折り返し問題との格闘！) 💪
+Django標準フォームのヘルプテキストが長くてレイアウトが崩れる問題に対し、CSSで max-width や word-wrap を使って折り返し表示させようと奮闘！
+CSSが効かない原因を特定するために、CSSファイルの読み込み確認、セレクタの確認、ブラウザのキャッシュクリア、開発者ツールでのスタイル適用状況の確認など、
+様々なデバッグ手法を試した！ (この経験は絶対に次に活きる！)
+ウィンドウサイズによってヘルプテキストの表示が変わることに気づき、レスポンシブな環境でのCSSの難しさと奥深さを体感した！
+最終的に、この問題は一旦「後回し」という賢明な判断を下した！ (これも大事なスキル！👍)
+その他:
+CSSの「空のルールセット」エラーの解決。
+CSSファイルの正しい読み込み方法の再確認。
+Djangoテンプレートタグ {% load static %} の重要性の再認識。
+ブラウザ開発者ツールの「計算済み (Computed)」タブと「スタイル (Styles)」タブの活用方法を実践！
+
+
+🚀 明日 (2025/06/03) のアルバトロス開発タスク！ 🚀
+マサ君の宣言通り、明日はこの3つの課題に挑戦だね！ワクワクする！✨
+ボタンの色を、削除 (赤系) と変更 (黄色系とか？) 以外は、色なし (Bootstrapのデフォルトのグレーとか、枠線だけのボタンとか) に統一する！
+対象となるボタンを洗い出して、それぞれのHTMLテンプレートでBootstrapのボタンクラス
+ (btn-primary, btn-secondary, btn-danger, btn-warning, btn-outline-primary など) を適切に設定していく感じかな？
+CSSで独自の色を定義しても良いね！
+ボタンを押したときに、押された状態が視覚的に分かりやすくなるようにする！
+これは、主にJavaScriptとCSSを組み合わせて実現する感じになると思う！
+例えば、
+クリックされたボタンに一時的に active クラスを付けて、CSSで背景色を変えたり、少し沈んだように見せたりする。
+あるいは、何かの選択肢を選ぶボタンなら、選択中のボタンだけスタイルを変えたままにしておく、とか。
+どのボタンに、どんな「押された状態」を表現したいか、具体的なイメージがあると進めやすいね！
+(もし可能なら) 画面内にタブを作る！
+これは、例えばBootstrapの「Navs and tabs」コンポーネントを使うと、比較的簡単に実装できるかも！
+https://getbootstrap.com/docs/5.3/components/navs-tabs/
+どの画面に、どんな内容のタブを作りたいか、具体的な構想があると良いね！
+もし、タブの内容を動的に切り替えたいなら、JavaScriptも少し使うことになるかも。
+
+
+6/3---ボタンの色調整、幅調整。
+親要素 (<div class="mt-3 chart-action ...">) に d-flex と gap-3 を追加:
+d-flex: これで、中の「はい」ボタンと「いいえ」ボタンが横並びになる。
+gap-3 (または gap-2 とか gap-4): ボタンとボタンの間に、いい感じの隙間を空けてくれる。
+(数字が大きいほど隙間も広くなるよ。画像を見ると、結構隙間あるから gap-3 くらいが良いかも？)
+各ボタン (<button>) に flex-fill クラスを追加:
+これが今回のキモ！ flex-fill を指定すると、Flexコンテナ (この場合は親の div) の中で、各Flexアイテム (この場合はボタン) が利用可能なスペースを均等に分け合って、
+幅いっぱいまで伸びるようになるんだ！
+だから、ボタンが2つなら、それぞれが親要素の幅の約半分くらいの幅を持つことになる (gapの分だけ少し狭くなるけどね)。
+これなら、ボタンのテキストの長さに依らず、ボタン自体の幅が揃って、しかも押しやすい幅になるはず！
+(おまけ) ボタンのテキストも画像に合わせて変更:
+画像だと「はい、改善しました」「いいえ、改善なし」ってなってるから、HTMLのボタンのテキストもそれに合わせてみたよ！ (これはお好みで！)
+
+
+故障種目別、選択画面。
+グリッドシステム採用。
+<h2> タグのクラス名修正:
+class="mb-4 text=center" になってたけど、正しくは class="mb-4 text-center" (ハイフン) だね！
+{% if chart_types %} ブロックの中身を総入れ替え！:
+今までの <div class="list-group">...</div> の部分は、ごっそり削除しちゃう！
+代わりに、さっきアタシが提案したグリッドシステム (<div class="row g-3">...</div>) のHTML構造を、まるっとコピペで貼り付ける！
+カテゴリとボタンの表示 (現状は手打ち):
+上の修正案では、カテゴリ名 (「電源」とか) や、その中の具体的なトラブルボタン (「電源断」とか) は、今のところHTMLに直接手打ちで書いてるよ。
+各ボタンの href の中にある {% url 'albatross_app:start_chart' 1 %} の数字 (1 とか 2 とか) は、
+それぞれのトラブルに対応する ChartType モデルの ID を入れる必要がある。
+(このIDは、Django Adminとかで ChartType を登録した時に自動で振られる番号だね！それを確認して、正しいIDに置き換えてね！)
+
+📝 チャートメイン画面のタブ機能とレベル別UI構想 (マサ君案まとめ) 📝
+１．タブの目的と種類
+チャートメイン画面の上部に、**「初級」「中級」「上級」**の3つのタブを設置する。
+目的：ユーザーの習熟度に合わせて、説明の粒度や表示形式を最適化し、より効率的な故障診断をサポートするため。
+２．各レベルのUIと機能の特徴
+初級:
+UI構造：中級と共通 (現在の1ページスクロール形式のチャートを想定)。
+内容：説明が最も丁寧で、初心者でも分かりやすい言葉遣いや指示を心がける。
+機能：基本的な「はい/いいえ」形式のチャート進行。
+中級:
+UI構造：初級と共通 (現在の1ページスクロール形式のチャートを想定)。
+内容：初級よりは簡潔にしつつ、必要な情報は網羅。専門用語も少しずつ使用。
+機能：基本的な「はい/いいえ」形式のチャート進行。
+上級 (ここが一番のキモ！🔥):
+UI構造：大幅に変更！
+1画面固定表示 (スクロールなし)。
+フッターは固定表示 (または、チャート画面では不要かもしれないので検討)。
+全ての質問項目を1画面に表示し、チャート全体の流れが一目で把握できるようにする。(故障種別選択画面のレイアウトに少し似たイメージかも？)
+内容：キーワードや要点のみの簡潔な表示。ベテランオペレーターが、キーワードを見れば次に何を確認すべきか判断できるレベル。
+機能：
+チェックボックス形式: 各質問項目に対して「実施した/実施していない」を記録できるチェックボックスを設置。
+(もし可能なら) 時刻表示 (タイムスタンプ):
+目的：連続した電話応対時に、前後の対応と混同するのを防ぐため。
+表示方法：画面上に、現在の時刻か、あるいは操作開始からの経過時間を表示するイメージ？ (DB保存は今のところ不要)
+改善判断の難しさ:
+チェックボックスで「実施済み」を記録していく中で、どのタイミングで「改善した」と判断し、ログを記録するか、
+そのトリガーやUIが悩みどころ。(マイカの助言求む！)
+３．その他・マサ君の思い
+この「上級システム」(1画面完結、チェックボックス、タイムスタンプ) が、マサ君が一番実現したかったコアな機能の一つ。
+デザインのイメージはかなり固まってるけど、特に上級システムの「改善した」の判断と記録の仕組みについて、技術的な実現方法やUI/UXのアイデアで悩んでいる。
+
+
+新しい操作フロー案 (タイムスタンプ活用版！):
+画面レイアウトと基本操作 (変更なし):
+全ての質問項目 (チェックボックス付き) が、左上から右下へZ型に並んで表示される (スクロールなしの1画面完結)。
+ユーザーは、実施した項目にチェックを入れていく。チェックを入れる行為が「実施」とみなされる。
+チェックが入った項目は、見た目が変わって「押下状態 (実施済み)」であることが分かるようにする。
+(もし可能なら) 画面のどこかに、現在の時刻か操作開始からの経過時間を表示するタイムスタンプ機能。
+「改善した」ボタンの挙動 (これが新しいポイント！):
+画面上に、「これで改善しました」ボタンを1つだけ用意する。(例えば、フッターとか、画面の右下とか、常にアクセスしやすい場所)
+このボタンは、少なくとも1つ以上の項目が「実施済み (チェック済み)」になったら活性化される。(これは前の案と同じだね！)
+「改善した」ボタンが押された時の処理:
+JavaScriptで、全ての「実施済み (チェック済み)」になっている項目の情報を収集する。
+各項目がいつチェックされたか (実施されたか) のタイムスタンプも、もし記録できるなら一緒に収集する。(これはちょっと高度な機能になるかも。
+もし難しければ、チェックされた順番だけでもOK！)
+収集した全ての実施済み項目の情報と、「改善した」という結果を、Djangoのビューに送信してログとして保存する。
+ビュー側 (またはJavaScript側) で、「一番最後にチェックされた (実施された) 項目」を特定し、それを「改善に繋がった可能性が最も高い手順」
+としてログに記録する (あるいは、そういう情報として後で分析できるようにしておく)。
+この「タイムスタンプ活用版」のメリット:
+UIがシンプルになる: 「改善ボタン」が1つだけになるので、画面がスッキリする。
+ユーザーの操作が直感的: 色々試して、最後に「これで直った！」って思ったら、その時点で画面下とかにある「改善した」ボタンを押せばいいだけ。
+ログの質が向上する可能性: どの手順が改善に繋がったのかを、ある程度推測できる情報（最後に実施した手順）を記録できる。
+考える必要があること (技術的なポイント):
+各チェックボックスの「チェックされた時刻」をどうやって記録・管理するか？ (JavaScript):
+チェックボックスの状態が変わるたびに、そのイベントと時刻をJavaScriptのオブジェクトか配列に記録していく必要がある。
+例: {'step_id_1': '2025-06-03T10:30:05', 'step_id_3': '2025-06-03T10:32:10', ...} みたいな感じで。
+もし、時刻の記録が難しい場合は、単純に「チェックされた項目のリスト」だけでも良い。その場合、「一番最後にチェックされた項目」を特定するのは、
+チェックされた順番を保持しておくなどの工夫が必要になるかも。
+「一番最後にチェックされた項目」をどうやって特定するか？:
+もし時刻を記録してるなら、一番新しいタイムスタンプを持つ項目を見つければOK。
+もし時刻を記録してないなら、ユーザーがチェックを入れた順番をJavaScriptで保持しておいて、その最後の項目、とか？ 
+(でも、ユーザーがチェックを付けたり外したりすると、順番の管理が複雑になるかも…)
+あるいは、もっとシンプルに、「改善ボタンが押された時点でチェックが入ってる項目の中で、チャートのフロー的に一番後ろにあるもの」とか、
+何かルールを決める必要があるかもね。
+ログの保存形式:
+TroubleshootingSession と SessionLog のモデルはそのまま使えると思うけど、SessionLog に「このステップで改善したか？」
+みたいなフラグフィールドを追加するか、あるいは TroubleshootingSession に「最終改善ステップID」みたいなフィールドを持たせるのも良いかもね。
+
+
+変更点のまとめ！ 짚어보기！
+【削除】 handleAnswer 関数の中の、古い if/else if ブロック:
+マサ君が元々書いてた「1. 違う選択肢を選びなおし」「2. 同じ選択肢を再度選ぶ（キャンセル）」「3. 初めて回答」の分岐ロジックと、
+その中の classList.add/remove('selected-button-style') や classList.add/remove('answered-step')、stepElement.dataset.selectedAnswer の操作は、
+ごっそり削除する。
+【修正】 handleAnswer 関数の先頭部分:
+const previousAnswer = userAnswers[currentStepId]; を追加して、現在の質問 (currentStepId) に対する前回の回答 (yes, no, null のいずれか) を 
+userAnswers オブジェクトから取得する。
+デバッグログも、新しいロジックに合わせて少し修正。
+【追加】 handleAnswer 関数の中の「1. 回答の更新」ロジック:
+if (previousAnswer === buttonType): もし、今回クリックされたボタン (buttonType) が、前回の回答 (previousAnswer) と同じなら、
+それは「キャンセル」なので、userAnswers[currentStepId] = null; とする。
+else: そうでなければ (初めての選択か、違うボタンへの変更)、userAnswers[currentStepId] = buttonType; で新しい回答を記録する。
+【追加】 handleAnswer 関数の中の「2. 見た目の更新」の呼び出し:
+updateStepAppearance(stepElement, yesButton, noButton, userAnswers[currentStepId]); という行を追加して、
+新しく作る updateStepAppearance 関数を呼び出す。引数には、操作対象の要素と、更新後の回答 (userAnswers[currentStepId]) を渡す。
+【修正】 handleAnswer 関数の中の「3. 次のステップへの遷移ロジック」:
+この部分は、基本的には今のマサ君のコードと似てるけど、条件分岐を userAnswers[currentStepId] !== null (何かしら選択されてる場合) に変更する。
+次のステップIDを取得する時も、userAnswers[currentStepId] (更新後の回答) を基準にする。
+キャンセルされた場合 (else ブロック) は、特に何もしない (マサ君の意向通り)。
+【新規追加】 updateStepAppearance 関数:
+この関数をまるっと新しく定義する！
+引数として、対象のステップ要素 (stepElement)、はいボタン (yesButton)、いいえボタン (noButton)、そして現在の回答
+ (currentAnswer: 'yes', 'no', null のいずれか) を受け取る。
+まず、両方のボタンから 'selected-button' クラスを一旦削除する (リセット)。
+currentAnswer の値に応じて、
+'yes' なら: yesButton に 'selected-button' を追加し、stepElement に 'answered-step' を追加。
+'no' なら: noButton に 'selected-button' を追加し、stepElement に 'answered-step' を追加。
+null なら: stepElement から 'answered-step' を削除。(ボタンの 'selected-button' は既に削除済み)
+デバッグログも適宜入れる。
+
+デフォルトで「解決しない」枠を付けるためのクラスを追加:
+ChartStep モデルに is_unresolved_solution みたいなブール型フィールド (これが True なら「解決しない」系の最終ステップ) を持たせて、
+{% if step.is_unresolved_solution %}final-step-unresolved{% endif %} っていう感じで、条件に応じて final-step-unresolved クラスを div に追加する。
+JavaScriptから操作しやすいようにIDを振る (任意だけど推奨！):
+id="final-step-card-{{ step.id }}" みたいに、各最終ステップのカードにユニークなIDを振っておくと、
+JavaScriptで特定の最終ステップ要素を簡単に取得できるようになる。
+(オプション) JavaScriptで「解決した」系か「解決しない」系か判別するための data- 属性を付ける:
+data-solution-type="{% if step.is_unresolved_solution %}unresolved{% else %}improved{% endif %}" みたいに、data- 属性に目印を付けておくと、
+JavaScriptの updateFinalStepStyles() 関数の中で、どのカードにどのスタイルを適用すべきか判断しやすくなる。
+そして、最終ステップの解決策テキストを表示してる <div class="alert alert-info solution-text"> にも、solution-text っていうクラスが付いてるの、
+すごく良いね！👍
+このクラスに対して、CSSで枠線のスタイルを当てればOK！
+
+【残すもの (変更なし、または微調整のみ)】:
+① DOMContentLoaded の最初の部分 ( startingStepId, allStepElements, userAnswers の初期化)
+② setActiveStep 関数の定義
+③ handleCompletion 関数の定義
+⑤ 最初のステップ表示ロジック (allStepElements.forEach で display: 'block' にしてるやつ)
+⑥ 各ステップの「はい」「いいえ」ボタンへのイベントリスナー設定 (handleAnswer を呼び出す部分)
+⑦ 「診断を完了して記録する」ボタンの処理 (モーダル表示、fetch でのデータ送信)
+⑧ getCookie 関数の定義
+【置き換えるもの】:
+元の handleAnswer 関数の定義全体を、さっきマサ君が修正してくれた新しいロジックの handleAnswer 関数の定義に、まるっと置き換える！
+【新しく追加するもの】:
+let improvementWasFound = false; の一行 ( handleAnswer の定義の直前あたりが良いかな)
+updateStepAppearance 関数の定義全体を、handleAnswer 関数の定義の後 (または前でもOKだけど、関連する関数は近くにまとめておくと分かりやすい) に、
+まるっと追加する！
+(もし、updateFinalStepStyles 関数も作るなら、それもこの辺りに追加)
+つまり、主にいじるのは、handleAnswer 関数の「中身」と、そのヘルパー関数として updateStepAppearance を「追加」する、っていうイメージだよ！
+他の部分は、今のままで基本的にはOKなはず！
+
+✨ 本日 (2025/06/03 と仮定するね！) のアルバトロス開発ふりかえり！ ✨
+マサ君、今日もアルバトロスを進化させるために、たくさんのことに挑戦したね！👏
+チャート画面の「はい」「いいえ」ボタンのデザイン調整！
+ボタンの色を btn-light に変更し、さらに border クラスを追加することで、視認性とデザイン性を向上させた！ (マサ君の美的センス、光ってる！✨)
+Flexboxユーティリティ (d-flex, gap-*, flex-fill) を活用して、ボタンを横幅いっぱいに広げ、押しやすいレイアウトに見事変更！ (理想のUIを実現！🎉)
+トラブル種別選択画面のレイアウト改善！
+Bootstrapのグリッドシステム (row, col-*) とカード (card) を使って、複数のカテゴリとその中のトラブル項目を、
+整理されたタイル状のレイアウトで表示するようにHTML構造を大幅に改善！
+TemplateSyntaxError ( endif 忘れとか、else の位置がおかしいとか) を、アタシのヒントをもとに自力で解決！ (これは本当にすごい！成長の証！😭💖)
+グリッドシステムの閉じタグの位置の不備を修正し、カテゴリが正しく横並びになるように修正！
+さらに、横に表示する列数を調整する方法 ( col-md-3 → col-md-4 など) も理解した！
+チャート画面の最終ステップの見た目を動的に変更する機能への挑戦 (途中)！
+「どこかで改善されたら最終ステップの解決に枠を付ける」「デフォルトで解決しないに枠が付いてて、改善されたら消える」という、
+ユーザーに分かりやすい結果表示を目指して、HTMLとJavaScriptの修正に着手！
+JavaScriptで「改善した」フラグ (improvementWasFound) を管理し、それに応じて最終ステップのカードに特定のCSSクラス 
+(final-step-improved, final-step-unresolved) を付け外しするロジックを検討・実装中。
+HTMLテンプレート側で、最終ステップのカード要素にJavaScriptからアクセスするためのクラスや data- 属性を追加しようと試みた！
+現在、ボタンが反応しなくなるという問題に直面しており、HTMLの構文ミスやJavaScriptのロジックの不備が原因である可能性を特定中！
+ (原因究明まであと一歩！💪)
+CSSファイルの構成と管理方法の検討！
+プロジェクト内の複数のCSSファイルの役割分担を整理し、チャート画面専用のスタイルを記述するCSSファイル (chart_display_styles.css) を新しく作成するという、
+メンテナンス性の高い構成を選択！ (将来を見据えた素晴らしい判断！✨)
+今日のハイライトは、なんといってもトラブル種別選択画面のレイアウトを、マサ君の理想通りにグリッドシステムで組めたことと、
+アカウント削除フローの5秒タイマー問題を解決できたこと（これは昨日までの積み重ねだね！）、そして自力で TemplateSyntaxError を解消できたことだね！🎉
+CSSやJavaScriptでうまくいかない部分もあったけど、そこから逃げずに原因を突き止めようと頑張ってるマサ君の姿は、本当に輝いてたよ！✨
+（心の声：マサ君、今日は本当に色々なことに挑戦して、頭もフル回転だったと思う！😭 でも、その一つ一つの経験が、確実にマサ君を成長させてるからね！
+アタシ、本当に誇らしいよ！💖）
+🚀 明日 (2025/06/04) のアルバトロス開発 最初にやること！ 🚀
+ズバリ！今日の最後に奮闘してた、「チャート画面のボタンが反応しない問題の解決」と「最終ステップの枠表示機能の完成」 だね！🔥
+具体的には…
+HTMLテンプレート (chart_display.html) の徹底的な見直し！
+特に、最終ステップのカード div のクラス指定と data- 属性の書き方に、構文ミスや意図しない重複がないか、もう一度じっくり確認する！
+ (さっきのアタシの提案を参考にしてみてね！)
+全ての div タグが、ちゃんと対応する </div> で閉じられてるか、インデントも頼りに確認する。
+JavaScript (chart_display.html の <script> 内) のロジック再点検！
+updateFinalStepStyles() 関数の中で、最終ステップのカード要素を選択するセレクタ (document.querySelectorAll(...)) が、
+修正後のHTMLのクラス名や data- 属性とちゃんと一致してるか確認する。
+handleAnswer() 関数の中で、improvementWasFound フラグの更新と updateFinalStepStyles() の呼び出しタイミングが適切か、もう一度確認する。
+ブラウザの開発者ツールの「コンソール」に、何かJavaScriptのエラーメッセージが出てないか、必ずチェックする！ (これが最大のヒントになる！)
+CSSの確認:
+.final-step-improved と .final-step-unresolved のスタイル定義が、ちゃんとCSSファイルに書かれてて、読み込まれてるか確認。
+開発者ツールで、最終ステップのカード要素に、これらのクラスが期待通りに付いたり外れたりしてるか、リアルタイムで監視する！
+
+
+📝 今日のアルバトロス開発ふりかえり！ (2025/06/04) 📝
+今日がんばったこと！ (マサ君、ナイスファイト！🎉)
+質問カードの間隔調整、完璧にマスター！ ✨
+chart_display.html の質問カードの div に付いてるBootstrapのマージンクラス (mb-3 など) を調整することで、
+カード間の隙間を自由自在に変更できるようになった！ ( mb-4 にして、見やすくなったね！👍)
+「開始ステップ」バッジの表示/非表示コントロール、習得！ ✨
+chart_display.html の中で、「開始ステップ」バッジを表示している {% if step.is_starting_step %} のブロックをコメントアウト (または削除) することで、
+表示を消せるようになった！ (これで画面がスッキリしたね！😊)
+ヘッダーの「画面設定」ボタン新設に向けて、準備開始！ ⚙️
+「こんにちは〇〇さん」のお引越し、無事完了！ 🚚
+base.html のヘッダーから「こんにちは〇〇さん」を削除し、chart_type_list.html と chart_display.html のメインコンテンツエリアに移動できた！
+ (素晴らしい！👏)
+新しい「画面設定」ボタンの配置に挑戦！ (途中まで！)
+base.html のヘッダーに、他のボタン (アカウント設定 や ログアウト) と統一感のあるデザインで、「画面設定」ボタンを追加しようと試みた！
+アカウント設定のドロップダウンメニュー内の target="_blank" の表示制御ロジックで、Djangoテンプレートの if/else/endif の対応がちょっと複雑になって、
+TemplateSyntaxError が発生！ (でも、原因はほぼ特定できてる！💪)
+今日のハイライトは、なんといってもマサ君がHTMLの細かい修正に果敢にチャレンジして、基本的な表示調整はバッチリできるようになったことだね！ ✨
+エラーも出たけど、そこから逃げずに原因を突き止めようとしてるマサ君の姿勢は、本当に素晴らしいよ！
+（心の声：マサ君、今日はHTMLとCSS、そしてDjangoテンプレートタグと格闘の一日だったね！😭 でも、その一つ一つの経験が、
+確実にマサ君を強くしてるからね！アタシ、本当に誇らしいよ！💖）
+🚀 明日 (2025/06/05) のアルバトロス開発 最初にやること！ 🚀
+ズバリ！今日の最後に奮闘してた、「base.html のヘッダー部分の TemplateSyntaxError 解消と、ボタン配置の完成」 だね！🔥
+具体的な手順 (再確認！)
+アカウント設定ドロップダウン内の if/endif 修正！ (最優先！これでエラーが消えるはず！)
+base.html のアカウント設定の <ul class="dropdown-menu dropdown-menu-end"> の中身を、アタシが前に提案した エラー修正済みのコード に置き換える！
+ポイントは、「パスワード変更」と「アカウント削除」の各リンクに対して、{% if (条件) %} target="_blank" {% endif %} という形で、
+else を使わずに target="_blank" を付けるかどうかを制御すること！
+不要な <li> や重複してる「アカウント削除」リンクも削除する！
+ヘッダーのボタン全体の <li> 構造を見直す！
+「画面設定」ボタン、「アカウント設定」ボタン (btn-group全体)、「ログアウト」ボタンを、それぞれ独立した <li class="nav-item"> で囲むように修正する。
+<ul class="navbar-nav flex-row"> で全体を囲むと、キレイに横並びになるはず！
+ボタン間の隙間は、me-2 (右マージン) や ms-2 (左マージン) クラスを各 <li> やボタンに適切に付けて調整する。
+これができたら、いよいよ…！ 👇
+「画面設定」ボタンから開くモーダルウィンドウの骨組みを作成！ 🖼️
+base.html (または共通の場所) に、BootstrapのモーダルウィンドウのHTMLコードを追加する。
+モーダルのIDは、ヘッダーの「画面設定」ボタンの data-bs-target で指定したID (例: #screenSettingsModal) と合わせる。
+モーダルの中には、とりあえず「文字サイズ変更」っていうタイトルと、「小」「標準」「大」みたいな仮のボタンを置いてみる。
+(もしスムーズに進んだら) モーダル内のボタンで文字サイズを変更するJavaScriptの実装！ Aa ✨
+「小」「標準」「大」ボタンが押されたら、ページの body タグとか、特定の要素の font-size をJavaScriptで変更する処理を書く。
+この時、チャートの回答状況などがリセットされないか、ちゃんと確認する！
+
+
+6/9---ベースHTMLのエラー直しから。
+エラーは直らず。以前のコードでもう一度やり直し。
+
+よし、じゃあ具体的な作戦を再確認！ 🚀
+ヘッダーに「画面設定」ボタンを配置する！ (これは、さっきまでの流れで、もうすぐできそうだね！)
+ボタンの見た目は、アカウント設定ボタンと統一感を出す。
+アイコン (歯車⚙️とか) を使う。
+data-bs-toggle="modal" と data-bs-target="#screenSettingsModal" 属性を付ける。
+base.html (または共通の場所) に、モーダルウィンドウのHTMLの骨組みを作る！
+モーダルのIDは #screenSettingsModal にする。
+モーダルの中には、
+タイトル「画面設定」
+閉じるボタン (<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>)
+コンテンツエリア (ここに、後で文字サイズ変更ボタンとかを入れる)
+フッター (ここにも閉じるボタンとかを置ける)
+を配置する。
+まずは、ここまでやって、ボタンを押したら空っぽのモーダルがちゃんと表示されるか確認しよう！ ✨
+
+このHTMLコードのポイント解説！ 💡
+<div class="modal fade" id="screenSettingsModal" ...>:
+これがモーダルウィンドウ全体を囲む div。
+class="modal fade": Bootstrapのモーダルであることを示してる (fade は、表示/非表示の時にふわっとアニメーションする効果)。
+id="screenSettingsModal": このモーダルのID！これが超重要！ヘッダーの「画面設定」ボタンの data-bs-target 属性で指定したIDと、
+必ず同じ名前にしてね！ ( # は付けないよ！)
+tabindex="-1": キーボード操作のための属性。
+aria-labelledby="screenSettingsModalLabel": アクセシビリティのための属性 (モーダルのタイトルを指定する)。
+aria-hidden="true": 最初は隠れてることを示す。
+<div class="modal-dialog modal-dialog-centered">:
+モーダルウィンドウの表示位置やサイズを制御する div。
+modal-dialog-centered: モーダルを画面の上下中央に配置するクラス。
+<div class="modal-content">:
+モーダルのヘッダー、ボディ、フッターをまとめる div。
+<div class="modal-header">:
+モーダルのタイトルと、右上の「×」閉じるボタンを置く場所。
+<h5 class="modal-title" id="screenSettingsModalLabel">画面設定</h5>: モーダルのタイトル。
+<button type="button" class="btn-close" data-bs-dismiss="modal" ...>: 右上の「×」ボタン。data-bs-dismiss="modal" 属性で、
+これを押すとモーダルが閉じるようになってる。
+<div class="modal-body">:
+モーダルの主要なコンテンツ (文字サイズ変更ボタンとか) を置く場所。
+今は仮に <p>ここに文字サイズ変更のボタンとかが入る予定だよ！</p> って書いてある。
+<div class="modal-footer">:
+モーダルの下部にボタン (「閉じる」ボタンとか「保存」ボタンとか) を置く場所。
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>: これもモーダルを閉じるボタン。
+
+モーダル中身。
+このHTMLのポイント解説！ 💡
+<p class="mb-2">文字サイズを選択してください：</p>: ボタンの前に説明文をちょっと追加。
+<div class="btn-group" role="group" ...>:
+Bootstrapの ボタングループ (Button group) を使って、3つのボタンを横一列にキレイにまとめたよ！
+role="group" と aria-label="..." は、アクセシビリティのための属性。
+<button type="button" class="btn btn-outline-primary" id="...">:
+各ボタンに btn btn-outline-primary クラスを付けて、アウトラインスタイルの青いボタンにしてる (見た目はお好みで変えてね！)。
+超重要！ 👇
+id="fontSizeSmall"
+id="fontSizeDefault"
+id="fontSizeLarge"
+っていうふうに、それぞれのボタンにユニークなIDを付けてるんだ。これは、後でJavaScriptから「どのボタンが押されたか」を特定するために使うよ！
+「標準」ボタンには、最初から active クラスを付けて、選択されてるっぽい見た目にしてる (これも任意)。
+
+
+JS文字サイズ変更スクリプト中身。
+このJavaScriptのポイント解説！ 💡
+DOMContentLoaded: ページのHTMLが全部読み込まれてからJavaScriptを実行するための、おまじない。
+ボタン要素の取得: document.getElementById(...) で、さっきHTMLに追加したボタンをIDで取得してる。
+文字サイズ変更対象: const bodyElement = document.body; で、ページ全体の <body> タグの文字サイズを変えるようにしてる。
+もし、特定のエリアだけ文字サイズを変えたいなら、そのエリアの要素 (例えば <main class="container"> とか) を取得するように変更してね。
+イベントリスナー: 各ボタンに addEventListener('click', ...) で、クリックされた時の処理を登録してる。
+文字サイズの変更:
+bodyElement.style.fontSize = '...'; で、実際にCSSの font-size プロパティを書き換えてる。
+'0.8rem', '' (空文字でデフォルトに戻す), '1.2rem' の値は、お好みで調整してね！ px とか em とかでもOK。
+updateActiveButton 関数:
+押されたボタンに active クラスを付けて、他のボタンからは外すためのヘルパー関数。これで、どのサイズが選択されてるか見た目で分かるようになる！
+コンソールログ: ちゃんと動いてるか確認できるように、コンソールにメッセージを出すようにしてる。
+
+文字サイズの変更
+変更点解説 (ステップ１)！ 💡
+各ボタンのクリックイベントリスナーの中に、localStorage.setItem('userFontSizePreference', '識別子'); っていう行を追加したよ！
+localStorage.setItem(キー, 値): localStorage にデータを保存するための命令。
+'userFontSizePreference': 保存するデータの「キー (名前)」。これは自由に決められるけど、分かりやすい名前にしておこうね。
+'small', 'default', 'large', 'extra-large': 保存するデータの「値」。どのサイズが選ばれたかを示す、マサ君が分かりやすい識別子 (文字列) にしておくと良いよ。 
+(実際のCSSの font-size の値を直接保存しても良いけど、識別子の方が後で扱いやすいかも)
+
+変更点解説 (ステップ２)！ 💡
+localStorage.getItem('userFontSizePreference'): ページが読み込まれた時に、まず localStorage から
+ 'userFontSizePreference' っていうキーで保存されてる値を取り出してる。
+if (savedFontSizePreference): もし値が保存されてたら (つまり、前にユーザーが文字サイズを設定したことがあるなら)、以下の処理をする。
+保存されてた識別子 ('small' とか) に応じて、適用する font-size の値と、アクティブにすべきボタンのIDを決めてる。
+bodyElement.style.fontSize = fontSizeToApply; で、実際に文字サイズを適用。
+ボタンのアクティブ表示も更新:
+buttons オブジェクトを作って、各ボタンのIDとHTML要素を紐付けてる。(「極大」ボタンのIDも、HTML側でちゃんと設定しておいてね！)
+updateActiveButton 関数と同じようなロジックで、保存されてた設定に対応するボタンに active クラスを付けて、他からは外してる。
+(もし updateActiveButton 関数が、この処理より後で定義されてるなら、先に定義を移動させるか、ここで直接アクティブクラスを操作する必要があるよ！)
+
+
+6/10---モーダル調整。
+現在の文字サイズパネルの設定がアクティブになるように調整。
+updateActiveButtonBasedOnPreference 関数を作る！
+今のページ読み込み時の if (savedFontSizePreference) の中にある、「localStorageの値に応じて 
+active クラスを付け替えるロジック」を、独立した関数に切り出すんだ。こうすると、色んな場面で呼び出しやすくなるっしょ？😉
+ページ読み込み時に、その新しい関数を呼ぶ！
+これは今まで通り、DOMContentLoaded の中で実行する。
+モーダルが表示されたとき (shown.bs.modal イベント) にも、その新しい関数を呼ぶ！
+これで、モーダルが開かれるたびに、ちゃんと今の文字サイズ設定に合ったボタンがアクティブになる！
+
+変更点のポイント解説！ 🌟
+btnSuperLarge の変数名:
+HTMLの <button ... id="fontSizesuperLarge">極大</button> とJavaScriptの const btnsuperLarge = document.getElementById('fontSizesuperLarge'); 
+の間で、ID名がちょっと違ってたから、JS側の変数名を btnSuperLarge (キャメルケース) にして、getElementById の引数も fontSizesuperLarge に統一してみた。
+あと、localStorage に保存する値も 'super-large' に統一！ (HTML側のIDも fontSizeSuperLarge にする方が、JSの変数名と揃って分かりやすいかも！)
+fontButtons オブジェクト:
+localStorageに保存してるキー ('small', 'default' など) と、対応するボタン要素をまとめたオブジェクトを作ったよ。
+これで、updateActiveButtonBasedOnPreference 関数の中がスッキリする！
+updateActiveButtonBasedOnPreference 関数:
+これが今回のキモ！ localStorageから 'userFontSizePreference' を読み込んで、
+まず、全部のボタンからいったん active クラスを引っぱがす。
+次に、保存されてた設定に対応するボタンだけに active クラスを付け直す。
+もし何も保存されてなかったり、変な値が入ってたら、「標準」ボタンをアクティブにするようにしたよ。
+呼び出すタイミング:
+ページ読み込み直後: DOMContentLoaded の中で、文字サイズを適用した 後 に updateActiveButtonBasedOnPreference() を呼ぶ。
+各文字サイズ変更ボタンクリック時: localStorage.setItem で設定を保存した 後 に updateActiveButtonBasedOnPreference() を呼ぶ。
+(これまでは updateActiveButton(this) だったけど、こっちの方がlocalStorage基準で確実！)
+モーダル表示時 (shown.bs.modal): モーダルが開かれたら updateActiveButtonBasedOnPreference() を呼ぶ。
+
+
+もし、HTML の「極大」ボタンのIDが <button type="button" class="btn btn-outline-primary" id="fontSizesuperLarge">極大</button> のままなら、
+JavaScript側は const btnSuperLarge = document.getElementById('fontSizesuperLarge'); でOK。
+fontButtons のキーは 'super-large'。
+localStorageに保存する値も 'super-large'。
+btnSuperLarge.addEventListener の中の bodyElement.style.fontSize = '1.6rem'; の '1.6rem' は、
+実際に極大ボタンで適用したいフォントサイズに合わせてね！
+もし、HTML の「極大」ボタンのIDを <button type="button" class="btn btn-outline-primary" id="fontSizeSuperLarge">極大</button> に変更するなら、
+JavaScript側は const btnSuperLarge = document.getElementById('fontSizeSuperLarge'); に変更。
+他は上のままでOK！
+
+🌈 アルバトロス・テーマカラー設定計画まとめ 🌈
+目的:
+ユーザーが自分の好みの色でアプリケーションを利用できるようにし、業務へのモチベーション向上に貢献する。
+パステル調の優しい色合いを基本とし、視覚的な快適さと楽しさを提供する。
+テーマカラー (5色展開):
+クールブルー (Cool Blue): 💎
+イメージ: 冷静、集中、フォーマル。
+効果: 集中力UP、信頼感、落ち着き。
+色味: 澄んだ空のような淡いブルー、または少しくすんだブルー。
+ヒールグリーン (Heal Green): 🌿
+イメージ: 癒し、安心、調和。
+効果: 安心感、目の疲労軽減、安定した気持ち。
+色味: 新緑のような優しい黄緑、またはミントグリーン系。
+かわちぃピンク (Kawachii Pink): 🌸
+イメージ: かわいい、気分が上がる、優しさ、幸福感。
+色味: 桜色のような淡いピンク、または少しコーラル寄りのピンク (ショッキングピンクは避ける)。
+ハッピーイエロー (Happy Yellow): 🌼
+イメージ: 明るさ、希望、楽しさ、知性、注意力UP。
+色味: 真っ黄色すぎず、ほんの少しクリーム色がかった優しい黄色。
+ドリーミーラベンダー (Dreamy Lavender): 💜
+イメージ: おしゃれ、創造性、リラックス。
+色味: 藤の花のような淡い紫、または少しピンクがかったライラック系。
+色の適用範囲とルール:
+テーマカラーで変更する箇所:
+ヘッダーの背景色: 各テーマの「少し濃いめ」の色を適用。
+フッターの背景色: 各テーマの「少し濃いめ」の色を適用 (ヘッダーと同色、または近い色)。
+メインコンテンツエリアの背景色 (body タグなど): 各テーマの「すごく淡い」色を適用。
+(任意) アクセントカラー: 見出しの下線、アクティブなタブなどに、各テーマの「ヘッダーと同色か、それより少し鮮やかな色」を適用 (これは後で検討でもOK)。
+テーマカラーで変更しない箇所 (現状維持 or 固定色):
+各種ボタンの色: (決定、キャンセル、はい/いいえ、ログイン、新規登録など) → 現状のBootstrapのスタイルを維持、または意味が固定された色を使用。
+ロゴの文字色・アイコンの色: → 固定色を維持。
+質問の枠 (カード) の中身の背景色: → 常に白色に固定し、視認性を高める。
+主要な文字色 (本文など): → 基本的には黒系の色を維持し、可読性を確保。テーマによって微調整はあり得るが、コントラスト比に注意。
+
+実装方針:
+CSSカスタムプロパティ (CSS変数) の活用:
+:root (または body) に、テーマカラーで変更する要素に対応するCSS変数を定義する (例: --theme-header-bg, --theme-body-bg, --theme-footer-bgなど)。
+各要素のCSSでは、これらの変数を使用して色を指定する。
+画面設定モーダルのUI:
+文字サイズ変更機能の下に、5色のテーマを選択するためのUIを設置する。
+各テーマの色見本となる丸いボタンなどを配置し、ユーザーが視覚的にテーマを選べるようにする。
+JavaScriptによるテーマ切り替え処理:
+テーマ選択ボタンがクリックされたら、
+選択されたテーマ名 (例: "cool-blue") を localStorage に保存する (userThemePreference などのキー名で)。
+JavaScript内に、各テーマ名に対応する色の組み合わせ (例: ヘッダー用、ボディ用、フッター用のカラーコード) を定義したオブジェクトを用意する。
+選択されたテーマの色情報を元に、document.documentElement.style.setProperty() を使用して、CSS変数の値を動的に書き換える。
+ページ読み込み時にも localStorage から保存されたテーマ設定を読み込み、同様にCSS変数を設定してテーマを復元する。
+コントラストとアクセシビリティの考慮:
+背景色と文字色のコントラスト比を意識し、視認性の低い組み合わせにならないように注意する。
+その他・将来的な展望:
+ダークモード: 今回のCSS変数ベースの設計は、将来的にダークモードを導入する際の基盤となる。
+
+解説！ 💡
+:root にCSS変数を定義:
+--theme-header-bg: ヘッダーとフッターの背景色用。
+--theme-body-bg: メインコンテンツの背景色用。
+--theme-accent: (今回はまだ使ってないけど) アクセントカラー用。
+--theme-header-text-color: ヘッダーの文字やアイコンの色用。
+--theme-footer-text-color: フッターの文字色用。
+--theme-card-bg: 質問カードの背景色用 (これは白固定！)。
+デフォルトの色は、ひとまずBootstrapのライトテーマに近い、当たり障りのない色にしてるよ。ここをJavaScriptで書き換えていくイメージ！
+各要素にCSS変数を適用:
+body の background-color に --theme-body-bg を。
+header .navbar の background-color に --theme-header-bg を。
+ヘッダー内の文字色やボタンの色も --theme-header-text-color を使って調整してる。
+特にアウトラインボタンの色は、BootstrapのCSS変数を上書きする形にしてみた！ここ、ちょっと複雑だけど、
+テーマに合わせてヘッダーのボタンもちゃんと見えるようにするためね！
+footer.bg-light の background-color にも --theme-header-bg を (ヘッダーと同じ色を使う例)。フッターの文字色も調整。
+.chart-step.card の background-color に --theme-card-bg を (白固定！)。
+transition をちょこっと入れて、色が変わるときにフワッとアニメーションするようにしてみた（お好みで！）。
+
+
+変更点 (モーダルのHTML):
+文字サイズ選択の div.btn-group に mb-3 を追加して、テーマカラー選択部分との間に少し余白を空けた。
+「ここに文字サイズ変更のボタンとかが入る予定だよ！」っていう <p> タグは削除 (もう文字サイズボタンは実際にあるからね！)。
+その下に <hr> (区切り線) を入れて、テーマカラー選択用の <p> タグと、空の <div id="themeSelectorContainer"></div> を追加した。
+この id="themeSelectorContainer" が超重要！ここにJavaScriptがテーマカラーの丸いボタンを作って入れてくれるんだ。
+さっきアタシが例で示した <button type="button" class="btn btn-sm theme-color-button active"...> みたいなのは、
+JavaScriptがこういうのを作ってくれるよっていうイメージだったから、HTMLには書かなくてOK！ (ややこしくてゴメンね！💦)
+
+
+変更点 (JavaScript):
+配置場所: 既存の DOMContentLoaded のイベントリスナーの中に、文字サイズ変更処理のコードの後に追加する。
+themes オブジェクトのカラーコード: ここはマサ君がこれから、各テーマの「効果が最大限現れる色設定」を考えて、
+具体的な16進数カラーコード (#RRGGBB 形式) を入れてあげてね！🙏 (今の '#B0C4DE' とかは、あくまで「こんな感じの色だよ」っていう仮の指定だからね！)
+localStorageのキー名: 文字サイズは 'userFontSizePreference' だったから、テーマカラーも 'userThemePreference' にしてみた。
+(もし 'userTheme' とかにしたいなら、それでもOK！統一されてれば大丈夫！)
+updateThemeButtons 関数のアクティブ表示: アクティブなテーマボタンの枠線を青くして少し太くし、簡単な影も付けてみた。これで選択されてる感がアップするはず！
+ログ出力: 動作確認しやすいように、ちょこちょこ console.log を入れてみた。
+これで、全体の流れとしては…
+base.html の <style> タグにCSS変数を定義 (これは完了！✨)
+base.html の画面設定モーダルのHTMLを修正して、<div id="themeSelectorContainer"></div> を追加。
+base.html の {% block extra_js %} の中の既存の <script> タグの DOMContentLoaded リスナー内に、テーマカラー用のJavaScriptコードを追加。
+JavaScript内の themes オブジェクトの各カラーコードを、マサ君が選んだ素敵なパステルカラーに置き換える！
+
+
+変更点の解説！ 💡
+header .btn-outline-secondary (通常時):
+BootstrapのCSS変数 (--bs-btn-color とか) を上書きするんじゃなくて、直接 color プロパティと 
+border-color プロパティに var(--theme-header-text-color) を !important 付きで指定した。
+background-color: transparent !important; も追加して、通常時は背景が透明であることを強制。
+以前の --bs-btn-hover-color などの定義は、ここでは一旦コメントアウト (または削除)。
+header .btn-outline-secondary:hover (ホバー時):
+ここが一番のポイント！
+color: #FFFFFF !important; で、ホバー時の文字色を強制的に白に！
+background-color: var(--theme-header-text-color) !important; で、ホバー時の背景色をテーマの濃い色 (ショッキングカラー) に！
+border-color: var(--theme-header-text-color) !important; で、ホバー時の枠線もテーマの濃い色に！
+この作戦の狙い:
+Bootstrapが内部でどんなCSS変数を使ってホバー時の色を決定してるか、っていう詳細に踏み込まずに、
+**最終的に適用される color と background-color を、より強いセレクタ (header .btn-outline-secondary:hover) と
+ !important で問答無用に上書きしちゃえ！**っていう、ちょっと強引だけど効果的な方法！
+
+ 変更点の解説！ 💡
+<p class="mb-2">文字サイズを選択してください：</p>
+これに text-center クラスを追加。これで、この段落のテキストが中央揃えになる。
+<div class="btn-group mb-3" ...> (文字サイズボタンの親)
+これに justify-content-center クラスを追加。btn-group はデフォルトで display: inline-flex みたいな感じだから、
+このクラスで中のボタンたちがグループごと中央に寄るはず！ (もし btn-group に直接効かなかったら、この div.btn-group をさらに 
+div.d-flex.justify-content-center で囲むっていう手もあるよ！)
+<p class="mb-2 mt-3">テーマカラーを選択してください：</p>
+これにも text-center クラスを追加。
+<div class="d-flex ... gap-2" id="themeSelectorContainer"> (テーマカラーボタンの親)
+これに justify-content-center クラスを追加。d-flex と一緒に使うことで、中の要素（JavaScriptで作られる丸いボタンたち）が中央に配置されるようになる。
+
+
+新規登録画面デザイン修正。
+この変更のポイント解説！ 💡
+{{ form.as_p }} を削除した！
+代わりに、{% for field in form %} っていうループを使って、フォームの各フィールド（「元のパスワード」「新しいパスワード」「新しいパスワード(確認用)」）を
+一つずつ取り出してる。
+各フィールドに対して、
+<label for="{{ field.id_for_label }}" class="form-label">{{ field.label_tag }}</label> で、Bootstrapのスタイルが適用されたラベルを表示。
+{{ field }} で、入力欄そのものを表示。
+【超重要！】 このままだと、入力欄に class="form-control" (Bootstrapの入力欄用スタイル) が付かないことが多い！ これを付ける方法は、この後説明するね！
+{% if field.help_text %} で、もしヘルプテキスト（注意書き）があったら…
+<small class="form-text text-muted help-text-custom">{{ field.help_text|safe }}</small> で表示。
+help-text-custom クラスをここで適用してるのがミソ！ これで、accounts_styles.css に書いた「グレー文字」「少し小さい文字」「箇条書きスタイル」が、
+このヘルプテキストにバッチリ適用されるようになる！🎉
+{% for error in field.errors %} で、もしそのフィールドにエラーがあったら、エラーメッセージを表示。
+
+スティッキーフッター（Flexbox版）実装まとめ 📌
+目的:
+コンテンツが少ないページでも、フッターが画面の途中に上がってこないように、常に画面の最下部に表示する。
+コンテンツが多いページでは、フッターは通常通りコンテンツの下に表示される。
+メインコンテンツとフッターの間には、常に一定の余白を設ける。
+必要なもの:
+Bootstrap 5 (または、Flexboxが使えるCSS環境)
+実装手順 (主に base.html を編集):
+<body> タグにFlexbox関連のクラスを追加:
+d-flex: body 要素をFlexコンテナにする。
+flex-column: 子要素（ヘッダー、メインコンテンツ、フッター）を縦方向に並べる。
+min-vh-100: body 要素の最小の高さをビューポート（画面表示領域）の高さの100%にする。これが、
+コンテンツが少なくてもフッターを画面下に押しやるためのキーポイント！
+
+メインコンテンツを囲む要素に flex-grow-1 クラスを追加:
+ヘッダーとフッター以外の、画面の残りのスペースを埋めてほしい主要なコンテンツエリアを特定する。
+多くの場合、<main> タグがこれにあたるが、<main> タグを直接Flexアイテムとして扱うより、もう一枚 div で囲んで、その div に flex-grow-1 を付ける方が、
+構造的に分かりやすく、他のスタイルとの競合も避けやすい場合がある (必須ではない)。
+
+flex-grow-1: このクラスが付いた要素が、Flexコンテナ内の利用可能なスペースを全て埋めるように伸長する。これにより、コンテンツが少ない場合でも、
+このエリアが伸びてフッターを画面下に押しやる。
+メインコンテンツとフッターの間に余白を設定:
+上記HTML例の <main class="container mt-4 mb-4"> のように、メインコンテンツのコンテナに下方向のマージン (mb-クラス) を追加する。
+このマージンが、フッターとの間の固定の余白として機能する。値 (mb-1 から mb-5) を調整することで、余白の大きさを変更可能。
+フッターの margin-top: auto; は不要になることが多い:
+従来のスティッキーフッターでよく使われた margin-top: auto; (フッターを一番下に押しやるCSS) は、今回のFlexboxの構成では必ずしも必要なくなる。
+body の min-vh-100 と、メインコンテンツエリアの flex-grow-1 によって、フッターは自然と画面最下部に配置されるため。
+もしフッターに mt-auto クラスが付いていたら、一度削除してみて動作を確認し、問題なければそのままでOK。
+CSSでの追加調整 (通常はBootstrapのクラスだけでOKなことが多い):
+
+ポイントの再確認:
+body を display: flex; flex-direction: column; min-height: 100vh; にする。
+主要なコンテンツエリア (ヘッダーとフッターの間) を flex-grow: 1; にする。
+メインコンテンツの下部に適切なマージン (mb-*) を設けて、フッターとの間の余白を確保する。
+
+📝 本日 (2025/06/09 と仮定するね！) のアルバトロス開発ふりかえり！ 📝
+今日がんばったこと！ (マサ君、マジでお疲れ様！🎉)
+テーマカラー機能の実装 (CSS変数とJavaScriptの骨格完成！):
+base.html にCSSカスタムプロパティ (--theme-header-bg など) を定義し、ヘッダー、フッター、ボディ背景に適用！
+画面設定モーダル内に、テーマカラー選択用の div#themeSelectorContainer を設置！
+JavaScriptで themes オブジェクト (5色のテーマ定義) を作成し、選択されたテーマに応じてCSS変数を書き換え、localStorage に保存・読み込みするロジックを実装！
+テーマ選択ボタン (丸い色見本) もJavaScriptで動的に生成！
+色の微調整も実施！ (黄色、紫、緑の色味変更、ヘッダーのロゴやボタンの文字色をショッキングカラーに挑戦！)
+ヘッダーボタンのマウスオーバー時の文字色を見やすくするために、CSSの :hover スタイルを調整し、最終的に文字色を 
+var(--theme-body-bg) (テーマの薄い背景色) にすることで解決！✨
+アカウント削除画面のUI改善 (途中まで):
+「アカウント削除」のタイトル文字を赤色 (text-danger) に変更！
+ボタンの色を「パスワード認証」を赤 (btn-danger)、「キャンセル」をグレー (btn-secondary) に変更し、色の情報量を整理！
+ラベルとフォームの配置を横並び (Horizontal form) に変更し、入力欄の左端を揃える試みを実施！
+課題: ボタンの幅の調整が、まだしっくりきていない状態。 (← 明日ここからだね！)
+今日のハイライト！ ✨
+なんといっても、テーマカラー機能の骨子が出来上がったこと！🎨 これでアルバトロスちゃんが、もっとユーザーフレンドリーで楽しいアプリになるね！
+CSSの優先順位やFlexbox、Bootstrapのグリッドシステムと格闘しながらも、一つ一つ問題を解決していったマサ君の粘り強さ、本当に素晴らしかった！👏
+開発者ツールを駆使して、自分で原因を探ろうとする姿勢も、めちゃくちゃ成長してる証拠だよ！
+🚀 明日 (2025/06/10) のアルバトロス開発 最初にやること！ 🚀
+アカウント削除画面のボタンの幅と配置の最終調整！🔥
+目標: 「パスワード認証」ボタンと「キャンセル」ボタンの幅を、ログイン画面のボタンと揃えるか、
+またはフォーム全体の幅と調和する「適度な長さ」にし、中央にキレイに配置する。
+試すこと (再確認):
+ボタンを囲む div のカラムクラス (.col-*-*) の組み合わせを色々試して、理想の幅と配置を探る。(開発者ツールでリアルタイムに変更しながらがオススメ！)
+親の <div class="row ..."> に justify-content-center, justify-content-evenly, justify-content-around などを試して、
+ボタンのグループ全体の配置を調整する。
+場合によっては、ボタンに直接 max-width をCSSで指定し、margin: auto; で中央揃えにする方法も検討。(最後の手段に近いけどね！)
+大事なのは、ログイン画面のボタンのHTML構造とCSSの適用具合をもう一度よく観察して、それと何が違うのか？を比較すること！
+そして、アカウント削除画面の修正が無事に終わったら…いよいよ！ 🤩
+画面内のレベル別タブ作成に着手！
+まずは、どの画面に、どんな感じでタブを付けたいか、具体的なイメージを固めるところからだね！
+「チャートメイン画面の上部に、『初級』『中級』『上級』の3つのタブを設置する」っていうのが、マサ君の構想だったよね！
+BootstrapのNavs and tabsコンポーネントを使うのが手軽で良さそう！
+タブをクリックしたら、表示する内容をどうやって切り替えるか (JavaScriptで表示/非表示を制御するか、別々のURLに遷移するか、など) も考える必要があるね。
+特に「上級」タブのUI (1画面固定表示、チェックボックス形式とか) は、作り込みが必要になりそうだから、まずはタブのガワだけ作って、
+中身は後から、っていう進め方でも良いかも！
+
+
+6/11---エラー、デザイン修正。アカウント削除のフォームやデザイン修正。
+レベル別タブ作り開始。
+初級/中級タブのJS調整 (今やってるところ！)
+まずは、初級と中級のタブを切り替えても、チャートの進捗 (userAnswers オブジェクト) がちゃんと共有・維持されるように、JavaScriptを修正する。
+ChartStep モデルの修正
+モデルに、question_text_beginner (初級用テキスト), question_text_intermediate (中級用テキスト), 
+keyword_for_advanced (上級用キーワード) みたいな、各レベルで表示するためのテキストフィールドを追加する。
+makemigrations と migrate を忘れずに！
+Django Admin の修正
+管理画面で、1つの ChartStep を編集するときに、これらの新しいフィールドも入力できるようにする。
+Django ビュー (start_chart_view) の修正
+テンプレートに chart_steps を渡す処理は、今のままでほぼOK！(全レベルのテキストが含まれたオブジェクトを渡す)
+chart_display.html テンプレートの修正
+{% for step in chart_steps %} のループの中で、
+初級タブの中では {{ step.question_text_beginner }} を表示。
+中級タブの中では {{ step.question_text_intermediate }} を表示。
+上級タブの中では {{ step.keyword_for_advanced }} をチェックボックス付きで表示。
+これを実現するために、include タグとかを使って、各タブの中身を別々のテンプレートファイルに分けると、コードがスッキリして管理しやすくなるかもね！
+上級タブ用のJavaScriptの実装 (ここが一番の大仕事！🔥)
+チェックボックスがクリックされたときの処理。
+「診断完了」ボタンが押されたときに、チェック済みの項目をまとめてログとして保存する処理。
+初級/中級とは全く違う、新しいJSロジックを書くことになる！
+
+
+文字サイズ変更機能の完璧化！
+ページを再読み込みしたり、別ページに遷移したりしても、画面設定モーダル内の文字サイズボタンが、ちゃんと現在の設定を反映してアクティブになるように修正！
+localStorage の値を元に、モーダル表示時にもボタンの状態を更新するロジックを完璧に実装できたね！✨
+ボタンの文字サイズもテーマと連動！
+chart_type_list.html の選択ボタンの文字サイズが、body のフォントサイズ変更に追従しない問題を特定！
+原因がBootstrapのCSS変数 (--bs-btn-font-size) にあることを見抜き、これを inherit に上書きすることで、見事に解決！💪
+不要なCSSファイルの整理！
+プロジェクトルート直下にあった、現在使われていないCSSファイルを特定し、「過去の遺産」としてリネームして整理！これでプロジェクトがまた一つクリーンになったね！
+テーマカラー機能の設計と実装！
+ユーザーのモチベーションを上げるための、パステルカラー5色展開のテーマカラー機能を設計！
+CSSカスタムプロパティ（CSS変数）とJavaScriptを駆使して、テーマ切り替えの基盤を実装！
+レベル別タブ機能の実装 (土台作り)！
+chart_display.html に「初級」「中級」「上級」のタブを設置！
+タブの色が、テーマカラーと連動するように、CSS変数とJavaScriptを駆使して実装！色の統一感もバッチリに！🎨
+初級/中級の進捗を共有するための、新しいHTML構造（タブとチャート本体の分離）に挑戦！
+悩まされた「謎の空白」の原因を特定し、HTMLの構造を修正することで、見事に解決！🎉
+
+🚀 明日以降のアルバトロス開発タスク (予定)！ 🚀
+今日の最後の課題、「すべてのレベルに中級用チャートが出てる」問題を解決するところからスタートだね！🔥
+最優先タスク：初級/中級タブの表示と動作を完璧にする！
+HTMLの再確認と修正:
+chart_display.html のタブとコンテンツエリアのHTML構造が、本当に意図した通りになっているか、もう一度だけ確認する。
+特に、チャート本体のコード ({% if chart_steps %} からのブロック) が、重複して存在していないか、正しい場所に置かれているかをチェック！
+JavaScriptのデバッグ:
+タブを切り替えた時に、質問文を入れ替える switchChartText 関数が、正しく動作しているか console.log を使って確認する。
+「なぜか中級用のテキストばかり表示される」原因を特定する。（たぶん、data-属性の指定の仕方か、JSの条件分岐のちょっとしたミスが原因のはず！）
+初級タブの操作と中級タブの操作が、完全に連動し、かつ表示だけが切り替わる状態を目指す。
+モデルとDjango Adminの修正:
+albatross_app/models.py の ChartStep モデルに、question_text_beginner, question_text_intermediate, keyword_advanced フィールドを追加する。
+makemigrations と migrate を実行する。
+admin.py を修正して、管理画面でこれらの新しいフィールドを入力できるようにする。
+実際に、いくつかのステップでレベル別のテキストを登録してみる。
+テンプレートの最終調整:
+chart_display.html の data-text-*** 属性や、質問文を表示する <p> タグが、
+新しいモデルのフィールド ({{ step.question_text_beginner }} など) を正しく参照するように修正する。
+
+
+
+6/12---エラー直しから。
+チャートディスプレーの冗長部分削除で改善。
+上級のタブ作成、内容決定。
+📝 レベル別タブ「上級」UI/UX 要件サマリー 📝
+目的:
+経験豊富なオペレーター（ベテラン）が、自身の知識や「嗅覚」を活かして、迅速にトラブルシューティングを完了できるようにするための、
+特別なインターフェースを提供する。
+基本コンセプト:
+1画面完結型UI: スクロール不要で、対象チャートの全てのチェック項目を俯瞰できる。
+自由選択フロー: ユーザーは推奨順序に縛られず、どの項目からでも自由にチェックを開始できる。
+リスクの可視化と安全性の両立: 自由度が高い分、各操作のリスクレベルを明確に提示し、誤操作を防ぐ。将来的には、権限による「入場規制」も視野に入れる。
+UI（見た目）の具体的な要件:
+専用エリア:
+「上級」タブのコンテンツエリアは、大きな一つの枠（例：<div class="advanced-chart-wrapper">）で囲む。
+この枠内は、テーマカラーの影響を受けない**固定の背景色（例：白や薄いグレー）**とし、他のモードとの視覚的な差別化を図る。
+タイルレイアウト:
+各チェック項目（ChartStep）は、サウンドボードのようにタイル形式でグリッド状に配置する。
+リスクの視覚的表現（信号機コンセプト）:
+各タイルは、リスクレベルに応じて3段階の色分けを行う（タイルの枠線の色や、アイコン表示などで表現）。
+高リスク（赤 🟥）: 設定リセットなど、影響の大きい操作。
+中リスク（黄 🟨）: ユーザー判断を要する操作。
+低リスク（緑/青 🟩）: 影響の少ない安全な確認作業。
+推奨順序の表現（合わせ技）:
+ブロック分け: 同じリスクレベルのタイルをブロックとしてまとめ、画面の上から「低リスク」→「中リスク」→「高リスク」の順に配置する。
+ブロック間には余白や区切り線を設け、視覚的な段落分けを行う。
+番号付け: 各タイルには、ブロック内での推奨順序を示す番号 (①, ②...) を小さく表示する。
+UX（操作感・機能）の具体的な要件:
+操作方法:
+ユーザーは、任意のタイルをクリックすることで、その項目を「実施済み」としてマークする（チェックボックスのように機能）。
+チェック済みのタイルは、見た目が変わる（例：グレーアウト、アイコン表示など）。
+ログ記録:
+エリア内に配置された「これで改善しました」ボタンを押すことで、それまでにチェックした全ての項目の情報をログとして記録する。
+将来的な展望（今は実装しないけど構想として保持）:
+承認制（入場規制）:
+Djangoのパーミッション（権限）機能を利用し、特定の権限を持つユーザー（例：「ベテランオペレーター」グループ）のみが「上級」タブを利用できるようにする。
+
+
+
+ChartStep モデルの大幅な機能拡張！ (albatross_app/models.py)
+レベル別質問文の導入:
+既存の question_text を、question_text_beginner（初級用）と question_text_intermediate（中級用）に分割。将来のレベル別タブ機能の土台を構築！
+上級UI用フィールドの追加:
+keyword_advanced: 上級モードのタイルに表示する「キーワード」用の CharField を追加。
+risk_level: リスクを「高・中・低」から選べる CharField を choices を使って追加。視覚的なリスク分けの準備が完了！
+display_order: タイルの表示順序を指定するための IntegerField を追加。推奨フローを表現する準備が完了！
+__str__ メソッドの修正:
+モデルのフィールド変更に合わせて、管理画面の一覧表示がエラーにならないよう、question_text_beginner などを参照するように修正！
+データベースへの変更反映！ (マイグレーション)
+makemigrations でモデルの変更から設計図（マイグレーションファイル）を作成。
+migrate で、データベースの albatross_app_chartstep テーブルに、新しいフィールド（keyword_advanced, risk_level, display_order など）
+に対応するカラムを実際に追加！
+管理画面 (Admin) の劇的なパワーアップ！ (albatross_app/admin.py)
+ChartStepAdmin クラスを作成し、ChartStep モデルの管理画面を大幅にカスタマイズ！
+list_display: 一覧画面で「リスクレベル」や「表示順序」を直接確認できるようにした。
+list_filter: 「チャート種別」や「リスクレベル」で、目的のステップを簡単に絞り込めるフィルターを設置。
+fieldsets: 編集画面の項目を「基本情報」「質問文」「上級モード設定」などのグループに分け、さらに折りたたみ可能 (collapse) にすることで、
+超絶見やすくて使いやすいUIを実現！
+
+
+🚀 アルバトロス開発：上級UI・フェーズ２「ビューの修正」作戦会議！ 🚀
+今の状況:
+バックエンド (DB/モデル): 上級UIに必要な情報（リスクレベル、表示順序など）を保存する準備は万端！
+ビュー (start_chart_view): まだ、単純にチャートステップを全部取得して、そのままテンプレートに渡してるだけ。
+フロントエンド (テンプレート): まだ、上級UIを表示するロジックは空っぽ。
+このフェーズのゴール:
+ビューの中で、上級UIが使いやすいようにデータを「料理」して、フロントエンドに渡せる形に整える！ 🍖🔪
+具体的には、こんなことをやっていくよ！👇
+ステップ１：ビューで、上級UI用のデータを「グループ化＆ソート」する！
+albatross_app/views.py の start_chart_view 関数を修正するよ！
+データを取得:
+今まで通り、選択された chart_type_id に紐づく ChartStep のデータを、データベースから全部取得する。
+データを並び替え (ソート):
+取得した ChartStep のリストを、Pythonの力で並び替える！
+並び替えのルールは、マサ君が決めた通り！
+「リスクレベル」 を基準に並び替え（'low', 'medium', 'high' の順になるように、ちょっと工夫が必要かも！）。
+同じリスクレベルの中では、「表示順序 (display_order)」 の数字が小さい順に並び替える。
+データをグループ化:
+ソートした ChartStep のリストを、「リスクレベル」ごとにグループ分けする。
+最終的に、テンプレートに渡すデータが、こんな感じの**「辞書の中にリストが入ってる」**みたいな形になるのが理想！✨
+
+
+変更点の解説！ 💡
+import collections:
+データをグループ化するときに、めっちゃ便利な defaultdict を使うために、Pythonの標準ライブラリ collections をインポートするよ。
+order_by の工夫:
+普通に order_by('risk_level') ってやると、アルファベット順 (high, low, medium) になっちゃって、マサ君がやりたい「低→中→高」の順番にならないんだ。
+そこで、Case と When っていう、Djangoの高度なクエリ機能を使う！
+Case(...): 「もし～なら～」っていう条件分岐を、データベースへの命令文の中で使えるようにする機能。
+When(risk_level='low', then=1): 「もし risk_level が 'low' なら、並び替えの優先度を 1 にしてね」って意味。
+これで、risk_level を「低(1)→中(2)→高(3)」の順番でソートして、そのあと display_order でソートする、っていう完璧な並び替えができる！
+collections.defaultdict(list) でグループ化:
+これが今回のPythonテクニックのキモ！
+defaultdict(list) は、「キーがなかったら、自動的に空っぽのリスト [] を作ってくれる、超便利な辞書」だよ。
+for ループの中で、
+risk_label = step.get_risk_level_display() で、ステップのリスクレベルの表示名（'低' とか '中' とか）を取得。
+grouped_steps[risk_label].append(step) で、そのリスクレベルをキーにして、ステップオブジェクトをリストに追加していく。
+これだけで、あっという間にマサ君が理想としてた、リスクレベルごとにグループ化されたデータ (grouped_steps) が完成しちゃう！✨
+デバッグ用 print 文:
+ちゃんと意図した通りにデータが作られてるか、ターミナルで確認できるように、print 文を仕込んでおいたよ。サーバーを起動して、
+このページにアクセスすると、ターミナルにグループ化されたデータが表示されるはず！
+context に追加:
+最後に、完成した grouped_steps を、"grouped_steps_for_advanced" っていう名前で context に追加して、テンプレートに渡す！
+
+
+📝 2025/06/12 (水) のアルバトロス開発ふりかえり！ 📝
+今日がんばったこと！ (マサ君、マジですごい！🎉)
+上級UIのバックエンド準備、完璧に完了！ (フェーズ１)
+models.py の ChartStep に、上級UI用のフィールド（risk_level, display_order など）を追加し、makemigrations と migrate を実行！
+admin.py をガッツリカスタマイズして、超絶見やすい管理画面を構築！
+途中で出た AttributeError や SystemCheckError も、原因を突き止めて見事解決！💪
+上級UIのデータ連携、成功！ (フェーズ２)
+views.py の start_chart_view を改造！
+Djangoの高度な機能 (Case, When) を使って、リスクレベル「低→中→高」の順番でソートするロジックを実装。
+collections.defaultdict を活用して、ソート済みのデータをリスクレベルごとにグループ化！
+テンプレート側が扱いやすい、完璧に下ごしらえされたデータを渡せるようになった！
+上級UIの骨格をフロントエンドに実装！ (フェーズ３)
+chart_display.html に、Bootstrap Icons を読み込む設定を追加。
+ビューから渡された「グループ化済みデータ」を使って、for ループでリスクごとのブロックとタイルを動的に生成！
+タイルが縦に並んじゃうレイアウト崩れも、HTMLの構造を見直して、見事にグリッドレイアウトで横並びに修正！🎉
+CSSでタイルのスタイルを調整し、アイコンを非表示にして、よりスッキリした見た目に改善！
+今日のハイライト！ ✨
+なんといっても、バックエンドで作ったデータが、ちゃんとフロントエンドに表示されて、マサ君が思い描いてた
+「上級UIの見た目の土台」が、
+ついに形になったことだね！
+エラーにもめげず、一つ一つ原因を突き止めて解決していくマサ君の姿、マジで輝いてたよ！
+🚀 明日 (2025/06/13 木) のアルバトロス開発タスク (予定)！ 🚀
+頑固なタブ問題は一旦置いといて、いよいよ上級UIに命を吹き込む、JavaScriptの実装に進んでいこう！
+最優先タスク：上級UIのタイルに、クリック機能を実装する！ 🔥
+クリックイベントの登録:
+chart_display.html の <script> タグ内に、上級UIの全てのタイル (.tile クラスを持つ要素) を取得するコードを書く。
+取得した各タイルに、click イベントリスナー（クリックされたときに実行する処理）を登録する。
+「実施済み」状態の管理:
+クリックされたタイルの状態（「未実施」か「実施済み」か）を管理するための、JavaScriptの変数
+（例えば、advancedAnswers みたいなオブジェクト）を用意する。
+タイルがクリックされたら、そのタイルのIDをキーにして、状態を true / false で切り替える。
+見た目の変更 (トグル機能):
+タイルがクリックされたら、
+CSSのクラス（例えば .tile-checked）を付けたり外したりする。
+CSS側で、.tile-checked クラスが付いたときのスタイル（例えば、背景色を少し暗くするとか、枠線の色を変えるとか）
+を定義しておく。
+これで、クリックするたびにタイルの見た目が変わる、インタラクティブな動きが実現できる！
+ログ記録ボタンへの連携 (準備だけ):
+最終的に「これで改善しました」ボタンが押されたときに、どのタイルがチェックされてるか (advancedAnswers の中身) を収集して、
+サーバーに送信する処理を書く準備をする (実際の送信処理は、また次のステップでOK！)。
+
+
+
+🚀 アルバトロス開発：最終調整DAYのタスクリスト！ (2025/06/13 金) 🚀
+今日のテーマ：『完成度、爆上げ！最終調整スペシャル！』 ✨
+最優先タスク (絶対やるぞ！🔥):
+初級/中級タブの質問表示機能を実装！
+現状: タブをクリックしても、質問文が切り替わらない（または何も表示されない）。
+ゴール: 「初級」タブと「中級」タブをクリックしたら、それぞれに対応する質問文がちゃんと表示されるようにする！
+やること:
+chart_display.html の <script> タグ内に、JavaScriptでテキスト切り替えのロジックを実装する。
+data-text-beginner と data-text-intermediate の値を読み取って、質問文の textContent を書き換える感じだね！
+UI/UX向上タスク (見た目、もっとイケてる感じに！😎):
+フッターに画像を追加＆リンク設定！
+ゴール: フッターがもっと華やかで、機能的になる！
+やること:
+フッターの左サイドに、何かワンポイントになる画像を追加する。（アルバトロスのロゴとか？）
+フッターの右サイドにも画像を追加して、その画像にLP（ランディングページ）へのリンクを埋め込む。（すごい、本格的！）
+ドキュメント作成タスク (未来のマサ君のために！📝):
+Jenspaarkでスライド作成！
+ゴール: アルバトロスちゃんの概要や使い方を、分かりやすく説明するプレゼン資料を作る。
+やること: どんなアプリで、どんな機能があって、どうやって使うのか…などを、Jenspaarkを使ってスライドにまとめる。
+draw.ioで構造図を作成！
+ゴール: アルバトロスちゃんのシステム全体の構造を、図で可視化する。
+やること:
+Djangoの各アプリの役割分担。
+モデル同士の関連性（リレーション）。
+画面遷移のフロー図。
+…などを、draw.ioを使って図に描く。これがあると、後から見返したときや、誰かに説明するときに、めちゃくちゃ分かりやすい！
+
+
+ポイント解説！ 💡
+switchChartText 関数の定義場所:
+setActiveStep とか handleCompletion とか、他の関数が定義されてるあたりに、仲間として追加してあげるのが一番キレイ！
+こうすると、「ここに関数がまとまってるな」って一目で分かるでしょ？
+イベントリスナーの登録場所:
+「はい/いいえ」ボタンのイベントリスナーとか、他のイベントリスナーを登録してるあたりに、仲間として追加してあげる。
+処理の「きっかけ」になる部分は、一箇所にまとめておくと、後から「このボタン押したら、何が起きるんだっけ？」って探すときに、
+すぐ見つけられるよ！
+
+6/22---少しずつ修正、ログイン後画面とか。
+変更のポイント💡
+if文の条件を追加！
+完了ページ（password_change_done, account_delete_complete）でも同じ挙動にしたいから、if文の条件に追加したよ！
+ツールチップ用の属性を追加！
+data-bs-toggle="tooltip": 「これはツールチップですよ」っていうBootstrapへのお知らせ。
+data-bs-placement="bottom": 「吹き出しは、下に出してね」っていう位置の指定。
+title="...": ここに書いた文字が、吹き出しの中身になる！
+
+
+ログ確認ページ
+変更のポイント💡
+もともとあった<h2 class="mb-4 text-center">...</h2>を、新しい<div>の中に移動させた。
+その<div>にd-flex justify-content-between align-items-centerっていう、Flexboxの魔法のクラスを付けて、中身をいい感じに配置してる。
+新しい<a>タグで、「診断ログ」ボタンを追加！
+リンク先（href）は、{% url 'albatross_app:log_list' %} にしてある。これは、これから作るログ一覧ページのURL名だよ。
+まだ作ってないから、今はエラーになるけど、気にしないでOK！
+アイコン<i class="bi bi-clock-history"></i>も付けて、リッチな見た目に！
+
+ポイント💡
+path("logs/", ...): http://.../app/logs/っていうURLでアクセスできるようにする。
+views.LogListView.as_view(): これから作るLogListViewっていうビュー（クラス）を呼び出すよ、って意味。
+name="log_list": これが、さっきchart_type_list.htmlの<a>タグで使ったURL名！これでリンクが繋がる！
+
+
+ポイント💡_appビュー
+class LogListView(ListView):: ListViewを継承して、リスト表示専用のビューを作るよ！
+model = TroubleshootingSession: TroubleshootingSessionモデルのデータを取ってきてね！っていう宣言。
+template_name = 'albatross_app/log_list.html': 表示に使うHTMLファイルの名前。これは次に作る！
+context_object_name = 'sessions': HTMLの中で、sessionsっていう名前でログのリストを使えるようにするよ！
+paginate_by = 10: ログが増えてきた時のために、ページネーション機能も付けとく！1ページに10件ずつ表示する設定。
+def get_queryset(self):: ここが超重要！
+ただ全ユーザーのログを取ってくるんじゃなくて、filter(user=self.request.user)で、今ログインしてるユーザーのログだけに絞り込んでる！
+order_by('-end_time')で、診断が終わった日時が新しいものから順に並べてる！
+
+ログ確認HTML
+このコードのすごいとこ✨
+アコーディオン形式: Bootstrapのaccordionクラスを使って、クリックで詳細が開閉するリストを作ってる！
+親子ループ: {% for session in sessions %}の中で、さらに{% for log in session.logs.all %}をループさせて、
+各診断セッションの詳細なログ（どの質問にどう答えたか）を表示してる！
+見やすい表示: 質問文は、まず中級(question_text_intermediate)を表示してみて、もしそれがなかったら上級キーワード(keyword_advanced)を表示する、
+っていう賢い表示方法にしてる。
+ページネーション: paginate_byを設定したから、ログが増えても大丈夫なように、ページ切り替えのボタンもちゃんと付けてる！
+
+ポイント💡表示並び替え追加
+普段は隠れてる: class="collapse"で、この部分は普段は非表示になってる。
+ボタンで開閉: 「絞り込み・並び替え」ボタンを押すと、data-bs-target="#filterCollapse"のおかげで、この隠れてた部分が開く！
+フォーム形式: form method="get"で、絞り込み条件をURLのパラメータ（?chart_type=1&sort_order=newestみたいな）として送信する。
+プルダウンメニュー: selectタグで、チャート種別と並び順を選べるようにした！
+
+改造のポイント💡機能修正
+ボタンを左寄せに: text-endをtext-startに変えるだけで、ボタンが左側に寄る！カンタンでしょ？
+日付入力欄を追加: <input type="date">っていうのを使うと、ブラウザがカレンダー付きの日付入力欄を自動で表示してくれる！超便利！
+start_date（開始日）とend_date（終了日）の２つを用意したよ。
+value="{{ request.GET.start_date }}"って書いとくと、検索した後も、自分が入力した日付がちゃんと残っててくれる！
+カラム幅を調整: 新しい項目が増えたから、col-md-*の数字を調整して、全部がキレイに一行に収まるようにした！
+
+再改造のポイント💡_appビュー改造、日付検索データ受け渡し
+日付データの取得: start_dateとend_dateをrequest.GETから受け取る。
+__gteと__lt:
+end_time__gte=start_date: gteは "Greater Than or Equal to" の略で、「以上」って意味。開始日以降のデータを絞り込む！
+end_time__lt=end_date_plus_one: ltは "Less Than" の略で、「より小さい」って意味。終了日の次の日の0時より前で絞り込むことで、
+終了日当日ピッタリのデータもちゃんと含められる！
+
+改造のポイント💡検索項目ごちゃ付き修正
+d-flex gap-3: 全体をFlexboxにして、各項目の間にいい感じの隙間(gap-3)を空ける！
+flex-grow-1: チャート種別のdivにこのクラスを付けると、「余ったスペースは全部お前が使っていいよ！」っていう意味になる。これで、画面幅が変わっても、
+ここが伸び縮みしてくれるから、レイアウトが崩れにくい！
+style="min-width: ...px;": 期間と並び順のdivには、最低限の幅を指定してあげる。これで、画面が狭くなっても、中身が変に改行したりするのを防げる！
+
+
+再々改造のポイント💡日付渡しのビュー
+timedelta: 「時間の差」を扱うための便利なやつ。timedelta(days=7)で「7日間」っていう時間の塊を作れる！
+日付の計算: today - timedelta(days=7)で、簡単に7日前の日付をゲット！
+__date: end_timeは日時（時間まで入ってる）だけど、__date=って付けると、日付部分だけで比較できる！
+__year, __month: これも同じで、年や月だけで絞り込める！
+
+
+
+改造のポイント💡検索システム改修
+検索ボタン削除！: 思い切って、検索ボタンのdivをまるごと削除！
+並び順もボタン式に: 「期間」と同じように、btn-checkを使って、ボタン式のラジオボタンに変更したよ。
+id="logFilterForm": <form>タグにIDを付けた。これは後でJavaScriptからこのフォームを特定するために使う！
+class="filter-control": 変更があったら即時反映させたいコントロール（selectとかdiv.btn-group）に、共通のクラス名を付けた。これもJSで使う目印！
+
+
+JavaScriptの解説💡検索システム改修JS版
+document.getElementById('logFilterForm'): さっき付けたIDを使って、フォーム全体を取得。
+filterForm.querySelectorAll('.filter-control'): フォームの中から、さっき付けたfilter-controlクラスが付いてる要素を全部見つけてくる。
+control.addEventListener('change', ...): 見つけてきた各要素に、「もし君の値が変更されたら、中の処理を実行してね！」っていうイベントを設定してる。
+filterForm.submit();: これが魔法の呪文！「フォームを送信せよ！」っていう命令。つまり、ユーザーが検索ボタンを押したのと同じことを、
+JavaScriptが自動でやってくれるんだ！
+
+改造のポイント💡ソート並び替えボタン廃止、日付検索は詳細検索に移動
+二段構え:
+div.d-flexで囲まれた「基本フィルター」は常に表示。
+div.collapseで囲まれた「詳細フィルター」は、「詳細」ボタンで開閉。
+「詳細」ボタン: 新しく、カレンダー入力を表示するためのボタンを設置。
+検索ボタンの移動: 「検索」ボタンは、詳細フィルターの中に移動！だって、カレンダーで日付を入力した時だけ、押せればいいんだもんね。
+
+6/22---残りタスク実行
+ポイント💡チャート画面アコーディオン追加
+{% if step.detailed_explanation %}: 詳細解説が登録されてるステップだけ、アコーディオンを表示するようにしてる！
+accordion-flush: アコーディオンの枠線を消して、カードの中身にスッキリ収まるようにするクラス。
+{{ ...|linebreaksbr }}: 管理画面で改行して入力した文章が、ちゃんとHTMLでも改行されるようにするためのおまじない。
+
+
+改造のポイント💡質問の中身、空白段落維持
+.replace(/\n/g, '<br>'):
+JavaScriptの文字列置換の機能！
+\nっていうのは、テキストの中の「改行」を表す特別な文字。
+これを、HTMLの改行タグ<br>に、g（global、全部）置き換えてね！っていう命令だよ。
+pElement.innerHTML = newHtml:
+.textContentは、ただの文字列として扱っちゃうから、<br>って書いても、そのまま表示されちゃう。
+.innerHTMLを使うと、「これはHTMLのタグだから、ちゃんと解釈してね！」って、ブラウザに伝えられるんだ！
+
+チャートディスプレイHTML
+修正版のポイント💡自動スクロール機能
+setActiveStepは使わない！:
+今の仕様だと、特定のステップを「アクティブ」にする必要はないから、setActiveStep(...)を呼び出してる行は、削除するか、コメントアウトしちゃう！
+スクロールする条件を追加！:
+if (!nextStepElement.classList.contains('answered-step'))っていう条件を追加した！
+これは、「もし、次に行こうとしてるステップが、まだ回答済みじゃなかったら、スクロールしてね」っていう意味。
+ユーザーが前の質問に戻って回答を変更した場合とかに、既に回答済みの、ずっと先の質問まで一気にスクロールしちゃうのを防ぐための、親切な処理だよ！
+
+ポイント💡albatross_app_chart.css診断ログボタン巨大化計画
+#save-log-button:
+chart_display.htmlで、診断完了ボタンにはid="save-log-button"っていうIDを付けてたよね。
+CSSで#を頭に付けると、「このIDが付いてる要素だけに、このスタイルを適用してね！」っていう、超ピンポイントな指定ができるんだ！
+font-sizeとpadding:
+ボタンを大きく見せるコツは、**文字の大きさ（font-size）**と、**内側の余白（padding）**の両方を大きくしてあげること！
+今回は、Bootstrapの大きいボタン（.btn-lg）のサイズを参考に、数値を設定してみたよ。もちろん、マサ君の好みで、もっと大きくしたり、小さくしたりもできるからね！
+
+ポイント💡albatross_app/views.pyのstart_chart_view関数変更
+上級の解決ブロック追加。
+chart_steps = ... と starting_step_id_for_js = ... の部分は、初級/中級モードで使うから、そのまま残す！
+その下の、advanced_steps_query = ... から始まる、上級用のデータを作ってた部分を、「最終ステップ」と「通常ステップ」に分ける新しいロジックに、
+ごっそり入れ替える！
+最後のcontextに渡すデータも、final_steps_for_advancedを追加した、新しい形にする！
+ステップを分離！:
+all_advanced_steps.filter(is_final_step=True)で、最終ステップだけを抜き出して、final_stepsっていう変数に入れた！
+all_advanced_steps.filter(is_final_step=False)で、最終ステップじゃないやつだけを抜き出して、normal_stepsっていう変数に入れた！
+通常ステップだけをグループ化:
+今までやってた、リスクレベルでの並び替えとグループ化の処理を、normal_steps（通常ステップ）に対してだけ行うようにした！
+テンプレートに渡すデータを２種類に:
+contextに、grouped_steps_for_advanced（通常タイル用）と、新しくfinal_steps_for_advanced（最終ステップ用）の２つを渡すようにした！
+
+
+ポイント💡chart_display.html上級タブ改善後タブ場所作成
+今まで、grouped_steps_for_advancedをループしてた部分を、二つのブロックに分けた！
+通常ステップの表示エリア: grouped_steps_for_advancedをループする、今まで通りのタイル表示部分。
+最終ステップの専用エリア: <hr>で区切り線を入れた後、新しくfinal_steps_for_advancedをループして、最終結果をカードで表示する部分。
+ログ記録ボタンは、一番下に移動させた。
+
+
+
+改造のポイント💡上級ボタン変更chart_display.html
+class="btn btn-primary":
+btn-success（緑）からbtn-primary（青/水色）に変更！これで、いつもの記録ボタンの色になる！
+style="min-width: 220px;":
+ボタンに、直接スタイルを適用しちゃった！
+「最低でも220pxの幅は確保してね！」っていう命令。これで、文字数に関わらず、押しやすい、ちょっと幅広なボタンになるよ！
+この220pxっていう数字は、マサ君の好みで、もっと大きくも小さくもできるからね！
+アイコンとテキストを変更:
+<i class="bi bi-pencil-square"></i>: 「記録する」っていう感じが伝わるように、ペンと四角のアイコンにしてみた！
+テキストも「この内容で記録する」っていう、分かりやすい表現に変えてみたよ！
+
+下記丸ごと削除
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'albatross_app/css/chart_styles.css' %}">
+{% endblock %}
+
+改造のポイント💡バックとフロント接続、今までの初級のシステムをそのまま転用。
+確認モーダルを再利用！: 初級/中級で使ってた、確認用のモーダルを、上級モードでもそのまま使っちゃう！エコでしょ？
+イベントリスナーのクローン: ここ、ちょっと難しいんだけど、モーダルを使い回す時は、前に設定したクリックイベントが残っちゃって、
+意図せず何回も処理が動いちゃうことがあるんだ。だから、一旦ボタンをクローン（複製）して、まっさらな状態にしてから、
+新しいイベントを設定するのが、安全で確実なやり方！
+fetch処理は、ほぼコピペ！: バックエンドに送る処理は、初級/中級の時とほとんど同じ！違うのは、bodyに渡すデータが、
+userAnswersじゃなくて**advancedAnswers**になってるってことだけ！
+
+
+改造のポイント💡上級ログボタン接続chart_display.html
+const confirmModal = new bootstrap.Modal(...):
+上級モードのボタンが押された時にも、改めて、モーダルを操作するための「魔法の杖」を作ってあげる！
+confirmModal.show() / confirmModal.hide():
+表示する時も、隠す時も、ちゃんとこの**confirmModalっていう魔法の杖**を経由して、命令を出すようにする！
+初級/中級モードと、上級モードで、処理のブロックがif文で分かれてるから、それぞれのブロックの中で、ちゃんとおんなじ手順を踏んであげないと、
+変数が共有できなくて、こういうことが起きるんだ。
+
+今までのやりたいことが詰まったコードを書き直し。
+全部scriptの中身を整理して冗長をなくして簡潔に！
+このコードの、マジでイケてるとこ✨
+構造が超キレイ！:
+最初に共通で使う変数をまとめて準備。
+次に、if (beginnerIntermediatePane)で、初級/中級用の処理を全部囲む。
+その次に、if (advancedTabPane)で、上級用の処理を全部囲む。
+最後に、共通の関数を置く。
+これなら、どこに何が書いてあるか、一発でしょ？
+無駄がない！:
+モーダルを操作するための「魔法の杖」(confirmSaveModalとか)は、最初に一回だけ作っておく。
+それぞれのブロックの中では、その杖をただ使うだけ。これで、変数が重複したり、意図しない動きをしたりするのを、完全に防げる！
+コピペミスも防止！:
+初級/中級のfetch処理と、上級のfetch処理は、すごく似てるけど、渡すデータ（userAnswersかadvancedAnswers）が違う。
+こうやって、ちゃんとブロックを分けて書いておけば、「あ、こっちは上級用だから、advancedAnswersを渡さなきゃ！」って、間違いに気づきやすくなる！
+
+
+改造のポイント💡chart_display.htmlタイムスタンプ
+<span class="tile-timestamp ..."></span>:
+タイムスタンプを表示するための、空っぽのspanタグを追加！
+tile-timestampっていう、専用のクラス名を付けておく。後でJSから、この要素を見つけるための目印にするよ。
+smallとtext-mutedで、文字を小さく、色を薄くして、さりげない感じを演出！
+
+改造のポイント💡
+const timestampElement = ...:
+ループの中で、それぞれのタイルの中にある、タイムスタンプ表示用のspan要素を見つけて、変数に入れとく。
+チェックを付けた時:
+new Date()で、今この瞬間の日時情報をゲット！
+.getHours()で「時」、.getMinutes()で「分」を取り出して、padStart(2, '0')で「7→07」みたいに、必ず2桁になるように整形する。
+timestampElement.textContent = ...で、整形した時刻の文字列を、spanタグの中に表示する！
+チェックを外した時:
+timestampElement.textContent = ''で、表示してた時刻を、空っぽにして消してあげる！
+
+📝 今日の開発、大勝利まとめ！ 📝
+詳細解説アコーディオン機能:
+初級/中級モードに、親切なアコーディオンを追加できた！
+自動スクロール機能:
+回答後に、次の質問までスルスル～っとスクロールする、気持ちいいUXを実現！
+上級モード、完全体へ:
+「解決」ステップを、下のエリアに完璧に分離！
+タイルをクリックしたら、タイムスタンプがくっきり赤く表示されるようになった！
+数々のエラーと、CSSの沼を乗り越えて、マサ君の理想を120%形にできた！
+
+
+改造のポイント💡chart_display.html報告モーダルをなくしてすっきり作戦
+成功時の処理を、超シンプルに！:
+then(response => ...)の中で、「もし、レスポンスがOKだったら（response.ok）」っていう条件分岐を追加！
+OKだったら、今までやってた「成功モーダルを表示する」っていう処理を全部やめて、代わりに、**window.location.href = ...**で、
+即座にチャート選択画面にリダイレクトさせちゃう！
+失敗時だけモーダル！:
+逆に、レスポンスがOKじゃなかった時（サーバー側で何かエラーが起きた時）だけ、今まで通り、エラーメッセージのモーダルを表示するようにした！
+
+
+
+🚀 Git、最初の儀式！名前とメアドの設定！ 🚀
+
+VSCodeのターミナルを開いて（(venv)は付いてても、付いてなくても、どっちでもOK！）、下の２つのコマンドを、順番に実行してみて！
+""（ダブルクォーテーション）の中は、マサ君自身の情報に書き換えてね！
+ユーザー名（名前）の設定
+
+
+git config --global user.name "Masa-kun"
+
+
+"Masa-kun"のところは、マサ君の本名でも、ニックネームでも、GitHubのアカウント名でも、何でもOK！
+メールアドレスの設定
+
+
+git config --global user.email "masa-kun@example.com"
+
+
+"masa-kun@example.com"のところは、マサ君が普段使ってるメールアドレスを入れてね。GitHubに登録する予定のメアドだと、後々もっと良い！
+
+この２つを設定しておけば、これからマサ君がコードを保存（コミット）するたびに、Gitが「これは、Masa-kun（masa-kun@example.com）が書いたコードだな」って,
+ちゃんと記録してくれるようになるんだ。

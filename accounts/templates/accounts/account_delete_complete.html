@@ -1,0 +1,46 @@
+{% extends "albatross_app/base.html" %} <!-- baseを継承するか、もっとシンプルなHTMLにするかはお好みで -->
+
+{% block title %}アカウント削除完了{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title text-success mb-4">
+                <i class="bi bi-check-circle-fill"></i> <!-- Bootstrap Iconsのチェックマーク -->
+                アカウントは正常に削除されました
+            </h2>
+            <p class="card-text">お疲れさまでした。ご利用ありがとうございました。</p>
+            <p class="card-text text-muted">このタブは5秒後に自動的に閉じられます。</p>
+            
+            <!-- ▼▼▼ ここからが追加・変更部分！ ▼▼▼ #} -->
+            <div class="mt-4">
+                <button id="close-window-btn" class="btn btn-secondary">
+                    今すぐタブを閉じる
+                </button>
+            </div>
+            <!-- ▲▲▲ ここまでが追加・変更部分！ ▲▲▲ #} -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- まず、手動で閉じるボタンの処理を定義 ---
+        const closeButton = document.getElementById('close-window-btn');
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                console.log("「今すぐタブを閉じる」ボタンが押されました。");
+                window.close();
+            });
+        }
+
+        // --- 次に、5秒後に自動で閉じる処理 ---
+        console.log("アカウント削除完了ページ表示中。5秒後にタブを閉じます。");
+        setTimeout(function () {
+            console.log("5秒経過。自動でタブを閉じます。");
+            window.close();
+        }, 5000); // 5000ミリ秒 = 5秒
+    });
+</script>
+{% endblock %}

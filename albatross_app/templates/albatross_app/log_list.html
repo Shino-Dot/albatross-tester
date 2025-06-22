@@ -1,0 +1,211 @@
+{% extends "albatross_app/base.html" %}
+
+{% block title %}診断ログ履歴{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-clock-history"></i> 診断ログ履歴</h2>
+        <a href="{% url 'albatross_app:chart_type_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> チャート選択に戻る
+        </a>
+    </div>
+
+    <div id="filterCollapse">
+        <div class="card card-body mb-4">
+            <form method="get" action="" id="logFilterForm">
+                <div class="d-flex align-items-end gap-3 mb-3">
+                    <!-- --- チャート種別で絞り込み --- #} -->
+                    <div class="flex-grow-1">
+                        <label for="chart_type" class="form-label fw-bold">チャート種別</label>
+                        <select name="chart_type" id="chart_type" class="form-select form-select-sm filter-control">
+                            <option value="">すべて</option>
+                            {% for type in chart_types_for_filter %}
+                                <option value="{{ type.id }}" {% if request.GET.chart_type == type.id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- ▼▼▼ 2. 期間フィルターをボタン式に変更！ ▼▼▼ -->
+                    <div class="flex-grow-1">
+            <label class="form-label fw-bold">期間</label>
+            <div class="btn-group btn-group-sm w-100 filter-control" role="group">
+                <input type="radio" class="btn-check" name="period" id="period_today" value="today" autocomplete="off" {% if request.GET.period == 'today' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="period_today">今日</label>
+
+                <input type="radio" class="btn-check" name="period" id="period_weekly" value="weekly" autocomplete="off" {% if request.GET.period == 'weekly' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="period_weekly">過去7日間</label>
+
+                <input type="radio" class="btn-check" name="period" id="period_monthly" value="monthly" autocomplete="off" {% if request.GET.period == 'monthly' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="period_monthly">今月</label>
+
+                <input type="radio" class="btn-check" name="period" id="period_all" value="" autocomplete="off" {% if not request.GET.period %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="period_all">すべて</slabel>
+            </div>
+        </div>
+                    <!-- ▲▲▲ 期間フィルターの変更ここまで ▲▲▲ -->
+                    <div style="min-width: 150px;">
+                        <label class="form-label fw-bold">並び順</label>
+                        <div class="btn-group btn-group-sm w-100 filter-control" role="group"> <!-- ← classを追加！ -->
+                            <input type="radio" class="btn-check" name="sort_order" id="sort_newest" value="newest" autocomplete="off" {% if request.GET.sort_order == 'newest' or not request.GET.sort_order %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="sort_newest">新しい順</label>
+
+                            <input type="radio" class="btn-check" name="sort_order" id="sort_oldest" value="oldest" autocomplete="off" {% if request.GET.sort_order == 'oldest' %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="sort_oldest">古い順</label>
+                        </div>
+                    </div>
+
+                    <!-- --- 詳細検索ボタン --- #} -->
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#detailFilterCollapse">
+                            <i class="bi bi-search"></i> 詳細
+                        </button>
+                    </div>
+                </div>
+
+                <!-- --- ▼▼▼ 2. 詳細フィルター（折りたたみ）▼▼▼ --- #} -->
+    <div class="collapse " id="detailFilterCollapse">
+        <div class="card card-body bg-light mb-4">
+            <div class="row g-3 align-items-end">
+                <!-- --- 日付範囲指定 --- #} -->
+                <div class="col-md-5">
+                    <div class="input-group input-group-sm">
+                        <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}" placeholder="開始日">
+                        <span class="input-group-text">～</span>
+                        <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}" placeholder="終了日">
+                    </div>
+                </div>
+                <!--  --- (ここに、さらに将来の検索項目を追加できる) --- #} -->
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">この条件で検索</button>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'albatross_app:log_list' %}" class="btn btn-outline-secondary btn-sm w-100">フィルターをリセット</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+            </form>
+        </div>
+    </div>
+    <!-- --- ▲▲▲ フィルター機能の挿入ここまで ▲▲▲ --- #} -->
+
+    {% if sessions %}
+        <div class="accordion" id="logAccordion">
+            {% for session in sessions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ session.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ session.id }}" aria-expanded="false" aria-controls="collapse-{{ session.id }}">
+                            <strong>{{ session.chart_type.name }}</strong>
+                            <span class="ms-auto text-muted">{{ session.end_time|date:"Y年n月j日 G:i" }}</span>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ session.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ session.id }}" data-bs-parent="#logAccordion">
+                        <div class="accordion-body">
+                            <ul class="list-group list-group-flush">
+                                {% for log in session.logs.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">{{ forloop.counter }}. {{ log.chart_step.question_text_intermediate|default:log.chart_step.keyword_advanced }}</div>
+                                            <small class="text-muted">{{ log.chart_step.question_text_beginner|truncatechars:50 }}</small>
+                                        </div>
+                                        {% if log.answer == 'yes' %}
+                                            <span class="badge bg-success rounded-pill">はい</span>
+                                        {% elif log.answer == 'no' %}
+                                            <span class="badge bg-danger rounded-pill">いいえ</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary rounded-pill">不明</span>
+                                        {% endif %}
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item">この診断の詳細なログはありません。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- ▼▼▼ ここからページネーション！ ▼▼▼ #} -->
+        {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">«</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">«</span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">»</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">»</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+        <!-- ▲▲▲ ページネーションここまで ▲▲▲ #} -->
+
+    {% else %}
+        <div class="card text-center">
+            <div class="card-body">
+                <p class="card-text">まだ診断ログはありません。</p>
+                <a href="{% url 'albatross_app:chart_type_list' %}" class="btn btn-primary">最初の診断を始める</a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // フォーム要素を取得
+    const filterForm = document.getElementById('logFilterForm');
+    // フォーム内の、値が変わる可能性のあるコントロールを全て取得
+    const controls = filterForm.querySelectorAll('.filter-control');
+
+    // 各コントロールに対して、イベントリスナーを設定
+    controls.forEach(function(control) {
+        // 'change'イベントは、プルダウンの選択が変わったり、
+        // ラジオボタンの選択が変わったりした時に発生する！
+        control.addEventListener('change', function() {
+            // 値が変わったら、即座にフォームを送信する！
+            filterForm.submit();
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
+

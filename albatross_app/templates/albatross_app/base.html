@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}アルバトロス{% endblock %}</title> <!-- 各ページで上書きできるようblockタグで囲う -->
+
+    <!-- ブートストラップ等共通で使うCSSを読み込む場所 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- プロジェクト共通のファイルがあればここで読み込む -->
+    {% load static %}<!-- staticファイルを使うためのコード-->
+    <!-- <link rel="stylesheet" href="{% static 'css/base.css' %}"> -->
+    <!-- static/css/base.cssを読み込む場合 -->
+    <link rel="stylesheet" href="{% static 'accounts/css/accounts_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'albatross_app/css/albatross_app_chart.css' %}">
+    <link rel="stylesheet" href="{% static 'albatross_app/css/common_styles.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    {% block extra_head %}{% endblock %}
+    <!-- 各ページで追加のcssやHEADタグを入れたいとき用 -->
+
+    <!-- ▼▼▼ ここからテーマカラー用のCSS変数を追加！ ▼▼▼ -->
+<style>
+    :root {
+        /* --- デフォルトテーマ (ライトグレー系とか、無難な色で) --- */
+        --theme-header-bg: #e9ecef;         /* ヘッダー/フッター用の少し濃い色 (Bootstrapの .bg-light に近い色) */
+        --theme-body-bg: #f8f9fa;           /* 背景用のすごく淡い色 (Bootstrapの .bg-light よりさらに薄い感じ) */
+        --theme-accent: #0d6efd;            /* (任意) アクセント用の色 (Bootstrapのプライマリブルー) */
+        --theme-header-text-color: #212529; /* ヘッダーの文字色 (デフォルトは暗い色) */
+        --theme-footer-text-color: #6c757d; /* フッターの文字色 (デフォルトは .text-muted) */
+
+        /* --- 質問カードの背景色 (これはテーマに関わらず固定！) --- */
+        --theme-card-bg: #ffffff; /* カード背景は白 */
+        /* ★★★ タブ用の変数の定義を復活させる！ ★★★ */
+        --theme-tab-text: #0d6efd;
+        --theme-tab-bg-active: #0d6efd;
+        --theme-tab-text-active: #ffffff;
+    }
+
+    /* --- テーマカラーの適用 --- */
+    body:not(.page-unauthenticated) {
+        background-color: var(--theme-body-bg);
+        color: var(--bs-body-color); /* 文字色はBootstrapのデフォルトを基本に */
+        transition: background-color 0.3s ease; /* 背景色が変わるときにフワッとアニメーション (任意) */
+    }
+
+    body:not(.page-unauthenticated) header .navbar { /* Bootstrapのnavbarクラスが付いてるヘッダーの場合 */
+        background-color: var(--theme-header-bg) !important; /* !important は状況に応じて */
+        transition: background-color 0.3s ease;
+    }
+    body:not(.page-unauthenticated) header .navbar-brand,
+    body:not(.page-unauthenticated) header .nav-link,
+    body:not(.page-unauthenticated) header .btn { /* ヘッダー内の文字やボタンの色も調整 */
+        color: var(--theme-header-text-color) !important; /* !important は状況に応じて */
+    }
+                /* ヘッダーのアウトラインボタンのスタイル */
+        body:not(.page-unauthenticated) header .btn-outline-secondary {
+            /* 通常時のスタイルを直接指定！ */
+            color: var(--theme-header-text-color) !important;
+            border-color: var(--theme-header-text-color) !important;
+            background-color: transparent !important; /* 通常時は背景透明を明示 */
+
+            /* BootstrapのCSS変数を上書きする試みは、ここでは一旦やめる */
+            /* --bs-btn-color: var(--theme-header-text-color) !important; */
+            /* --bs-btn-border-color: var(--theme-header-text-color) !important; */
+            /* --bs-btn-hover-color: #FFFFFF !important; */
+            /* --bs-btn-hover-bg: var(--theme-header-text-color) !important; */
+            /* --bs-btn-hover-border-color: var(--theme-header-text-color) !important; */
+        }
+
+        /* ヘッダーのアウトラインボタンがホバーされた時のスタイルを直接指定！ */
+        body:not(.page-unauthenticated) header .btn-outline-secondary:hover {
+            color: var(--theme-body-bg) !important; /* ★ホバー時の文字色は白に固定！ */
+            background-color: var(--theme-header-text-color) !important; /* ★背景はテーマの濃い色 (ショッキングカラー)！ */
+            border-color: var(--theme-header-text-color) !important; /* ★枠線もテーマの濃い色！ */
+        }
+
+
+    body:not(.page-unauthenticated) footer.bg-light { /* Bootstrapの .bg-light クラスが付いてるフッターの場合 */
+        background-color: var(--theme-header-bg) !important; /* ヘッダーと同じ色を使う例 */
+        transition: background-color 0.3s ease;
+    }
+    body:not(.page-unauthenticated) footer .text-muted { /* フッターの text-muted の色も調整 */
+        color: var(--theme-footer-text-color) !important;
+    }
+
+    /* 質問カードの背景を白に固定 */
+    .chart-step.card { /* albatross_app_chart.css にあるセレクタと合わせる */
+        background-color: var(--theme-card-bg) !important;
+        /* 枠線の色は、テーマカラーに影響されない固定色にするか、
+            あるいはテーマのアクセントカラーにしても面白いかも？ (今回は固定色を想定) */
+        /* border-color: #dee2e6 !important; */
+    }
+
+    /* (任意) アクセントカラーの適用例 (見出しの下線など) */
+    /*
+    h1, h2, h3 {
+        border-bottom: 2px solid var(--theme-accent);
+        padding-bottom: 0.2em;
+    }
+    a {
+        color: var(--theme-accent);
+    }
+    */
+</style>
+<!-- ▲▲▲ ここまでテーマカラー用のCSS変数を追加！ ▲▲▲ -->
+
+</head>
+
+
+<!-- 5/14ヘッダー中身追記 -->
+
+<body class="d-flex flex-column min-vh-100 {% block body_class %}{% endblock %}">
+
+    <header>
+        <nav class="navbar navbar-expand-lg navber-light bg-light"> <!-- ここからナビゲーションバー -->
+            <div class="container-fluid">
+                {% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name in "password_change account_delete password_change_done account_delete_complete" %}
+    <!-- もし、アカウント設定系のページにいるなら… -->
+    <a class="navbar-brand fw-light text-primary fs-4" 
+        href="javascript:window.close();" 
+        data-bs-toggle="tooltip" 
+        data-bs-placement="bottom"
+        title="このページからは移動できません。クリックしてタブを閉じてください。">
+        <img src="{% static 'albatross_app/images/flap.png' %}" alt="albatrossロゴ" width="40" height="40"
+            class="d-inline-block align-text-top me-2">
+        Albatross
+    </a>
+{% else %}
+    <!-- それ以外のページなら、今まで通りのリンク！ -->
+    <a class="navbar-brand fw-light text-primary fs-4"
+        href="{% if user.is_authenticated %}{% url 'albatross_app:chart_type_list' %}{% else %}{% url 'accounts:login' %}{% endif %}">
+        <img src="{% static 'albatross_app/images/flap.png' %}" alt="albatrossロゴ" width="40" height="40"
+            class="d-inline-block align-text-top me-2">
+        Albatross
+    </a>
+{% endif %}
+                <div class="ms-auto">
+                    {% if user.is_authenticated %}
+                    <ul class="navbar-nav flex-row">
+                        <li class="nav-item me-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#screenSettingsModal">
+                                <i class="bi bi-gear-fill"></i>
+                                画面設定
+                            </button>
+                        </li>
+
+                        <li class="nav-item me-2">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    アカウント設定
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if request.resolver_match.url_name == "password_change" or request.resolver_match.url_name == 'account_delete' %}
+                                        <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}">パスワード変更</a></li>
+                                    {% else %}
+                                        <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}" target="_blank">パスワード変更</a></li>
+                                    {% endif %}
+
+                                    <li><hr class="dropdown-divider"></li> <!-- ← ★★★ここを修正！★★★ -->
+
+                                    {% if request.resolver_match.url_name == "account_delete" or request.resolver_match.url_name == "password_change" %}
+                                        <li><a class="dropdown-item" href="{% url 'accounts:account_delete'%}">アカウント削除</a></li>
+                                    {% else %}
+                                        <li><a class="dropdown-item" href="{% url 'accounts:account_delete'%}" target="_blank">アカウント削除</a></li>
+                                    {% endif %}
+                                </ul>
+
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'accounts:logout'%}" method="post" class="d-inline">
+
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    ログアウト
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                    {% else %}
+                    <!-- 未ログインユーザー向けの表示 -->
+                    <ul class="navbar-nav flex-row">
+                        <li class="nav-item">
+                            <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">ログイン</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-sm ms-2">新規登録</a>
+                        </li>
+                    </ul>
+                    <!-- この「新規登録」ボタンは、user.is_authenticated が False の時だけ表示される -->
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+<div class="flex-grow-1">
+    <main class="container mt-4 mb-4"><!-- メインコンテンツ表示 -->
+        {% block content %}
+        <!-- ここに各ページの中身が入る -->
+        {% endblock %}
+    </main>
+</div>
+
+    <footer class="mt-auto py-3 bg-light text-center">
+        <div class="container">
+            <div class="d-flex justify-content-center align-items-center gap-1">
+                
+                <!-- (1) 左サイド：将来用の画像スペース -->
+                <div class="footer-left">
+                    <img src="{% static 'albatross_app/images/baby.png' %}" alt="左のロゴ" height="30">
+<!-- ← 今は何も入れないから、スペースが潰れないように仮の文字(空白)を入れとく #} -->
+                </div>
+
+                <!-- (2) 中央：コピーライト表記 -->
+                    <div class="footer-center">
+                        <span class="text-muted">© 2025 Albatross</span>
+                </div>
+
+                <!-- (3) 右サイド：LPへのリンク付き画像 -->
+                <div class="footer-right">
+                    <!-- ★★★ ここに、LPへのリンクと右側の画像を入れる！ ★★★ #} -->
+                    <a href="{% url 'albatross_app:landing_page' %}" target="_blank" rel="noopener noreferrer">
+                        <img src="{% static 'albatross_app/images/step.png' %}" alt="LPへのリンク" height="30">
+                        <!-- ↑↑↑ 画像のパスとaltテキスト、高さ(height)は、マサ君の用意した画像に合わせて調整してね！ #} -->
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ↑ Popper.js も一緒に入ってるバンドル版を使うと楽ちん！ -->
+
+{% block extra_js %}
+<script>
+// --- 文字サイズ変更関連の処理 ---
+document.addEventListener('DOMContentLoaded', function() {
+    // 文字サイズ変更ボタンの要素を取得
+    const btnSmall = document.getElementById('fontSizeSmall');
+    const btnDefault = document.getElementById('fontSizeDefault');
+    const btnLarge = document.getElementById('fontSizeLarge');
+    const btnSuperLarge = document.getElementById('fontSizeSuperLarge'); // ★変更点1: 変数名を btnSuperLarge に (任意だけど推奨)
+
+    // ページ全体の文字サイズを変更する対象の要素
+    const bodyElement = document.body;
+
+    // ★追加1: ボタンのIDと要素をマッピング (新しい関数で使う)
+    const fontButtons = {
+        'small': btnSmall,
+        'default': btnDefault,
+        'large': btnLarge,
+        'super-large': btnSuperLarge // ★変更点1 に合わせてキーも 'super-large'
+    };
+
+    // ★追加2: localStorageの値に基づいてアクティブなボタンを更新する新しい関数
+    function updateActiveButtonBasedOnPreference() {
+        const savedPreference = localStorage.getItem('userFontSizePreference');
+        console.log('localStorageから文字サイズ設定を読み込みました (updateActiveButtonBasedOnPreference):', savedPreference);
+
+        // まず全てのボタンからactiveを外す
+        for (const key in fontButtons) {
+            if (fontButtons[key]) {
+                fontButtons[key].classList.remove('active');
+            }
+        }
+
+        // 保存された設定に対応するボタンをアクティブにする
+        if (savedPreference && fontButtons[savedPreference]) {
+            fontButtons[savedPreference].classList.add('active');
+            console.log(savedPreference + ' ボタンをアクティブにしました。');
+        } else if (fontButtons['default']) { // 保存された設定がない、または無効な場合は「標準」をアクティブに
+            fontButtons['default'].classList.add('active');
+            console.log('保存された設定がないため、標準ボタンをアクティブにしました。');
+        }
+    }
+
+    // ★修正1: ページ読み込み時の処理を整理
+    const savedFontSizePreferenceOnLoad = localStorage.getItem('userFontSizePreference');
+    if (savedFontSizePreferenceOnLoad) {
+        let fontSizeToApply = '';
+        if (savedFontSizePreferenceOnLoad === 'small') {
+            fontSizeToApply = '0.8rem';
+        } else if (savedFontSizePreferenceOnLoad === 'default') {
+            fontSizeToApply = '';
+        } else if (savedFontSizePreferenceOnLoad === 'large') {
+            fontSizeToApply = '1.2rem';
+        } else if (savedFontSizePreferenceOnLoad === 'super-large') { // ★変更点1 に合わせてキーを 'super-large'
+            fontSizeToApply = '1.6rem'; // ★HTML側の極大ボタンの実際のフォントサイズに合わせる
+        }
+        bodyElement.style.fontSize = fontSizeToApply;
+        console.log('ページ読み込み時にlocalStorageから文字サイズ適用:', savedFontSizePreferenceOnLoad, '適用サイズ:', fontSizeToApply || '(標準)');
+    }
+    updateActiveButtonBasedOnPreference(); // ★修正2: 新しい関数をここで呼び出す！
+
+    // ★修正3: 各ボタンのクリックイベントリスナーの中身を変更
+    if (btnSmall) {
+        btnSmall.addEventListener('click', function() {
+            bodyElement.style.fontSize = '0.8rem';
+            localStorage.setItem('userFontSizePreference', 'small');
+            updateActiveButtonBasedOnPreference(); // ★新しい関数を呼ぶ！ (以前は updateActiveButton(this) だった)
+            console.log('文字サイズを「小」に変更しました。');
+        });
+    }
+    if (btnDefault) {
+        btnDefault.addEventListener('click', function() {
+            bodyElement.style.fontSize = '';
+            localStorage.setItem('userFontSizePreference', 'default');
+            updateActiveButtonBasedOnPreference(); // ★新しい関数を呼ぶ！
+            console.log('文字サイズを「標準」に変更しました。');
+        });
+    }
+    if (btnLarge) {
+        btnLarge.addEventListener('click', function() {
+            bodyElement.style.fontSize = '1.2rem';
+            localStorage.setItem('userFontSizePreference', 'large');
+            updateActiveButtonBasedOnPreference(); // ★新しい関数を呼ぶ！
+            console.log('文字サイズを「大」に変更しました。');
+        });
+    }
+    if (btnSuperLarge) { // ★変更点1 に合わせた変数名
+        btnSuperLarge.addEventListener('click', function() {
+            bodyElement.style.fontSize = '1.6rem'; // ★HTML側の極大ボタンの実際のフォントサイズに合わせる
+            localStorage.setItem('userFontSizePreference', 'super-large'); // ★変更点1 に合わせて保存キーも 'super-large'
+            updateActiveButtonBasedOnPreference(); // ★新しい関数を呼ぶ！
+            console.log('文字サイズを「極大」に変更しました。');
+        });
+    }
+
+    // ★削除1: 以前の updateActiveButton 関数はもう使わないので削除！
+    /*
+    function updateActiveButton(activeButton) {
+        // ... (以前のコード) ...
+    }
+    */
+
+    // ★修正4: モーダル表示時の処理を変更
+    const screenSettingsModal = document.getElementById('screenSettingsModal');
+    if (screenSettingsModal) {
+        screenSettingsModal.addEventListener('shown.bs.modal', function () {
+            console.log('画面設定モーダルが表示されました。アクティブボタンを更新します。');
+            updateActiveButtonBasedOnPreference(); // ★新しい関数をここで呼び出す！
+        });
+    }
+
+// --- ▼▼▼ ここからテーマカラー切り替え処理を追加！ ▼▼▼ ---
+    const themeSelectorContainer = document.getElementById('themeSelectorContainer');
+    const rootElement = document.documentElement;
+
+    const themes = {
+        'default': { name: 'デフォルト', strong: '#e9ecef', light: '#f8f9fa', accent: '#0d6efd', headerText: '#0d6efd', footerText: '#6c757d' },
+        'cool-blue': { name: 'クールブルー', strong: '#B0C4DE', light: '#E6E6FA', accent: '#4682B4', headerText: '#007BFF', footerText: '#4A5568', tabText: '#007BFF', tabBgActive: '#007BFF', tabTextActive: '#E6E6FA'},
+        'heal-green': { name: 'ヒールグリーン', strong: '#C1E1C1', light: '#E9F5E9', accent: '#8FBC8F', headerText: '#32CD32', footerText: '#3A5F4B', tabText: '#32CD32', tabBgActive: '#32CD32', tabTextActive: '#E9F5E9'},
+        'kawachii-pink': { name: 'かわちぃピンク', strong: '#FFC0CB', light: '#FFF0F5', accent: '#FF69B4', headerText: '#FF1493', footerText: '#8B4571', tabText: '#FF1493', tabBgActive: '#FF1493', tabTextActive: '#FFF0F5'},
+        'happy-yellow': { name: 'ハッピーイエロー', strong: '#FFF3C4', light: '#FFFBEA', accent: '#FADA5E', headerText: '#FFD700', footerText: '#7A7A7A', tabText: '#FFD700', tabBgActive: '#FFD700', tabTextActive: '#FFFBEA'},
+        'dreamy-lavender': { name: 'ドリーミーラベンダー', strong: '#D8BFD8', light: '#F3E8F3', accent: '#B088B0', headerText: '#9400D3', footerText: '#543E7A', tabText: '#9400D3', tabBgActive: '#9400D3', tabTextActive: '#F3E8F3'}
+    };
+
+    function applySavedTheme() {
+        const savedThemeKey = localStorage.getItem('userThemePreference'); // キー名を 'userThemePreference' に統一
+        const themeToApply = themes[savedThemeKey] ? savedThemeKey : 'default';
+        applyTheme(themeToApply);
+        updateThemeButtons(themeToApply);
+        console.log('適用されたテーマ (JS):', themeToApply); // ログ出力少し変更
+    }
+
+    function applyTheme(themeKey) {
+        if (themes[themeKey]) {
+            const selectedTheme = themes[themeKey];
+            rootElement.style.setProperty('--theme-header-bg', selectedTheme.strong);
+            rootElement.style.setProperty('--theme-body-bg', selectedTheme.light);
+            rootElement.style.setProperty('--theme-accent', selectedTheme.accent);
+            rootElement.style.setProperty('--theme-header-text-color', selectedTheme.headerText);
+            rootElement.style.setProperty('--theme-footer-text-color', selectedTheme.footerText);
+            // ★★★ こっちの形に戻す！ ★★★
+            rootElement.style.setProperty('--theme-tab-text', selectedTheme.tabText);
+            rootElement.style.setProperty('--theme-tab-bg-active', selectedTheme.tabBgActive);
+            rootElement.style.setProperty('--theme-tab-text-active', selectedTheme.tabTextActive);
+
+            localStorage.setItem('userThemePreference', themeKey); // キー名を 'userThemePreference' に統一
+        }
+    }
+
+    if (themeSelectorContainer) {
+        Object.keys(themes).forEach(themeKey => {
+            const theme = themes[themeKey];
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.classList.add('btn', 'btn-sm', 'theme-color-button'); // 'btn-sm' で少し小さく
+            button.dataset.theme = themeKey;
+            button.style.backgroundColor = theme.strong;
+            button.style.width = '30px';
+            button.style.height = '30px';
+            button.style.borderRadius = '50%';
+            button.style.border = '1px solid #ccc'; // 初期枠線
+            button.setAttribute('title', theme.name);
+            button.setAttribute('aria-label', theme.name);
+
+            button.addEventListener('click', function() {
+                applyTheme(themeKey);
+                updateThemeButtons(themeKey);
+            });
+            themeSelectorContainer.appendChild(button);
+        });
+    }
+
+    function updateThemeButtons(activeThemeKey) {
+        const buttons = document.querySelectorAll('.theme-color-button');
+        buttons.forEach(btn => {
+            if (btn.dataset.theme === activeThemeKey) {
+                btn.classList.add('active');
+                btn.style.borderColor = '#007bff'; // Bootstrapのプライマリブルーでアクティブ表示
+                btn.style.borderWidth = '2px';     // 枠線を少し太く
+                btn.style.boxShadow = '0 0 0 0.2rem rgba(13, 110, 253, 0.25)'; // フォーカスリングみたいな効果 (任意)
+            } else {
+                btn.classList.remove('active');
+                btn.style.borderColor = '#ccc';
+                btn.style.borderWidth = '1px';
+                btn.style.boxShadow = 'none'; // 通常時はシャドウなし
+            }
+        });
+    }
+
+    applySavedTheme(); // 初期表示時にテーマ適用
+
+    const screenSettingsModalForTheme = document.getElementById('screenSettingsModal'); // 変数名が被らないように変更
+    if (screenSettingsModalForTheme) { // screenSettingsModal のチェックは既存のJSにもあるので、変数名を分けた
+        screenSettingsModalForTheme.addEventListener('shown.bs.modal', function () {
+            const currentThemeKey = localStorage.getItem('userThemePreference') || 'default';
+            updateThemeButtons(currentThemeKey);
+            console.log('テーマ設定モーダル表示。ボタン状態更新。'); // ログ追加
+        });
+    }
+    // --- ▲▲▲ テーマカラー切り替え処理 ここまで ▲▲▲ ---
+
+
+});
+</script>
+{% endblock %}
+
+    <!-- Screen Settings Modal -->
+<div class="modal fade" id="screenSettingsModal" tabindex="-1" aria-labelledby="screenSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"> {# ← modal-dialog-centered で上下中央寄せ！ #}
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="screenSettingsModalLabel">画面設定</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 text-center">文字サイズを選択してください</p>
+                <div class="d-flex justify-content-center">
+                <div class="btn-group mb-3" role="group" aria-label="文字サイズ選択">
+                    <button type="button" class="btn btn-outline-primary" id="fontSizeSmall">小</button>
+                    <button type="button" class="btn btn-outline-primary active" id="fontSizeDefault">標準</button> {# ← 最初は「標準」が選択されてる感じ #}
+                    <button type="button" class="btn btn-outline-primary" id="fontSizeLarge">大</button>
+                    <button type="button" class="btn btn-outline-primary" id="fontSizeSuperLarge">極大</button>
+                </div>
+                </div>
+
+                <hr>
+                <p class="mb-2 mt-3 text-center">テーマカラーを選択してください</p>
+                <div class="d-flex justify-content-center flex-wrap gap-2" id="themeSelectorContainer">
+<!-- ここにJSがボタンを動的に追加 -->
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <!-- <button type="button" class="btn btn-primary">変更を保存</button> ← 保存ボタンは、ここでは不要かな？即時反映で  -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Screen Settings Modal -->
+
+</body>
+
+</html>

@@ -1,0 +1,85 @@
+{% extends "albatross_app/base.html" %}
+{% load static %}
+
+{% block body_class %}page-unauthenticated{% endblock %}
+
+{% block title %}新規ユーザー登録{% endblock %}
+
+{% block content %}
+<div class="login-page-container d-flex flex-column justify-content-center align-items-center">
+    <div class="container"> <!-- container はあってもなくてもOKだけど、ログインと合わせるなら入れる -->
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="signup-form-card p-4 p-sm-5">
+                    <h2 class="mb-4 text-center">新規ユーザー登録</h2>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                    <!-- {{ form.as_p }}でユーザークリエイトフォーム表示 -->
+                    <!-- 下記は各登録の項目 -->
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                            <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}"
+                            class="form-control {% if form.username.errors %}is-invalid{% endif %}" required>
+                            {% if form.username.help_text %}
+                                <small class="form-text text-muted help-text-custom">{{ form.username.help_text|safe }}</small> <!-- ←
+                    ヘルプテキスト！ -->
+                            {% endif %}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    <!-- Password (最初の入力) フィールド -->
+                    <!-- UserCreationFormでは、これは password1 という名前のはず (ビューで使ってるフォームを確認してね！)
+                もし views.py で SignUpView(form_class=UserCreationForm) ってなってるなら、
+                form.password1 と form.password2 でアクセスできるはず！ -->
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">{{ form.password1.label }}</label> <!-- ← password1 に直すかも？ -->
+                            <input type="password" name="{{ form.password1.name }}" id="{{ form.password1.id_for_label }}"
+                            class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                        <!-- ← password1 に直すかも？ -->
+                            {% if form.password1.help_text %} <!-- ← password1 に直すかも？ -->
+                        <!-- ↓↓↓ ヘルプテキストの表示方法、箇条書き風にするならこう ↓↓↓ -->
+                                <small class="form-text text-muted help-text-custom">
+                                    {{ form.password1.help_text|safe }}
+                                </small>
+                            {% endif %}
+                            {% for error in form.password1.errors %} <!-- ← password1 に直すかも？ -->
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    <!-- --- Password (確認用) フィールド -->
+                    <!-- UserCreationFormでは、これは password2 という名前のはず -->
+                        <div class="mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">{{ form.password2.label }}</label> <!-- ← password2 に直すかも？ -->
+                            <input type="password" name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}"
+                            class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                        <!-- ← password2 に直すかも？ -->
+                            {% if form.password2.help_text %} <!-- ← password2 に直すかも？ -->
+                                <small class="form-text text-muted help-text-custom">{{ form.password2.help_text|safe }}</small> <!--
+                    ← ヘルプテキスト！ -->
+                            {% endif %}
+                            {% for error in form.password2.errors %} <!-- ← password2 に直すかも？ -->
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    <!-- ↑↑↑ ★★★ ここまでが個別レンダリング ★★★ ↑↑↑ -->
+
+                    <!-- ↓↓↓ ボタンのd-gridのスペルミス修正！ (d-gird gep-2 -> d-grid gap-2) ↓↓↓ -->
+                        <div class="d-grid gap-2 mt-4"> <!-- フォームとボタンの間に少し余白 (mt-3 から mt-4 へ) -->
+                            <button type="submit" class="btn btn-primary btn-lg">登録する</button> <!-- btn-lgで少し大きく -->
+                        </div>
+                    </form>
+
+                    <p class="mt-3 text-center"> <!-- ここは変更なしでもOK！ -->
+                        すでにアカウントをお持ちですか？ <a href="{% url 'accounts:login' %}">ログインはこちら</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
