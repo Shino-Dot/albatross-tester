@@ -179,7 +179,11 @@ class TroubleshootingSession(models.Model):
     # outcome = models.CharField(max_length=50, blank=True, null=True, verbose_name="結果") # とりあえずコメントアウト
 
     def __str__(self):
-        return f"{self.user.username} - {self.chart_type.name} ({self.end_time.strftime("%Y-%m-%d %H:%M")})"
+        # まず、フォーマットした日付の文字列を、別の変数に入れちゃう
+        formatted_time = self.end_time.strftime("%Y-%m-%d %H:%M")
+        
+        # それから、f-stringの中では、シンプルな変数だけを使う！
+        return f"{self.user.username} - {self.chart_type.name} ({formatted_time})"
     
     class Meta:
         verbose_name = "トラブルシューティングセッション"

@@ -12,12 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import re
 from django.urls import reverse_lazy
-
+DEBUG = os.environ.get("FLY_APP_NAME") is None
 
 # 5/9---osモジュールを使うためにosをインポート追記
 # 5/22---reverse_lazy追加
-
+# 6/24---ポスグレSQLに変えるためのDJDATEBASEURL
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -34,7 +35,9 @@ SECRET_KEY = 'django-insecure-ez#l2(hhk9bx9cm*r9nvt8-#&2@7_=-ulpnzvs24jjq*6vjxv9
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
+# ALLOWED_HOSTSに、Fly.ioのアプリのURLを追加する
+# 今は、'albatross-2025.fly.dev' っていうのが、マサ君のアプリの住所だね！
+ALLOWED_HOSTS = ['albatross-2025.fly.dev', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -89,12 +92,42 @@ WSGI_APPLICATION = 'albatross.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# ▼▼▼ DATABASESの設定を、これにまるっと書き換える！ ▼▼▼
+# まずは、ローカル用のSQLiteの設定を、デフォルトとして書いておく
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# 本番環境（Fly.io）で、DATABASE_URLが設定されてる場合の、特別な処理
+if 'DATABASE_URL' in os.environ:
+    # Fly.ioが提供するDATABASE_URLを、正規表現で、部品ごとに分解する！
+    database_url = os.environ['DATABASE_URL']
+    match = re.match(r'postgres://(.*?):(.*?)@(.*?):(.*?)/(.*)', database_url)
+    
+    # ★★★ もし、分解がうまくいかなかった時のための、安全装置を追加！ ★★★
+    if match:
+        db_user = match.group(1)
+        db_password = match.group(2)
+        db_host = match.group(3)
+        db_port = match.group(4)
+        db_name = match.group(5)
+
+        # 分解した部品を使って、PostgreSQLの設定を、自分たちの手で、完全に作り直す！
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+            'OPTIONS': {'sslmode': 'require'},
+        }
+    else:
+        # もし、URLの分解に失敗したら、エラーを出すようにする
+        raise ValueError("DATABASE_URLの解析に失敗しました。")
 
 
 # Password validation
@@ -159,3 +192,7 @@ LOGOUT_REDIRECT_URL = reverse_lazy("accounts:login")
 # 3 ログアウトしたら、name='login' のページ（つまりログインページ）に飛ばすよ、って意味。
 # "/"からreverse_lazy("accounts:login")に変更、明示的に飛ばす。
 # ↑↑↑ 'albatross_app' (アプリ名) と 'chart_type_list' (さっき付けたURL名) を指定！
+
+
+# CSRF_TRUSTED_ORIGINSも設定しとくと、より安全！
+CSRF_TRUSTED_ORIGINS = ['https://albatross-2025.fly.dev']

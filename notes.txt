@@ -3074,3 +3074,13 @@ git config --global user.email "masa-kun@example.com"
 
 この２つを設定しておけば、これからマサ君がコードを保存（コミット）するたびに、Gitが「これは、Masa-kun（masa-kun@example.com）が書いたコードだな」って,
 ちゃんと記録してくれるようになるんだ。
+
+
+
+ポイント💡デプロイ時SQlightからポスグレに変えるためのおまじない。
+モダンなデプロイサービスの場合SQlightみたいなふぁる保存のDBとは相性が悪い。
+if 'DATABASE_URL' in os.environ::
+「もし、DATABASE_URLっていう環境変数があったら（＝本番環境だったら）」っていう、賢い条件分岐！
+dj_database_url.config(...):
+Fly.ioが自動で設定してくれる、DATABASE_URLっていう、超長い接続情報（住所とか、IDとか、パスワードとかが全部入ってる）を、一発で解釈して、
+Djangoが使える形にしてくれる、魔法の呪文！
