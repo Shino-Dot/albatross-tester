@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 import re
 from django.urls import reverse_lazy
-DEBUG = os.environ.get("FLY_APP_NAME") is None
+import dj_database_url # ★★★ インポート文を、ここ（ファイル上部）に移動！ ★★★
 
 # 5/9---osモジュールを使うためにosをインポート追記
 # 5/22---reverse_lazy追加
@@ -34,11 +34,12 @@ SECRET_KEY = 'django-insecure-ez#l2(hhk9bx9cm*r9nvt8-#&2@7_=-ulpnzvs24jjq*6vjxv9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# ALLOWED_HOSTSに、Fly.ioのアプリのURLを追加する
-# 今は、'albatross-2025.fly.dev' っていうのが、マサ君のアプリの住所だね！
-ALLOWED_HOSTS = ['albatross-2025.fly.dev', 'localhost', '127.0.0.1']
-
+ALLOWED_HOSTS = [
+    'albatross-2025.fly.dev', 
+    '.fly.dev', # Fly.ioの内部ネットワークからのアクセスを許可！
+    'localhost', 
+    '127.0.0.1'
+]
 # Application definition
 
 # 5/9...アロードホストを空欄から上記に変更「今まさに使ってる、この自分のパソコン」 を指す特別な名前と住所
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -103,32 +105,18 @@ DATABASES = {
 
 # 本番環境（Fly.io）で、DATABASE_URLが設定されてる場合の、特別な処理
 if 'DATABASE_URL' in os.environ:
-    # Fly.ioが提供するDATABASE_URLを、正規表現で、部品ごとに分解する！
-    database_url = os.environ['DATABASE_URL']
-    match = re.match(r'postgres://(.*?):(.*?)@(.*?):(.*?)/(.*)', database_url)
-    
-    # ★★★ もし、分解がうまくいかなかった時のための、安全装置を追加！ ★★★
-    if match:
-        db_user = match.group(1)
-        db_password = match.group(2)
-        db_host = match.group(3)
-        db_port = match.group(4)
-        db_name = match.group(5)
+    # ★★★ ここからがデバッグ用のコード！ ★★★
+    database_url = os.environ.get("DATABASE_URL")
 
-        # 分解した部品を使って、PostgreSQLの設定を、自分たちの手で、完全に作り直す！
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_name,
-            'USER': db_user,
-            'PASSWORD': db_password,
-            'HOST': db_host,
-            'PORT': db_port,
-            'OPTIONS': {'sslmode': 'require'},
-        }
-    else:
-        # もし、URLの分解に失敗したら、エラーを出すようにする
-        raise ValueError("DATABASE_URLの解析に失敗しました。")
+    # ★★★ ここまでがデバッグ用のコード！ ★★★
+    if 'sslmode=disable' in database_url:
+        database_url = database_url.replace('sslmode=disable', 'sslmode=require')
 
+    # dj_database_url を使って、DATABASE_URLをパースさせる
+    DATABASES['default'] = dj_database_url.config(
+        default=database_url,
+        conn_max_age=600
+    )
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -168,6 +156,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# ▼▼▼ この一行を追記！ ▼▼▼
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

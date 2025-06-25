@@ -4,9 +4,11 @@ FROM python:3.11-slim
 
 # --- ★★★ ここからが、超重要！ ★★★ ---
 # psycopg2が、正しくインストールされるために必要な、OSのツールを、先にインストールする！
-RUN apt-get update && apt-get install -y \
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
     build-essential \
     libpq-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 # --- ★★★ ここまでが、超重要！ ★★★ ---
 
@@ -30,11 +32,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ローカルの、このプロジェクトのファイルを、全部コンテナの/appフォルダにコピーする
 COPY . /app/
 
-# --- ▼▼▼ 6. 起動スクリプトをコピーして、実行権限を与える！ ▼▼▼ ---
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
+RUN python manage.py collectstatic --noinput
 # --- 6. アプリを起動するコマンドを設定 ---
 # このコンテナが起動した時に、このコマンドを実行してね！っていう命令
 # Gunicornという本番用のWebサーバーを使って、albatrossプロジェクトを動かす
-CMD ["/app/entrypoint.sh"]
+CMD ["gunicorn", "--bind", ":8000", "--workers", "2", "albatross.wsgi"]

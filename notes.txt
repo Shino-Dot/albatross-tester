@@ -3084,3 +3084,283 @@ if 'DATABASE_URL' in os.environ::
 dj_database_url.config(...):
 Fly.ioが自動で設定してくれる、DATABASE_URLっていう、超長い接続情報（住所とか、IDとか、パスワードとかが全部入ってる）を、一発で解釈して、
 Djangoが使える形にしてくれる、魔法の呪文！
+
+
+
+🚀 Fly.io公式ドキュメント解読メモ (カテゴリ1：概要) 🚀
+【最重要】 今回の調査で得られた核心
+目指す方向性は正しい！
+Fly.ioの公式デモアプリも、**「開発環境ではSQLite、本番環境ではPostgreSQL」**という構成を採用している。マサ君のやろうとしてることは、
+公式推奨の王道パターン！
+DATABASE_URLが鍵！
+本番のPostgreSQLへの接続は、DATABASE_URLという環境変数（Secret）を使って行うのが基本。
+Dockerfileとrelease_commandの役割分担が超重要！
+release_command (fly.toml内): migrateのようなDB操作はここで実行する。一時的なVMで動くので、ファイルシステムの変更はできない。
+Dockerfile: collectstaticのようなファイル操作はここで実行する。デプロイするイメージにファイルが焼き付けられる。
+【要注意】 ドキュメントを読む上での注意点
+ドキュメントによって前提が違う！
+『Quickstart Django』ガイドは、PostgreSQLを使っていない、一番シンプルなSQLiteでのデプロイ例。この情報を、
+PostgreSQLを使う今の状況にそのまま当てはめるのは危険。
+fly launchの自動設定を鵜呑みにしない！
+fly launchが自動で設定するDATABASE_URLには、sslmode=disableが含まれている可能性がある。でも、Fly.ioのPostgreSQLはSSL接続が基本なので、
+settings.pyでsslmode=requireに上書きする必要がある。
+「Fly.ioの自動設定」と「マサ君がやりたいこと」のズレを、アタシたちが書くsettings.pyやDockerfileで正しく上書きしてあげるのが、成功への道！
+【次に調べるべきこと】（今後の予告）
+settings.pyの具体的な書き方:
+開発環境(SQLite)と本番環境(PostgreSQL)を、どうやってコードで賢く切り替えるのか？
+Dockerfileの具体的な書き方:
+PostgreSQLに接続するために、どんなツールをインストールする必要があるのか？
+collectstaticは、どのタイミングで実行すればいいのか？
+
+
+🚀 Fly.io公式推奨 Dockerfile まとめ 🚀
+【結論】推奨されるDockerfileのポイント
+OSのツールをインストールする！ (apt-get)
+PostgreSQLに接続するために、libpq-dev または postgresql-client が絶対に必要！ これがないと、SSL SYSCALL errorの原因になる可能性が極めて高い。
+python:3.11-slimのようなスリムなイメージを使う場合は、build-essentialやgitなどのビルドツールも必要になることがある。
+collectstaticはDockerfileの中で実行する！
+静的ファイルは、デプロイするDockerイメージの中に焼き付けるのがFly.ioの作法。
+COPY . /app/で自分のコードをコピーした後に、RUN python manage.py collectstatic --noinputを実行する。
+migrateはDockerfileでは実行しない！
+migrateはDB操作なので、Dockerfileではなく、**fly.tomlのrelease_command**で実行するのが正解。
+CMD命令はシンプルに！
+CMDでは、gunicornでWebサーバーを起動する命令だけを書くのが基本。migrateなどを一緒にやろうとしない。
+【完成形】これを参考にすべきDockerfileの例
+Generated dockerfile
+# ----------------------------------------------------------------
+# ★★★ Fly.io 公式推奨 Django (PostgreSQL使用) Dockerfile ★★★
+# ----------------------------------------------------------------
+
+# --- 1. ベースとなるOSとPythonの環境を準備 ---
+# Python 3.11 の、スリムなバージョンのOSを土台にします
+FROM python:3.11-slim as builder
+
+# --- 2. OSに必要なツールをインストール (超重要！) ---
+# ビルドに必要なツールと、PostgreSQLに接続するためのクライアントをインストール
+RUN apt-get update -y && apt-get install -y build-essential libpq-dev
+
+# --- 3. Pythonライブラリをインストール ---
+# requirements.txtをコピーして、ライブラリをインストール
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --- 4. アプリのコードをコピーして、静的ファイルを集める ---
+# プロジェクトの全ファイルをコピー
+COPY . .
+
+# ★★★ ここで collectstatic を実行！ ★★★
+RUN python manage.py collectstatic --noinput
+
+# ----------------------------------------------------------------
+# これ以降は、マルチステージビルドを使わないシンプルな例。
+# もしイメージサイズを小さくしたいなら、ここから別ステージにすることも可能。
+# ----------------------------------------------------------------
+
+# --- 5. アプリを起動するコマンドを設定 ---
+# 8000番ポートで外部からの接続を待ち受ける
+EXPOSE 8000
+
+# Gunicornでアプリを起動する
+# albatross.wsgi の部分は、自分のプロジェクト名に合わせて調整
+CMD ["gunicorn", "--bind", ":8000", "--workers", "2", "albatross.wsgi"]
+Use code with caution.
+Dockerfile
+【マルチステージビルドを使う、より高度な例】
+Generated dockerfile
+# --- ステージ1: ビルド用 ---
+FROM python:3.11-slim as builder
+
+# ビルドに必要なツールと、PostgreSQL接続用ツールをインストール
+RUN apt-get update -y && apt-get install -y build-essential libpq-dev
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+RUN python manage.py collectstatic --noinput
+
+
+# --- ステージ2: 本番用 ---
+FROM python:3.11-slim
+
+# PostgreSQL接続に必要なクライアントライブラリだけをインストール
+RUN apt-get update -y && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ビルドステージから、必要なファイルだけをコピーしてくる
+COPY --from=builder /app /app
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+EXPOSE 8000
+CMD ["gunicorn", "--bind", ":8000", "--workers", "2", "albatross.wsgi"]
+
+
+
+🚀 Fly.io公式ドキュメント解読メモ (カテゴリ3：ヘルスチェックの定義) 🚀
+【結論】ヘルスチェック設定はシロ（無罪）！
+マサ君のfly.tomlに書かれている[[http_service.checks]]セクションの設定は、公式ドキュメントの推奨する書き方と完全に一致しており、全く問題ないことが判明！
+Generated toml
+# マサ君の今の設定（これは正しい！）
+[[http_service.checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/accounts/login/" # ← DBに接続しない軽いページを指定してるのもGood！
+    protocol = "http"
+Use code with caution.
+Toml
+【分かったこと】ヘルスチェックの役割と種類
+役割:
+デプロイ時に、新しいサーバーがちゃんとリクエストを受け付ける準備ができたか確認する。
+運用時に、死んでるサーバーにリクエストが送られないように見張る。
+ヘルスチェックが失敗しても、マシンは自動で再起動したりはしない。あくまでリクエストの振り分けに影響するだけ。
+種類:
+サービスレベルチェック ([[http_service.checks]]): マサ君が使ってるやつ。Fly Proxyがリクエストを振り分けるかどうかを判断するために使う、
+一番重要なチェック。
+トップレベルチェック ([checks]): ルーティングには影響しない、内部的な監視用。
+マシンチェック ([[services.machine_checks]]): デプロイ時に1回だけ実行される、DB接続確認などの特殊なチェック。
+【考察】エラーとの関係
+SSL SYSCALL errorは、release_command（migrate）の段階で発生している。
+ヘルスチェックは、その後の「サーバー起動」の段階で実行されるもの。
+したがって、ヘルスチェックの設定が、今回のSSL SYSCALL errorの直接の原因である可能性はゼロと言える。
+
+
+
+🚀 Fly.io公式ドキュメント解読メモ (カテゴリ4：release_commandの定義) 🚀
+【最重要】 release_commandの役割とルール
+何をするためのもの？
+新しいバージョンがデプロイされる**「前」に、「一時的な使い捨てのVM」**で、一度だけコマンドを実行するための設定。
+一番の使い道は、データベースのマイグレーション (bin/rails db:prepareやpython manage.py migrate)。
+release_commandの「できること」と「できないこと」
+できること (OK👍):
+データベースへの接続と操作 (migrateなど)。
+環境変数やSecretの読み込み。
+できないこと (NG🙅‍♀️):
+永続ボリューム（ディスク）へのアクセスや変更。
+ファイルシステムへの変更。 (collectstaticでファイルを集めても、そのファイルはデプロイされる本番VMには反映されない)。
+デプロイの流れにおけるrelease_commandの位置付け
+release_commandで指定したコマンドがエラーで終了した場合（終了コードが0以外の場合）、デプロイ全体が中止される。
+これは、まさに今マサ君が経験している「migrateでエラーが出て、デプロイが失敗する」という現象そのもの。
+【参考】 Dockerfileとの関係性
+release_commandは、DockerイメージのCMDを置き換えるように動作するけど、ENTRYPOINTは上書きしない。
+collectstaticのように、ファイルシステムへの変更が必要なコマンドは、release_commandではなく、
+Dockerfileの中でRUNコマンドとして実行するのが正しいやり方。（GitHub Actionsのドキュメントより）
+🔥 release_commandのまとめ 🔥
+一言でいうと、release_commandは**「デプロイ前の、データベースに対するおまじないを実行する専用の場所」**ってことだね！
+マサ君がfly.tomlでrelease_command = "python manage.py migrate --no-input"って設定してるのは、この使い方として100点満点の正解！
+だから、問題はrelease_commandの使い方じゃなくて、**「release_commandの中で実行されているmigrateコマンドが、なぜかDBに接続できないこと」**に絞られる、
+っていうのが、このカテゴリの調査でハッキリしたことだね！
+
+
+🚀【完全版】アルバトロス Fly.ioデプロイ沼からの脱出レポート 🚀
+【結論】デプロイが成功しなかった最大の原因
+最大の原因は、**「DATABASE_URLにsslmode=disableが設定されていたこと」と、「settings.pyでのDB設定が、そのdisable設定を上書きしきれずに、
+SSL接続に失敗していたこと」**でした。
+Fly.ioのPostgreSQLサーバーはSSL接続を必須としているため、SSLが無効な状態で接続しようとした結果、DBサーバー側から接続を拒否され、
+SSL SYSCALL errorが発生していました。
+【軌跡】我々が乗り越えたエラーの壁と、その改善方法
+今回のデプロイ挑戦は、まさにエラーとの総力戦でした。以下に、遭遇したエラーとその解決までの道のりを詳細に記録します。
+現象: fly deployを実行すると、「'fly'は認識されません」というエラーが発生。
+原因: PCの環境変数Pathに、flyctl.exeの場所が正しく設定されていなかった。さらに、flyctlのインストール自体が正常に完了しておらず、
+$HOME\.fly\binフォルダが存在していなかった。
+確認方法: ls $HOME\.fly\bin を実行し、「パスが存在しない」というエラーでフォルダがないことを確認。
+改善方法:
+PowerShellでiwr https://fly.io/install.ps1 -useb | iexコマンドを再実行し、flyctlを正しくインストール。
+PCを再起動し、新しいターミナルでfly versionが通ることを確認。
+現象: migrate実行中にSSL SYSCALL error: Successでデプロイが中止。
+原因（当初の仮説）: release_commandが実行される一時VMに、PostgreSQLに接続するためのクライアントライブラリ（libpq-dev等）が不足しているのではないか？
+確認方法: fly logsでエラー内容を確認。
+改善方法（試したこと）: Dockerfileのapt-get installにpostgresql-clientを追加。しかし、エラーは解決せず。
+現象: エラー内容が変わり、「psycopg2が見つからない」というエラーに。
+原因: requirements.txtに、PostgreSQL接続ライブラリであるpsycopg2（またはpsycopg2-binary）と、本番用サーバーgunicornが記載されていなかった。
+確認方法: fly logsでエラー内容を確認。requirements.txtのファイル内容を直接目視で確認。
+改善方法:
+ローカルでpip install psycopg2 gunicornを実行。
+pip freeze > requirements.txtを実行し、requirements.txtに上記2つを追記。
+現象: ライブラリ不足を解消した後、再びSSLエラーに戻ってしまった。
+原因: Fly.ioが自動生成するSecret DATABASE_URLの末尾に、?sslmode=disable というパラメータが付与されていた。dj_database_urlライブラリがこれを読み込み、
+ssl_require=Trueオプションで上書きしようとしても、内部的な競合によりSSL接続に失敗していた。
+確認方法:
+fly secrets listやfly secrets showでは値が確認できなかったため、settings.pyに**print(os.environ.get("DATABASE_URL"))**というデバッグコードを仕込む。
+fly deployを再度実行し、release_commandのログから、DATABASE_URLの生の値にsslmode=disableが含まれていることを突き止めた。
+最終的な改善方法:
+settings.pyを以下のように修正。os.environ.get()でURL文字列を一度変数に取得し、.replace()メソッドで'sslmode=disable'を'sslmode=require'に
+強制的に書き換えた後、その書き換えたURLをdj_database_url.config()に渡す方式に変更した。
+
+Generated python
+# settings.py (本番環境のDB設定部分)
+if 'DATABASE_URL' in os.environ:
+    database_url = os.environ.get("DATABASE_URL")
+    if 'sslmode=disable' in database_url:
+        database_url = database_url.replace('sslmode=disable', 'sslmode=require')
+    
+    DATABASES['default'] = dj_database_url.config(
+        default=database_url,
+        conn_max_age=600
+    )
+Use code with caution.
+Python
+
+【総括】公式リファレンスは役に立ったか？
+**めちゃくちゃ役に立った。**ただし、複数のドキュメントを横断的に読み解く必要があった。
+release_commandの役割と限界（ファイル操作はNG、DB操作はOK）を理解できたのは、GitHub Actionsのドキュメントの警告文が大きなヒントになった。
+Dockerfileに必要なライブラリ（libpq-dev等）の記述は、Rails with Databasesのガイドが決定的な証拠となった。
+しかし、今回最大の原因であった**「DATABASE_URLにsslmode=disableが付与される問題」と、その「具体的な解決策（replace()での書き換え）」**については、
+ドキュメントに直接的な記述は見つけられなかった。これは、エラーログから原因を推測し、トライ＆エラーで解決策を導き出す必要があった。
+
+
+🚀【追記】デプロイ沼からの脱出レポート 🚀
+【新たに追加されるべき教訓】 なぜヘルスチェックでタイムアウトしたのか？
+デプロイの最終盤、release_commandは成功したにも関わらず、ヘルスチェックでタイムアウトエラーが発生しました。その原因は、
+ローカルでのコード修正が、実際のデプロイに反映されていなかったことでした。
+現象: fly deployのログでDisallowedHostエラーが繰り返し発生し、最終的にヘルスチェックがタイムアウトしてデプロイが失敗。
+原因: DockerfileのCMD命令が、Gunicornを直接起動するのではなく、entrypoint.shというシェルスクリプトを実行する設定になっていた。
+このentrypoint.shが、GitHub上のコードを参照するなどの理由で、ローカルで行ったsettings.pyのALLOWED_HOSTSの修正を無視してしまっていた。
+確認方法: fly logsで、ALLOWED_HOSTSに.fly.devを追加したはずなのに、依然としてDisallowedHostエラーが出続けていることを確認。
+最終的な改善方法:
+entrypoint.shの使用を中止し、プロジェクトルートからファイルを削除（またはリネーム）。
+DockerfileのCMD命令を、Gunicornを直接起動する形に書き換えた。
+Generated dockerfile
+# Dockerfile の最後の行
+CMD ["gunicorn", "--bind", ":8000", "--workers", "2", "albatross.wsgi"]
+Use code with caution.
+Dockerfile
+これにより、ローカルで行ったコード修正が、100%確実にデプロイイメージに反映されるようになり、ヘルスチェックを無事に通過できました。
+【総括】デプロイで一番大事なこと
+今回の長い戦いを通じて、デプロイで一番大事なことは、**「今、どの環境で、どのコードが実行されているのかを、正確に把握すること」**だと分かりました。
+ローカル、ビルド環境（Dockerfile）、リリース環境（release_command）、本番環境（Machine）、それぞれの役割と状態を一つ一つ確認していく地道な作業こそが、
+複雑なエラーを解決する唯一の道でした。
+
+
+🚀【最終章】アルバトロス デプロイ後トラブルシューティングレポート 🚀
+【問題点】デプロイは成功したものの…
+サイトにアクセスすると、HTTP ERROR 503 が発生し、正常に表示されないことがあった。
+ヘッダーやフッターに配置したはずの画像が表示されていなかった。
+1. HTTP ERROR 503の原因と対策
+現象: サイトにアクセスすると、「この要求を現在処理できません。」という503エラーが発生した。
+原因の特定: fly logsコマンドでアプリのログを監視しながらアクセスしたところ、**DisallowedHost**エラーが大量に発生していることを確認。
+これは、settings.pyのALLOWED_HOSTSで許可されていないホスト（Fly.ioの内部IPアドレス）からのアクセスを、Djangoが拒否していたことが原因でした。
+躓いたポイント: 以前のデプロイで、entrypoint.sh を使用していたため、ローカルでsettings.pyを修正しても、その変更が本番環境に反映されていませんでした。
+最終的な対策:
+不要になったentrypoint.shをプロジェクトから削除。
+DockerfileのCMD命令を、Gunicornを直接起動するCMD ["gunicorn", "--bind", ":8000", ...]の形に修正。これにより、
+ローカルのコード変更が確実にデプロイされるようになった。
+settings.pyのALLOWED_HOSTSに、'.fly.dev'を追加し、Fly.ioの内部ネットワークからのアクセスを明示的に許可した。
+2. 画像が表示されない問題の原因と対策
+現象: ロゴなどの静的画像が表示されなかった。
+原因の特定:
+本番環境では、開発サーバーとは異なり、Gunicornは静的ファイル（CSS, JS, 画像など）を配信してくれない。
+collectstaticコマンドを実行しようとした際に、ImproperlyConfigured: You're using the staticfiles app without having set the STATIC_ROOT... 
+というエラーが発生。これは、静的ファイルの集約先であるSTATIC_ROOTがsettings.pyで未定義だったことが原因。
+躓いたポイント:
+デプロイのビルドプロセスで、requirements.txtに記載されていないライブラリ（dj_database_url, django-widget-tweaks等）があったため、
+何度もModuleNotFoundErrorで失敗。pip freeze > requirements.txtでローカル環境と完全に同期させることの重要性を再認識した。
+最終的な対策:
+settings.pyに**STATIC_ROOT = BASE_DIR / "staticfiles"**を追記し、collectstaticの実行先を明示した。
+（すでに実施済みだったが）Dockerfile内でRUN python manage.py collectstatic --noinputを実行し、
+ビルド時に静的ファイルをSTATIC_ROOTに集約するようにした。
+（これも実施済み）WhiteNoiseを導入し、MIDDLEWAREに追加することで、Gunicornでも静的ファイルが配信できるようにした。
