@@ -9,13 +9,13 @@
     <p class="text-end">こんにちは、{{ user.username }} さん！</p>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        {# 左側のスペース（今は空っぽ） #}
+        <!-- 左側のスペース（今は空っぽ） #} -->
         <div></div> 
         
-        {# 中央の見出し #}
+        <!-- 中央の見出し #} -->
         <h2 class="mb-0">どのようなトラブルですか？</h2>
         
-        {# 右側のログ確認ボタン #}
+        <!-- 右側のログ確認ボタン #} -->
         <a href="{% url 'albatross_app:log_list' %}" class="btn btn-sm btn-outline-info">
             <i class="bi bi-clock-history"></i> 診断ログ
         </a>
@@ -55,10 +55,10 @@
                 </div>
                 <div class="card-body d-flex flex-column">
                     <div class="d-grid gap-2 mb-2">
-                        <a href="{% url 'albatross_app:start_chart' 3 %}" class="btn btn-outline-primary">★カメラ使用不可</a> <!--IDは仮 -->
+                        <a href="{% url 'albatross_app:start_chart' 3 %}" class="btn btn-outline-primary">カメラ使用不可</a> <!--IDは仮 -->
                     </div>
                     <div class="d-grid gap-2">
-                        <a href="{% url 'albatross_app:start_chart' 2 %}" class="btn btn-outline-primary">★音不調</a> <!-- IDは仮 -->
+                        <a href="{% url 'albatross_app:start_chart' 2 %}" class="btn btn-outline-primary">音不調</a> <!-- IDは仮 -->
                     </div>
                 </div>
             </div>

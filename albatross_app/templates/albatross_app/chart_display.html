@@ -64,10 +64,10 @@
                     <!-- ============================================== -->
                     {% for step in chart_steps %}
                         {% if step.is_final_step %}
-                            <div class="card mb-5 chart-step" data-step-id="{{ step.id }}" style="display: block;" data-is-final-step="true" data-solution-type="{{ step.solution_type_for_js|default:'unknown' }}">
+                            <div class="card mb-5 chart-step" data-step-id="{{ step.id }}" style="display: block;" data-is-final-step="true" data-solution-type="{{ step.solution_type_for_js|default:'unknown' }}" data-text-beginner="{{ step.question_text_beginner }}" data-text-intermediate="{{ step.question_text_intermediate }}">
                                 <div class="card-header">最終ステップ</div>
                                 <div class="card-body">
-                                    <p class="card-text">{{ step.question_text_intermediate|default:step.keyword_advanced }}</p>
+                                    <p class="card-text step-question-text"></p>
                                     {% if step.solution_text %}
                                         <div class="alert alert-info solution-text">
                                             <strong>解決策/メッセージ：</strong><br>
@@ -140,11 +140,9 @@
                                 <div class="card h-100 
                                     {% if final_step.solution_type == 'improved' %}border-success border-2{% endif %}
                                     {% if final_step.solution_type == 'unresolved' %}border-danger border-2{% endif %}
-                                ">
-                                    <div class="card-body">
-                                        <h6 class="card-title">{{ final_step.keyword_advanced|default:"(最終ステップ)" }}</h6>
-                                        <p class="card-text small text-muted">{{ final_step.solution_text|linebreaksbr }}</p>
-                                    </div>
+                                    d-flex justify-content-center align-items-center p-3">
+
+                                    <span class="text-center">{{ final_step.keyword_advanced|default:"(最終ステップ)" }}</span>
                                 </div>
                             </div>
                         {% endfor %}

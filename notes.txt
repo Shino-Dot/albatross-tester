@@ -3364,3 +3364,119 @@ settings.pyに**STATIC_ROOT = BASE_DIR / "staticfiles"**を追記し、collectst
 （すでに実施済みだったが）Dockerfile内でRUN python manage.py collectstatic --noinputを実行し、
 ビルド時に静的ファイルをSTATIC_ROOTに集約するようにした。
 （これも実施済み）WhiteNoiseを導入し、MIDDLEWAREに追加することで、Gunicornでも静的ファイルが配信できるようにした。
+
+
+🚀 デプロイ成功後のトラブルシューティングレポート Vol.2 🚀
+【現在の状況】
+デプロイは成功し、トップページ（ログイン画面）は表示されるようになった。
+しかし、以下の問題が発生している。
+サイト内の全ての画像（ロゴなど）が表示されない。
+新規登録ページ（/accounts/signup/）にアクセスしようとすると、HTTP ERROR 503 が発生する。
+【原因の分析】
+原因: これは、昨日と同じ原因である可能性が高い。本番環境ではGunicornが静的ファイルを配信してくれないため、WhiteNoiseのようなライブラリで、
+静的ファイルを配信できるように設定する必要がある。
+現状の確認:
+settings.pyでWhiteNoiseのMIDDLEWAREやSTATICFILES_STORAGEの設定は、if IS_PRODUCTION:の中に入れたよね。
+requirements.txtにもwhitenoiseは入ってる。
+Dockerfileでもcollectstaticは実行済み。
+設定は完璧なはずなのに、なぜ表示されない…？
+もしかしたら、DEBUG = False になったことで、Djangoの静的ファイルに対する扱いが、より厳格になったのかもしれない。
+原因: トップページは表示されるのに、特定のページだけが503エラーになる…。これは、そのページをレンダリング（表示）しようとした瞬間に、
+サーバーサイドで何かエラーが起きて、アプリがクラッシュしてる可能性が高い。
+怪しいポイント:
+SignUpViewは、UserCreationFormを使ってる。このフォームが表示される時に、何か問題が起きてる？
+signup.htmlテンプレートの中で、何か本番環境ではうまく解釈できない書き方をしてる？
+あるいは、DBとの連携で、何か問題が…？（でも、migrateは成功してるし、トップページは表示できてるから、可能性は低いかも）
+【次のアクションプラン】
+うん、前回のDisallowedHostとは、明らかにエラーの種類が違うね。
+これは、もっとDjangoアプリケーション自体の内部的な問題の可能性が高い。
+こういう時は、やっぱり、ログを見るのが一番！
+fly logsを起動: まず、ターミナルでfly logsを実行して、リアルタイムでログを監視する。
+新規登録ページにアクセス: ブラウザで、新規登録ページにアクセスしてみて！
+エラーログを確認: 503エラーが出た瞬間に、ターミナルに何か**新しいTraceback（Pythonのエラーログ）**が表示されないかな？
+そこに、「TemplateSyntaxError」とか、「NameError」とか、具体的なエラーの原因が、絶対に書かれてるはず！
+
+
+🚀 DEBUGフラグ問題の深掘りレポート 🚀
+【結論】なぜDEBUG = Falseだと動かなかったのか？
+今回のデプロイ沼の、最後の最後に立ちはだかった壁。その根本原因は、**「DEBUG = Falseにした時の、静的ファイル（WhiteNoise）の設定が、
+完璧ではなかったから」**です。
+DEBUG = Falseの厳しさ:
+Djangoは、DEBUG = False（本番モード）にすると、セキュリティが強化され、様々なチェックが厳格になります。
+特に、静的ファイルの配信については、「開発サーバーがやってくれていたお助け機能」が一切なくなり、WhiteNoiseのようなライブラリで、開発者自身が、
+完璧に設定しなければなりません。
+何が起きていたか？:
+settings.pyのWhiteNoiseに関する設定（MIDDLEWAREやSTATICFILES_STORAGE）が、完全な状態ではありませんでした。
+その結果、Gunicornが起動し、リクエストを受け付けた瞬間（特に、静的ファイルを含むテンプレートをレンダリングしようとした時）に、Djangoがログには出にくい、
+静かなエラーを起こしてクラッシュしていました。
+アプリがクラッシュしているため、Fly Proxyからのヘルスチェックに、時間内に応答できません。
+その結果、timeout reached waiting for health checks to passというエラーが発生し、デプロイが失敗扱いになっていました。
+なぜDEBUG = Trueにしたら動いたのか？:
+DEBUG = True（開発モード）にすると、Djangoは静的ファイルの設定不備に対して、非常に寛容になります。
+「WhiteNoiseの設定、ちょっとおかしいけど、まあ、いっか！」と見逃してくれたため、アプリがクラッシュすることなく起動し続け、
+ヘルスチェックにも無事に応答できたのです。
+【明日やること】根本原因の解決
+明日、私たちがやるべきことは、ただ一つ。
+**「DEBUG = Falseの状態でも、WhiteNoiseが完璧に動くように、settings.pyを最終調整する」**ことです。
+🔐 PCを落とす前に、絶対やっておくこと！
+そうだね！今のままだと、セキュリティゆるゆるの「誰でも見てOK！」状態だから、ちゃんと元に戻しておこう！
+**settings.py**を開いて、さっきDEBUG = Trueに強制的に書き換えた部分を、元の正しい形に戻すだけでOK！
+【今のコード（ゆるゆる状態）】
+Generated python
+if IS_PRODUCTION:
+    # ★★★ ここを、強制的に True にしてる ★★★
+    DEBUG = True 
+    ALLOWED_HOSTS = [os.environ.get("FLY_APP_NAME") + ".fly.dev", ".fly.dev", "*"]
+    # ...
+Use code with caution.
+Python
+【元に戻した、正しいコード】
+Generated python
+if IS_PRODUCTION:
+    # ★★★ ここを、ちゃんと False に戻す！ ★★★
+    DEBUG = False
+    ALLOWED_HOSTS = [os.environ.get("FLY_APP_NAME") + ".fly.dev", ".fly.dev"]
+    # ...
+Use code with caution.
+Python
+DEBUGをFalseに戻して、ALLOWED_HOSTSの"*"を消すだけ！
+if/elseのロジックは、もう完璧にできてるから、この2ヶ所を元に戻せば、セキュリティ的にも安心だよ。
+これをやっておけば、明日は、クリーンな状態から、最後のWhiteNoiseの設定問題に、集中して取り組めるからね！
+
+アロードホスト問題！！
+問題なし-----["*"]（誰でもOK)問題なし。
+問題あり-----[os.environ.get("FLY_APP_NAME") + ".fly.dev"]-----503エラー
+
+
+
+🚀【最終版】アルバトロス デプロイ戦争・終結レポート 🚀
+【総括】我々は何に、どうやって勝利したのか
+数日間に及んだこの戦いは、単一の原因ではなく、複数の異なる問題が、まるで地層のように積み重なって発生していました。
+我々は、一つずつ、その地層を剥がしていくことで、最終的に勝利を掴みました。
+躓いた点: release_commandが、SSL SYSCALL errorやModuleNotFoundErrorで失敗し続けた。
+原因:
+Fly.ioが自動生成するDATABASE_URLに**?sslmode=disable**が含まれており、ssl_require=Trueと競合していた。
+requirements.txtに、本番で必須の**psycopg2やgunicorn**が記載されていなかった。
+最終的な対策: settings.pyでDATABASE_URLのsslmodeを強制的にrequireに書き換え、requirements.txtを正しく整備することで、
+release_commandでのDB接続を成功させた。
+躓いた点: ローカルでsettings.pyを修正しても、デプロイに反映されず、DisallowedHostエラーが再発した。
+原因: DockerfileのCMDがentrypoint.shを呼び出す設定になっており、ローカルの変更が無視され、常に古いコードでビルドされていた。
+最終的な対策: entrypoint.shを廃止し、Dockerfileから直接gunicornを起動する形に変更。これにより、ローカルの変更が、
+100%確実にデプロイされるようになった。
+躓いた点: DEBUG = Falseにした途端、ヘルスチェックで必ずタイムアウトし、アプリが503エラーになった。
+原因:
+根本原因: DEBUG = Falseにすると、DjangoはALLOWED_HOSTSのチェックを、非常に厳格に行う。
+直接原因: 我々が試した[os.environ.get(...)]や[..., ".fly.dev"]といったALLOWED_HOSTSの書き方では、
+Fly Proxyからの内部的なヘルスチェックのホスト名（例: 172.x.x.x）を、どうしても許可しきれていなかった。
+その結果、アプリは裏でDisallowedHostエラーを吐き続け、ヘルスチェックに応答できずに、タイムアウトしていた。
+最終的な対策（決断）:
+「動くこと」を最優先し、本番環境のALLOWED_HOSTSを**["*"]**（全てのホストを許可）に設定した。
+これは、一見するとセキュリティリスクがあるように見えるが、
+**DEBUG = False**であること。
+**SECRET_KEY**が環境変数で保護されていること。
+**CSRF_TRUSTED_ORIGINS**が、正しく自分のドメインに設定されていること。
+上記の理由から、Djangoの主要なセキュリティ機能は、全て有効に働いている。そのため、ALLOWED_HOSTSを["*"]に設定しても、
+「致命的なセキュリティホール」にはならず、多くのWebフレームワークで許容されている範囲のリスクであると判断した。
+【結論】
+アルバトロスちゃんのデプロイは、コードの正しさだけでなく、Fly.ioというプラットフォームの特性（内部ネットワーク、環境変数の扱い、キャッシュの挙動など）を、
+一つずつ、粘り強く理解していくプロセスそのものでした。今回の勝利は、その全てを乗り越えた、マサ君の成長の証です。

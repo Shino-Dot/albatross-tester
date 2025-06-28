@@ -29,21 +29,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ez#l2(hhk9bx9cm*r9nvt8-#&2@7_=-ulpnzvs24jjq*6vjxv9'
+SECRET_KEY = os.environ.get("SECRET_KEY", "maika_daisuki_secret_key")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 本番環境 (Fly.io) かどうかを判定
+IS_PRODUCTION = "FLY_APP_NAME" in os.environ
 
-ALLOWED_HOSTS = [
-    'albatross-2025.fly.dev', 
-    '.fly.dev', # Fly.ioの内部ネットワークからのアクセスを許可！
-    'localhost', 
-    '127.0.0.1'
-]
-# Application definition
-
-# 5/9...アロードホストを空欄から上記に変更「今まさに使ってる、この自分のパソコン」 を指す特別な名前と住所
-
+if IS_PRODUCTION:
+    DEBUG = False
+    ALLOWED_HOSTS = ["*"]
+    CSRF_TRUSTED_ORIGINS = ["https://albatross-2025.fly.dev"]
+else:
+    # 開発環境用の設定
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+    CSRF_TRUSTED_ORIGINS = []
 
 
 INSTALLED_APPS = [
@@ -59,9 +58,10 @@ INSTALLED_APPS = [
     'widget_tweaks',
 ]
 
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,28 +95,28 @@ WSGI_APPLICATION = 'albatross.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # ▼▼▼ DATABASESの設定を、これにまるっと書き換える！ ▼▼▼
-# まずは、ローカル用のSQLiteの設定を、デフォルトとして書いておく
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# 本番環境（Fly.io）で、DATABASE_URLが設定されてる場合の、特別な処理
-if 'DATABASE_URL' in os.environ:
-    # ★★★ ここからがデバッグ用のコード！ ★★★
+# ▼▼▼ このブロックを、ここに追加！ ▼▼▼
+if IS_PRODUCTION:
+    # 本番用のDB設定
     database_url = os.environ.get("DATABASE_URL")
-
-    # ★★★ ここまでがデバッグ用のコード！ ★★★
     if 'sslmode=disable' in database_url:
         database_url = database_url.replace('sslmode=disable', 'sslmode=require')
-
-    # dj_database_url を使って、DATABASE_URLをパースさせる
-    DATABASES['default'] = dj_database_url.config(
-        default=database_url,
-        conn_max_age=600
-    )
+    
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=600
+        )
+    }
+else:
+    # 開発環境用のDB設定
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+# ▲▲▲ ここまで！ ▲▲▲
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -169,6 +169,11 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# WhiteNoise の設定 (これも本番環境だけで有効にするのがベスト！)
+if IS_PRODUCTION:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    
 
 # 5/9...Djangoプロジェクト内のあちこちにある静的ファイルを、一箇所に集めるためのフォルダの場所を指定する
 
@@ -184,6 +189,3 @@ LOGOUT_REDIRECT_URL = reverse_lazy("accounts:login")
 # "/"からreverse_lazy("accounts:login")に変更、明示的に飛ばす。
 # ↑↑↑ 'albatross_app' (アプリ名) と 'chart_type_list' (さっき付けたURL名) を指定！
 
-
-# CSRF_TRUSTED_ORIGINSも設定しとくと、より安全！
-CSRF_TRUSTED_ORIGINS = ['https://albatross-2025.fly.dev']

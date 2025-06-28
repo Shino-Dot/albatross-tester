@@ -18,8 +18,8 @@
             <header
                 class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e7edf4] px-10 py-3">
                 <div class="flex items-center gap-4 text-[#0d141c]">
-                    <div class="size-4">
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div class="size-8">
+                        <img src="/static/albatross_app/images/flap.png" alt="Albatross Logo" class="h-full w-full">
                             <g clip-path="url(#clip0_6_543)">
                                 <path
                                     d="M42.1739 20.1739L27.8261 5.82609C29.1366 7.13663 28.3989 10.1876 26.2002 13.7654C24.8538 15.9564 22.9595 18.3449 20.6522 20.6522C18.3449 22.9595 15.9564 24.8538 13.7654 26.2002C10.1876 28.3989 7.13663 29.1366 5.82609 27.8261L20.1739 42.1739C21.4845 43.4845 24.5355 42.7467 28.1133 40.548C30.3042 39.2016 32.6927 37.3073 35 35C37.3073 32.6927 39.2016 30.3042 40.548 28.1133C42.7467 24.5355 43.4845 21.4845 42.1739 20.1739Z"
@@ -35,13 +35,20 @@
                             </defs>
                         </svg>
                     </div>
-                    <h2 class="text-[#0d141c] text-lg font-bold leading-tight tracking-[-0.015em]">Albatross</h2>
+                    <h2 class="text-[#0d141c] text-lg font-light leading-tight tracking-[-0.015em]">Albatross</h2>
                 </div>
                 <div class="flex flex-1 justify-end gap-8">
+                    <div class="language-switcher flex items-center gap-2 rounded-lg bg-slate-200 p-1">
+    <button id="btn-ja" class="px-3 py-1 text-sm font-bold text-slate-900 rounded-md transition-colors duration-300 bg-white shadow">
+        日本語
+    </button>
+    <button id="btn-en" class="px-3 py-1 text-sm font-bold text-slate-500 rounded-md transition-colors duration-300">
+        English
+    </button>
+</div>
                     <div class="flex items-center gap-9">
                         <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">Product</a>
                         <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">Solutions</a>
-                        <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">Resources</a>
                         <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">Pricing</a>
                     </div>
                     <button
@@ -273,13 +280,71 @@
                             <a class="text-[#49739c] text-base font-normal leading-normal min-w-40" href="#">Contact
                                 Us</a>
                         </div>
-                        <p class="text-[#49739c] text-base font-normal leading-normal">© 2023 Albatross. All rights
+                        <p class="text-[#49739c] text-base font-normal leading-normal">© 2025 Albatross. All rights
                             reserved.</p>
                     </footer>
                 </div>
             </footer>
         </div>
     </div>
+
+<script>
+    // ページの読み込みが終わったら、実行する
+document.addEventListener('DOMContentLoaded', function() {
+
+    // 2つの切り替えボタンを取得
+    const btnJa = document.getElementById('btn-ja');
+    const btnEn = document.getElementById('btn-en');
+    
+    // 全ての、言語テキスト要素を取得
+    const langElements = document.querySelectorAll('.lang');
+
+    // 言語を切り替えるための、関数を作る
+    function switchLanguage(targetLang) {
+        
+        // 全ての言語テキストを、一旦、全部、非表示にする
+        langElements.forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // 切り替えたい言語のクラス名（例：lang-ja）を、作る
+        const targetClass = 'lang-' + targetLang;
+        
+        // そのクラス名が付いてる要素だけを、全部、表示する！
+        document.querySelectorAll('.' + targetClass).forEach(el => {
+            el.style.display = 'inline'; // または 'block'
+        });
+        
+        // ボタンのアクティブ状態も、切り替える
+        if (targetLang === 'ja') {
+            btnJa.classList.add('bg-white', 'shadow', 'text-slate-900');
+            btnJa.classList.remove('text-slate-500');
+            
+            btnEn.classList.remove('bg-white', 'shadow', 'text-slate-900');
+            btnEn.classList.add('text-slate-500');
+        } else {
+            btnEn.classList.add('bg-white', 'shadow', 'text-slate-900');
+            btnEn.classList.remove('text-slate-500');
+
+            btnJa.classList.remove('bg-white', 'shadow', 'text-slate-900');
+            btnJa.classList.add('text-slate-500');
+        }
+    }
+
+    // 日本語ボタンが、クリックされた時の処理
+    btnJa.addEventListener('click', function() {
+        switchLanguage('ja');
+    });
+
+    // 英語ボタンが、クリックされた時の処理
+    btnEn.addEventListener('click', function() {
+        switchLanguage('en');
+    });
+
+});
+
+</script>
+
 </body>
 
 </html>

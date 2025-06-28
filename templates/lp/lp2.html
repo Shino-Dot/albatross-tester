@@ -1,0 +1,609 @@
+<html>
+
+<head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link rel="stylesheet" as="style" onload="this.rel='stylesheet'"
+        href="https://fonts.googleapis.com/css2?display=swap&family=Inter%3Awght%40400%3B500%3B700%3B900&family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
+
+    <title>Stitch Design</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- <head>タグの中とかに… -->
+<style>
+    /* 「selected」クラスが付いたボタンの、共通スタイル */
+    .btn-yes.selected,
+    .btn-no.selected {
+        background-color: #3b82f6 !important; /* 水色 (blue-500) */
+        color: white !important;
+        border-color: #3b82f6 !important; /* 枠線の色も、水色に！ */
+    }
+</style>
+
+</head>
+
+<body>
+    <div class="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root overflow-x-hidden"
+        style='font-family: Inter, "Noto Sans", sans-serif;'>
+        <div class="layout-container flex h-full grow flex-col">
+            <header
+                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e7edf4] px-10 py-3">
+                <div class="flex items-center gap-4 text-[#0d141c]">
+                    <div class="size-8">
+                        <img src="/static/albatross_app/images/flap.png" alt="Albatross Logo" class="h-full w-full">
+                    </div>
+                    <h2 class="text-[#0d141c] text-lg font-light leading-tight tracking-[-0.015em]">
+                        <span class="lang lang-ja">Albatross</span>
+                        <span class="lang lang-en" style="display: none;">Albatross</span>
+                    </h2>
+                </div>
+                <div class="flex flex-1 justify-end gap-8">
+                    <div class="language-switcher flex items-center gap-2 rounded-lg bg-slate-200 p-1">
+                        <button id="btn-ja"
+                            class="px-3 py-1 text-sm font-bold text-slate-900 rounded-md transition-colors duration-300 bg-white shadow">
+                            日本語
+                        </button>
+                        <button id="btn-en"
+                            class="px-3 py-1 text-sm font-bold text-slate-500 rounded-md transition-colors duration-300">
+                            English
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-9">
+                        <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">
+                            <span class="lang lang-ja">製品</span>
+                            <span class="lang lang-en" style="display: none;">Product</span>
+                        </a>
+                        <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">
+                            <span class="lang lang-ja">ソリューション</span>
+                            <span class="lang lang-en" style="display: none;">Solutions</span>
+                        </a>
+                        <a class="text-[#0d141c] text-sm font-medium leading-normal" href="#">
+                            <span class="lang lang-ja">料金</span>
+                            <span class="lang lang-en" style="display: none;">Pricing</span>
+                        </a>
+                    </div>
+                    <button
+                        class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#0c7ff2] text-slate-50 text-sm font-bold leading-normal tracking-[0.015em]">
+                        <span class="truncate">
+                            <span class="lang lang-ja">デモをリクエスト</span>
+                            <span class="lang lang-en" style="display: none;">Request a demo</span>
+                        </span>
+                    </button>
+                </div>
+            </header>
+            <div class="px-40 flex flex-1 justify-center py-5">
+                <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+                    <div class="@container">
+                        <div class="@[480px]:p-4">
+                            <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-lg items-start justify-end px-4 pb-10 @[480px]:px-10"
+                                style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDzmiIz92y3P0ImR8Lrg3om83HroXerFi1d68yGrDSxqEx7HDe3n1RruK0eak7JGcGpBfO2_mIeEQQsXNw8U7sIZrc-LSmWgojHIz9h9OagPceKJPkMU5I_UYlQc7d6hCN0Fptt5302d3pp-YELinncStXs3AJRY6_foJKAiFMwt2ONuNvpE6ruh5jfzoNcXEAEl8LpQWTempB3cPvOrnhLh1l6W4g9RvvUsr7LcGCwo8jJrtX79GlZ6n6O83UH8g5NEzmQa3i9UA");'>
+                                <div class="flex flex-col gap-2 text-left">
+                                    <h1
+                                        class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                                        <span class="lang lang-ja">コールセンター向けの、対話型トラブルシューティングガイド</span>
+                                        <span class="lang lang-en" style="display: none;">Interactive Troubleshooting
+                                            Charts for Call Centers</span>
+                                    </h1>
+                                    <h2
+                                        class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                                        <span
+                                            class="lang lang-ja">アルバトロスは、コールセンターのオペレーター向けに設計された対話型トラブルシューティングチャートシステムです。複雑なトラブルシューティング手順をナビゲートするための使いやすい「はい/いいえ」形式のチャート、ユーザーの習熟度に合わせた表示モード、オペレーターの効率と顧客サービスの品質を向上させるための診断ログ機能を備えています。</span>
+                                        <span class="lang lang-en" style="display: none;">Albatross is an interactive
+                                            troubleshooting chart system designed for operators in call centers. It
+                                            features an easy-to-use 'yes/no' chart format for navigating complex
+                                            troubleshooting procedures, display modes tailored to user proficiency
+                                            levels, and diagnostic logging capabilities to improve operator efficiency
+                                            and customer service quality.</span>
+                                    </h2>
+                                </div>
+                                <button
+                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-[#0c7ff2] text-slate-50 text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]">
+                                    <span class="truncate">
+                                        <span class="lang lang-ja">デモをリクエスト</span>
+                                        <span class="lang lang-en" style="display: none;">Request a demo</span>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <h2 class="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+                        <span class="lang lang-ja">主な機能</span>
+                        <span class="lang lang-en" style="display: none;">Key Features</span>
+                    </h2>
+                    <div class="flex flex-col gap-10 px-4 py-10 @container">
+                        <div class="flex flex-col gap-4">
+                            <h1
+                                class="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]">
+                                <span class="lang lang-ja">アルバトロスの機能</span>
+                                <span class="lang lang-en" style="display: none;">Albatross Features</span>
+                            </h1>
+                            <p class="text-[#0d141c] text-base font-normal leading-normal max-w-[720px]">
+                                <span
+                                    class="lang lang-ja">アルバトロスは、トラブルシューティングを効率化し、顧客サービスを向上させるために設計された様々な機能を提供します。</span>
+                                <span class="lang lang-en" style="display: none;">Albatross offers a range of features
+                                    designed to streamline troubleshooting and improve customer service.</span>
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="ChartLine" data-size="24px"
+                                    data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0v94.37L90.73,98a8,8,0,0,1,10.07-.38l58.81,44.11L218.73,90a8,8,0,1,1,10.54,12l-64,56a8,8,0,0,1-10.07.38L96.39,114.29,40,163.63V200H224A8,8,0,0,1,232,208Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">対話型チャートナビゲーション</span>
+                                        <span class="lang lang-en" style="display: none;">Interactive Chart
+                                            Navigation</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">直感的な「はい/いいえ」形式のチャートで複雑なトラブルシューティング手順をナビゲートし、オペレーターが正しい手順を効率的に実行できるようにします。</span>
+                                        <span class="lang lang-en" style="display: none;">Navigate complex
+                                            troubleshooting procedures with an intuitive 'yes/no' chart format, ensuring
+                                            operators follow the correct steps efficiently.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="Stack" data-size="24px" data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M230.91,172A8,8,0,0,1,228,182.91l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,36,169.09l92,53.65,92-53.65A8,8,0,0,1,230.91,172ZM220,121.09l-92,53.65L36,121.09A8,8,0,0,0,28,134.91l96,56a8,8,0,0,0,8.06,0l96-56A8,8,0,1,0,220,121.09ZM24,80a8,8,0,0,1,4-6.91l96-56a8,8,0,0,1,8.06,0l96,56a8,8,0,0,1,0,13.82l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,24,80Zm23.88,0L128,126.74,208.12,80,128,33.26Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">レベル別表示モード</span>
+                                        <span class="lang lang-en" style="display: none;">Adaptive Display Modes</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">オペレーターの習熟度に合わせて表示モードを調整し、新人には詳細なビューを、経験豊富なスタッフには簡略化されたビューを提供します。</span>
+                                        <span class="lang lang-en" style="display: none;">Tailor the display mode to
+                                            match operator proficiency levels, providing a detailed view for new hires
+                                            and a simplified view for experienced staff.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="User" data-size="24px" data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">診断ログ機能</span>
+                                        <span class="lang lang-en" style="display: none;">Diagnostic Logging</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">トラブルシューティングの手順と結果を記録して、一般的な問題を特定し、チャートの精度を向上させ、オペレーターのトレーニングとパフォーマンスを強化します。</span>
+                                        <span class="lang lang-en" style="display: none;">Log troubleshooting steps and
+                                            outcomes to identify common issues, improve chart accuracy, and enhance
+                                            operator training and performance.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2 class="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+                        <span class="lang lang-ja">導入のメリット</span>
+                        <span class="lang lang-en" style="display: none;">Benefits</span>
+                    </h2>
+                    <div class="flex flex-col gap-10 px-4 py-10 @container">
+                        <div class="flex flex-col gap-4">
+                            <h1
+                                class="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]">
+                                <span class="lang lang-ja">アルバトロス導入のメリット</span>
+                                <span class="lang lang-en" style="display: none;">Albatross Benefits</span>
+                            </h1>
+                            <p class="text-[#0d141c] text-base font-normal leading-normal max-w-[720px]">
+                                <span class="lang lang-ja">あなたのコールセンター業務でアルバトロスのメリットを体験してください。</span>
+                                <span class="lang lang-en" style="display: none;">Experience the benefits of Albatross
+                                    in your call center operations.</span>
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="Clock" data-size="24px" data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">問い合わせ解決時間の短縮</span>
+                                        <span class="lang lang-en" style="display: none;">Reduced Call Resolution
+                                            Time</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">アルバトロスの対話型チャートは、オペレーターを迅速かつ正確にトラブルシューティング手順へ導き、顧客の問題を解決する時間を短縮します。</span>
+                                        <span class="lang lang-en" style="display: none;">Albatross's interactive charts
+                                            guide operators through troubleshooting steps quickly and accurately,
+                                            reducing the time it takes to resolve customer issues.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="Users" data-size="24px" data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">顧客満足度の向上</span>
+                                        <span class="lang lang-en" style="display: none;">Improved Customer
+                                            Satisfaction</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">明確で効率的なトラブルシューティングのガイダンスを提供することで、アルバトロスはオペレーターが効果的に問題を解決するのを助け、より高い顧客満足度につながります。</span>
+                                        <span class="lang lang-en" style="display: none;">By providing clear and
+                                            efficient troubleshooting guidance, Albatross helps operators resolve issues
+                                            effectively, leading to higher customer satisfaction.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-1 gap-3 rounded-lg border border-[#cedbe8] bg-slate-50 p-4 flex-col">
+                                <div class="text-[#0d141c]" data-icon="Star" data-size="24px" data-weight="regular">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px"
+                                        fill="currentColor" viewBox="0 0 256 256">
+                                        <path
+                                            d="M239.2,97.29a16,16,0,0,0-13.81-11L166,81.17,142.72,25.81h0a15.95,15.95,0,0,0-29.44,0L90.07,81.17,30.61,86.32a16,16,0,0,0-9.11,28.06L66.61,153.8,53.09,212.34a16,16,0,0,0,23.84,17.34l51-31,51.11,31a16,16,0,0,0,23.84-17.34l-13.51-58.6,45.1-39.36A16,16,0,0,0,239.2,97.29Zm-15.22,5-45.1,39.36a16,16,0,0,0-5.08,15.71L187.35,216v0l-51.07-31a15.9,15.9,0,0,0-16.54,0l-51,31h0L82.2,157.4a16,16,0,0,0-5.08-15.71L32,102.35a.37.37,0,0,1,0-.09l59.44-5.14a16,16,0,0,0,13.35-9.75L128,32.08l23.2,55.29a16,16,0,0,0,13.35,9.75L224,102.26S224,102.32,224,102.33Z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <h2 class="text-[#0d141c] text-base font-bold leading-tight">
+                                        <span class="lang lang-ja">オペレーターのパフォーマンス向上</span>
+                                        <span class="lang lang-en" style="display: none;">Enhanced Operator
+                                            Performance</span>
+                                    </h2>
+                                    <p class="text-[#49739c] text-sm font-normal leading-normal">
+                                        <span
+                                            class="lang lang-ja">アルバトロスの適応型表示モードと診断ログ機能により、オペレーターは経験レベルに関係なく、最高のパフォーマンスを発揮できます。</span>
+                                        <span class="lang lang-en" style="display: none;">Albatross's adaptive display
+                                            modes and diagnostic logging capabilities enable operators to perform at
+                                            their best, regardless of their experience level.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- (1) デモセクションの、タイトルとか -->
+                    <div class="px-4 py-10">
+                        <div class="text-center mb-8">
+                            <h2 class="text-[#0d141c] text-3xl font-bold leading-tight tracking-tight">
+                                <span class="lang lang-ja">体感する、アルバトロス</span>
+                                <span class="lang lang-en" style="display: none;">Experience Albatross</span>
+                            </h2>
+                            <p class="mt-2 text-lg text-slate-600">
+                                <span class="lang lang-ja">一番のウリである「レベル別表示」と「自動スクロール」を、今すぐ、ここで体験してみてください。</span>
+                                <span class="lang lang-en" style="display: none;">Try out our key features: adaptive
+                                    display modes and automatic scrolling, right here, right now.</span>
+                            </p>
+                        </div>
+
+                        <!-- (2) デモ画面の、本体！ -->
+                        <div class="max-w-3xl mx-auto border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+
+                            <!-- デモ画面の、ヘッダー（タブ） -->
+                            <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                                <ul class="nav-pills flex gap-2" role="tablist">
+                                    <li>
+                                        <button id="demo-btn-beginner"
+                                            class="px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-200 bg-white text-slate-900 shadow">
+                                            <span class="lang lang-ja">初級</span>
+                                            <span class="lang lang-en" style="display: none;">Beginner</span>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button id="demo-btn-intermediate"
+                                            class="px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-200 bg-transparent text-slate-500">
+                                            <span class="lang lang-ja">中級</span>
+                                            <span class="lang lang-en" style="display: none;">Intermediate</span>
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <div>
+                                    <button id="demo-btn-reset"
+                                        class="px-3 py-1 text-sm font-semibold rounded-md text-slate-500 hover:bg-slate-200 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                            class="bi bi-arrow-counterclockwise inline-block" viewBox="0 0 16 16"></svg>
+                                        <span class="lang lang-ja ml-1">リセット</span>
+                                        <span class="lang lang-en ml-1" style="display: none;">Reset</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- デモ画面の、チャート表示エリア（ここで、スクロールする！） -->
+                            <div id="demo-chart-area" class="p-6 bg-white" style="height: 500px; overflow-y: auto;">
+                                <!-- ここに、JavaScriptが、動的に、カードを生成する！ -->
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    <h2 class="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+                        <span class="lang lang-ja">お客様の声</span>
+                        <span class="lang lang-en" style="display: none;">Testimonials</span>
+                    </h2>
+                    <div class="p-4">
+                        <div class="bg-cover bg-center flex flex-col items-stretch justify-end rounded-lg pt-[132px]"
+                            style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDEN71x_z_jdTrsBdOnfR3GSC9WdWUS_KgEY0khCx-W20qZnNWDOv9CSWqaLqaacFmQS3gyIb6ut_hZszbU7S5bQO-EW18DnrNv31DLZJ_X2PLUeztCZsisqoJ8oacScBci9kYMsK4SwO7ElC2rJkVHPOXwalCMNujzYnfWil3xNlMoFHzyWxexyCNNGtVSiZh8hE-1_f2pwOL2WOxRmF79O4fJGaiBkZnMm80-NWNfnOMftoGm2HJly4WInWT6K4QHdDuJfpVp8A");'>
+                            <div class="flex w-full items-end justify-between gap-4 p-4">
+                                <div class="flex max-w-[440px] flex-1 flex-col gap-1">
+                                    <p class="text-white tracking-light text-2xl font-bold leading-tight max-w-[440px]">
+                                        <span
+                                            class="lang lang-ja">「アルバトロスは私たちのコールセンター業務を一変させました。対話型チャートは使いやすく、オペレーターはこれまで以上に迅速に問題を解決しています。」</span>
+                                        <span class="lang lang-en" style="display: none;">"Albatross has transformed our
+                                            call center operations. The interactive charts are easy to use, and our
+                                            operators are resolving issues faster than ever before."</span>
+                                    </p>
+                                    <p class="text-white text-base font-medium leading-normal">
+                                        <span class="lang lang-ja">サラ・チェン、Tech Solutions Inc. サポートマネージャー</span>
+                                        <span class="lang lang-en" style="display: none;">Sarah Chen, Support Manager at
+                                            Tech Solutions Inc.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2 class="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+                        <span class="lang lang-ja">アルバトロスを始めよう</span>
+                        <span class="lang lang-en" style="display: none;">Get Started with Albatross</span>
+                    </h2>
+                    <div class="@container">
+                        <div
+                            class="flex flex-col justify-end gap-6 px-4 py-10 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20">
+                            <div class="flex flex-col gap-2 text-center">
+                                <h1
+                                    class="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]">
+                                    <span class="lang lang-ja">コールセンターのトラブルシューティング効率を向上させる準備はできましたか？</span>
+                                    <span class="lang lang-en" style="display: none;">Ready to improve your call
+                                        center's troubleshooting efficiency?</span>
+                                </h1>
+                                <p class="text-[#0d141c] text-base font-normal leading-normal max-w-[720px">
+                                    <span
+                                        class="lang lang-ja">デモをリクエストするか、無料トライアルを今すぐ始めて、アルバトロスがあなたのチームにどのように貢献できるかをご確認ください。</span>
+                                    <span class="lang lang-en" style="display: none;">Request a demo or start a free
+                                        trial today to see how Albatross can benefit your team.</span>
+                                </p>
+                            </div>
+                            <div class="flex flex-1 justify-center">
+                                <div class="flex justify-center">
+                                    <button
+                                        class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-[#0c7ff2] text-slate-50 text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow">
+                                        <span class="truncate">
+                                            <span class="lang lang-ja">デモをリクエスト</span>
+                                            <span class="lang lang-en" style="display: none;">Request a demo</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="flex justify-center">
+                <div class="flex max-w-[960px] flex-1 flex-col">
+                    <footer class="flex flex-col gap-6 px-5 py-10 text-center @container">
+                        <div
+                            class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                            <a class="text-[#49739c] text-base font-normal leading-normal min-w-40" href="#">
+                                <span class="lang lang-ja">製品</span>
+                                <span class="lang lang-en" style="display: none;">Product</span>
+                            </a>
+                            <a class="text-[#49739c] text-base font-normal leading-normal min-w-40" href="#">
+                                <span class="lang lang-ja">ソリューション</span>
+                                <span class="lang lang-en" style="display: none;">Solutions</span>
+                            </a>
+                            <a class="text-[#49739c] text-base font-normal leading-normal min-w-40" href="#">
+                                <span class="lang lang-ja">料金</span>
+                                <span class="lang lang-en" style="display: none;">Pricing</span>
+                            </a>
+                            <a class="text-[#49739c] text-base font-normal leading-normal min-w-40" href="#">
+                                <span class="lang lang-ja">お問い合わせ</span>
+                                <span class="lang lang-en" style="display: none;">Contact Us</span>
+                            </a>
+                        </div>
+                        <p class="text-[#49739c] text-base font-normal leading-normal">
+                            <span class="lang lang-ja">© 2025 Albatross. All rights reserved.</span>
+                            <span class="lang lang-en" style="display: none;">© 2025 Albatross. All rights
+                                reserved.</span>
+                        </p>
+                    </footer>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- (変数の定義) ---
+    const lpBtnJa = document.getElementById('btn-ja');
+    const lpBtnEn = document.getElementById('btn-en');
+    const chartArea = document.getElementById('demo-chart-area');
+    const demoBtnBeginner = document.getElementById('demo-btn-beginner');
+    const demoBtnIntermediate = document.getElementById('demo-btn-intermediate');
+    const demoBtnReset = document.getElementById('demo-btn-reset');
+    
+    let currentLPLang = 'ja';
+    let currentDemoLevel = 'beginner';
+
+    const demoChartSteps = [
+        { id: 1, is_final: false, text: { ja: { beginner: "まず、電源ケーブルが、しっかりとコンセントに差し込まれているか、ご確認いただけますでしょうか？\n意外と、これが原因のことも多いんですよ！", intermediate: "電源ケーブルの接続を確認してください。" }, en: { beginner: "First, could you please check if the power cable is firmly plugged into the outlet? This is surprisingly often the cause!", intermediate: "Please check the power cable connection." } } },
+        { id: 2, is_final: false, text: { ja: { beginner: "ありがとうございます。それでは次に、本体の電源ボタンを、ランプが点滅するまで、約5秒間、長押ししていただけますか？", intermediate: "電源ボタンを5秒間、長押ししてください。" }, en: { beginner: "Thank you. Next, could you please press and hold the power button on the main unit for about 5 seconds until the lamp flashes?", intermediate: "Press and hold the power button for 5 seconds." } } },
+        { id: 3, is_final: false, text: { ja: { beginner: "承知いたしました。では、本体に接続されている、すべてのケーブル類（電源、USBなど）を、一度、抜いていただけますでしょうか？", intermediate: "すべての接続ケーブルを抜いてください。" }, en: { beginner: "Understood. Now, could you please unplug all cables (power, USB, etc.) connected to the unit?", intermediate: "Unplug all connected cables." } } },
+        { id: 4, is_final: true, text: { ja: { beginner: "お疲れ様でした！これでデモは終了です。製品版では、さらに多くの機能をご利用いただけます。ぜひ、デモのリクエストをご検討ください！", intermediate: "デモは終了です。製品版も、ぜひご検討ください。" }, en: { beginner: "Great job! This concludes the demo. The full version offers many more charts and useful features. Please consider requesting a demo!", intermediate: "Demo finished. Please consider the full version." } } }
+    ];
+
+    // --- (関数の定義) ---
+    function switchLPLanguage(targetLang) {
+        currentLPLang = targetLang;
+        
+        // ★★★ ここが、一番、大事な修正点！ ★★★
+        // 言語を切り替える、その瞬間に、ページ内の、全ての.lang要素を、探し直す！
+        const allLangElementsNow = document.querySelectorAll('.lang');
+        allLangElementsNow.forEach(el => {
+            el.style.display = 'none';
+        });
+        const targetClass = 'lang-' + targetLang;
+        document.querySelectorAll('.' + targetClass).forEach(el => {
+            el.style.display = ''; 
+        });
+
+        if (targetLang === 'ja') {
+            lpBtnJa.classList.add('bg-white', 'shadow', 'text-slate-900');
+            lpBtnJa.classList.remove('text-slate-500');
+            lpBtnEn.classList.remove('bg-white', 'shadow', 'text-slate-900');
+            lpBtnEn.classList.add('text-slate-500');
+        } else {
+            lpBtnEn.classList.add('bg-white', 'shadow', 'text-slate-900');
+            lpBtnEn.classList.remove('text-slate-500');
+            lpBtnJa.classList.remove('bg-white', 'shadow', 'text-slate-900');
+            lpBtnJa.classList.add('text-slate-500');
+        }
+        updateDemoText();
+    }
+    
+    function buildDemoChart() {
+        if (!chartArea) return;
+        chartArea.innerHTML = '';
+        demoChartSteps.forEach((step, index) => {
+            const card = document.createElement('div');
+            card.className = `card mb-5 border border-slate-200 rounded-lg overflow-hidden transition-opacity duration-300 ${index > 0 ? 'opacity-40' : ''}`;
+            card.dataset.stepId = step.id;
+            const cardHeader = document.createElement('div');
+            cardHeader.className = 'card-header bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600';
+            const stepHeaderTextJa = document.createElement('span');
+            stepHeaderTextJa.className = 'lang lang-ja';
+            stepHeaderTextJa.textContent = step.is_final ? '最終ステップ' : `ステップ ${index + 1}`;
+            const stepHeaderTextEn = document.createElement('span');
+            stepHeaderTextEn.className = 'lang lang-en';
+            stepHeaderTextEn.textContent = step.is_final ? 'Final Step' : `Step ${index + 1}`;
+            cardHeader.append(stepHeaderTextJa, stepHeaderTextEn);
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body p-4';
+            const questionText = document.createElement('p');
+            questionText.className = 'step-question-text text-slate-800';
+            cardBody.appendChild(questionText);
+            if (!step.is_final) {
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'mt-4 flex gap-4';
+                const yesBtn = document.createElement('button');
+                yesBtn.className = 'btn-yes flex-1 bg-slate-100 text-slate-800 border border-slate-300 px-4 py-2 rounded-md hover:bg-slate-200 transition-colors';
+                const yesBtnTextJa = document.createElement('span');
+                yesBtnTextJa.className = 'lang lang-ja';
+                yesBtnTextJa.textContent = 'はい、改善しました';
+                const yesBtnTextEn = document.createElement('span');
+                yesBtnTextEn.className = 'lang lang-en';
+                yesBtnTextEn.textContent = "Yes, it's resolved";
+                yesBtn.append(yesBtnTextJa, yesBtnTextEn);
+                const noBtn = document.createElement('button');
+                noBtn.className = 'btn-no flex-1 bg-slate-100 text-slate-800 border border-slate-300 px-4 py-2 rounded-md hover:bg-slate-200 transition-colors';
+                const noBtnTextJa = document.createElement('span');
+                noBtnTextJa.className = 'lang lang-ja';
+                noBtnTextJa.textContent = 'いいえ、改善なし';
+                const noBtnTextEn = document.createElement('span');
+                noBtnTextEn.className = 'lang lang-en';
+                noBtnTextEn.textContent = 'No, not resolved';
+                noBtn.append(noBtnTextJa, noBtnTextEn);
+                buttonGroup.append(yesBtn, noBtn);
+                cardBody.appendChild(buttonGroup);
+            }
+            card.append(cardHeader, cardBody);
+            chartArea.appendChild(card);
+        });
+        updateDemoText();
+        setupDemoEventListeners();
+    }
+
+    function updateDemoText() {
+        if (!chartArea) return;
+        chartArea.querySelectorAll('.step-question-text').forEach(p => {
+            const card = p.closest('.card');
+            const stepId = card.dataset.stepId;
+            const stepData = demoChartSteps.find(s => s.id == stepId);
+            if (stepData) p.innerHTML = stepData.text[currentLPLang][currentDemoLevel].replace(/\n/g, '<br>');
+        });
+    }
+
+    function setupDemoEventListeners() {
+        if (!chartArea) return;
+        chartArea.querySelectorAll('.btn-yes, .btn-no').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', function() {
+                const currentCard = this.closest('.card');
+                currentCard.querySelectorAll('.btn-yes, .btn-no').forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+                currentCard.classList.add('opacity-40');
+                currentCard.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                const nextCard = currentCard.nextElementSibling;
+                if (nextCard) {
+                    nextCard.classList.remove('opacity-40');
+                    nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    }
+    
+    // --- (イベントリスナーの呼び出し) ---
+    if (lpBtnJa) lpBtnJa.addEventListener('click', () => switchLPLanguage('ja'));
+    if (lpBtnEn) lpBtnEn.addEventListener('click', () => switchLPLanguage('en'));
+    
+    if (demoBtnBeginner) demoBtnBeginner.addEventListener('click', () => {
+        currentDemoLevel = 'beginner';
+        demoBtnBeginner.classList.add('bg-white', 'shadow', 'text-slate-900');
+        demoBtnIntermediate.classList.remove('bg-white', 'text-slate-900', 'shadow');
+        updateDemoText();
+    });
+    if (demoBtnIntermediate) demoBtnIntermediate.addEventListener('click', () => {
+        currentDemoLevel = 'intermediate';
+        demoBtnIntermediate.classList.add('bg-white', 'text-slate-900', 'shadow');
+        demoBtnBeginner.classList.remove('bg-white', 'text-slate-900', 'shadow');
+        updateDemoText();
+    });
+
+    if (demoBtnReset) {
+    demoBtnReset.addEventListener('click', function() {
+        
+        // 1. まず、デモのHTMLを、作り直す
+        buildDemoChart();
+        
+        // 2. ★★★ そして、もう一度、言語切り替え関数を、呼び出す！ ★★★
+        switchLPLanguage(currentLPLang);
+    });
+}
+
+    buildDemoChart();
+    switchLPLanguage('ja');
+});
+</script>

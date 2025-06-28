@@ -256,4 +256,4 @@ class LogListView(ListView):
         return context
 
 def landing_page_view(request):
-    return render(request, "lp/lp.html")
+    return render(request, "lp/lp2.html")
