@@ -98,6 +98,11 @@ def save_chart_log_view(request):
         chart_type_id = data.get("chart_type_id")
         answers = data.get("answers")  # これが userAnswers オブジェクト
 
+        # --- ▼▼▼ 新しいデータを受け取る！ ▼▼▼ ---
+        is_resolved = data.get("is_resolved", True) # デフォルトはTrue (改善)
+        resolved_step_id = data.get("resolved_step_id") # なければNoneになる
+        # --- ▲▲▲ ここまで！ ▲▲▲
+
         # とりあえずコンソールに出力して確認！
         print("--- save_chart_log_view が呼ばれました！ ---")
         print(f"Chart Type ID: {chart_type_id}")
@@ -108,24 +113,26 @@ def save_chart_log_view(request):
         if chart_type_id is None:
             # chart_type_id が None の場合はエラーレスポンス
             return JsonResponse({"status": "error", "message": "チャート種別がありません。 "}, status=400)
-        try:
-            # ★★★ chart_type_id が文字列で送られてくる可能性があるので、intに変換 ★★★
-            chart_type_id_int = int(chart_type_id)
-            chart_type_obj = ChartType.objects.get(id=chart_type_id_int)
-        except ValueError:
-            # intへの変換に失敗した場合 (例: chart_type_id が数値じゃない文字列だった)
-            print(f"Chart Type ID を整数に変換できませんでした： {chart_type_id}")
-            return JsonResponse({"status": "error", "message": "無効なチャート種別ID形式です。 "}, status=400)
-        except ChartType.DoesNotExist:
-            # 該当する ChartType が存在しなかった場合
-            print(f"指定されたチャート種別IDが見つかりません: {chart_type_id_int}")
-            return JsonResponse({"status": "error", "message": "指定されたチャート種別が見つかりません。 "}, status=404)
+        
+        chart_type_obj = get_object_or_404(ChartType, id=int(chart_type_id))
+
+        # --- ▼▼▼ TroubleshootingSession を作る時に、新しいデータを追加！ ▼▼▼ ---
+        resolved_step_obj = None # まずはNoneで初期化
+        if resolved_step_id:
+            try:
+                # resolved_step_id があれば、ChartStepオブジェクトを取得
+                resolved_step_obj = ChartStep.objects.get(id=int(resolved_step_id))
+            except (ChartStep.DoesNotExist, ValueError):
+                # 見つからなくても、まあエラーにはしないでおく
+                resolved_step_obj = None
 
         # 2. TroubleshootingSession オブジェクトを作成して保存
         # (これは @login_required があるので request.user は必ず存在するはず)
         session = TroubleshootingSession.objects.create(
             user=request.user,
-            chart_type=chart_type_obj
+            chart_type=chart_type_obj,
+            is_resolved=is_resolved,          # ★追加！
+            resolved_step=resolved_step_obj  # ★追加！
             #  end_time はデフォルトで設定される
         )
         # session.save() # .create() を使った場合は、この .save() は不要
@@ -160,20 +167,17 @@ def save_chart_log_view(request):
                     answer=user_answer
                 )
                 logs_created_count += 1
-            except ValueError:
-                print(f"Step ID を整数に変換できませんでした: {step_id_str}")
-                #  このエラーをどう扱うか？ (無視して続けるか、全体をエラーにするか)
-                # 今回は無視してログだけ残す例
+            except (ChartStep.DoesNotExist, ValueError):
                 continue
-            except ChartStep.DoesNotExist:
-                print(f"指定されたチャートステップIDが見つかりません: {step_id_int}")
-                # これも無視して続けるか、エラーにするか
-                continue
-
+        
         print(f"{logs_created_count} 件のセッションログを作成しました。")
-
-        # 成功したことを示すJSONレスポンスを返す
         return JsonResponse({"status": "success", "message": f"結果を記録しました。（{logs_created_count}件のログ）"})
+
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "無効なJSONデータです。"}, status=400)
+    except Exception as e:
+        print(f"予期せぬエラーが発生しました：{e}")
+        return JsonResponse({"status": "error", "message": "サーバー内部エラーが発生しました。"}, status=500)
 
     except json.JSONDecodeError:
         print("JSONデコードエラーが発生しました。")

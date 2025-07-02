@@ -177,6 +177,17 @@ class TroubleshootingSession(models.Model):
     chart_type = models.ForeignKey(ChartType, on_delete=models.CASCADE, verbose_name="チャート種別")
     end_time = models.DateTimeField(default=timezone.now, verbose_name="完了日時")
     # outcome = models.CharField(max_length=50, blank=True, null=True, verbose_name="結果") # とりあえずコメントアウト
+    is_resolved = models.BooleanField(
+        default=True, 
+        verbose_name="解決済みフラグ"
+    )
+    resolved_step = models.ForeignKey(
+        ChartStep, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="解決ステップ"
+    )
 
     def __str__(self):
         # まず、フォーマットした日付の文字列を、別の変数に入れちゃう

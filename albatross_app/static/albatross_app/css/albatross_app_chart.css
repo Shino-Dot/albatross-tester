@@ -190,3 +190,9 @@
     color: #adb5bd; /* キーワードと同じ色に！ */
     transition: color 0.3s ease;
 }
+
+/* 上級モードのボタン専用のスタイル */
+#advanced-save-button {
+    min-width: 400px; /* 例えば、最低幅だけ指定するとか */
+    /* 他にも、好きなスタイルを追加できるよ！ */
+}

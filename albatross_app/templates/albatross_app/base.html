@@ -96,16 +96,73 @@
         /* border-color: #dee2e6 !important; */
     }
 
-    /* (任意) アクセントカラーの適用例 (見出しの下線など) */
-    /*
-    h1, h2, h3 {
-        border-bottom: 2px solid var(--theme-accent);
-        padding-bottom: 0.2em;
+
+
+    /* ボタンの基本設定（変化を滑らかにするアニメーション） */
+    #unresolved-trigger-button {
+        transition: all 0.2s ease-in-out;
     }
-    a {
-        color: var(--theme-accent);
+ /* /* 「押せる」状態になった時のスタイル */
+    #unresolved-trigger-button.is-active {
+        background-color: #dc3545; /* Bootstrapの危険色（濃い赤） */
+        color: #fff; /* 文字は白 */
+        border-color: #dc3545;
+        font-weight: bold;
     }
-    */
+
+    /* 「押せる」状態で、マウスが乗った時のスタイル */
+    #unresolved-trigger-button.is-active:hover {
+        background-color: #bb2d3b; /* 少し暗めの赤 */
+        border-color: #b02a37;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    /* 普段（押せない）状態のボタン */
+    #unresolved-trigger-button:disabled {
+        background-color: #f8f9fa; /* Bootstrapの薄いグレー */
+        border-color: #dee2e6;
+        color: #adb5bd;
+        opacity: 1; /* ★重要：disabledのデフォルトの透明度をリセット */
+        cursor: not-allowed;
+    }
+
+    /* 「押された後」のスタイル */
+    #unresolved-trigger-button.is-confirmed {
+        background-color: #f8d7da; /* Bootstrapの、薄い赤色 */
+        color: #842029; /* 濃い赤色の文字 */
+        border-color: #f5c2c7;
+        font-weight: bold;
+        transform: none; /* 浮き上がりとかをリセット */
+        box-shadow: none; /* 影もリセット */
+    }
+
+/* --- ボタン共通の「強力魔法」スタイル --- */
+    .custom-log-button {
+        width: 50%;
+        max-width: 600px;
+        min-width: 300px;
+        font-size: 1.8rem;
+        padding: 1rem 1.5rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease-in-out;
+        border: none;
+    }
+
+    /* --- 上級ボタン専用の「プチ可愛い」上書き魔法 --- */
+    #advanced-save-button {
+        width: 40%;
+        max-width: 450px;
+        min-width: 250px;
+        font-size: 1.1rem;
+        padding: 0.6rem 1.2rem;
+        letter-spacing: 1px;
+    }
+
+
 </style>
 <!-- ▲▲▲ ここまでテーマカラー用のCSS変数を追加！ ▲▲▲ -->
 
