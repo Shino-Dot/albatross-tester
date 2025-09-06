@@ -47,17 +47,27 @@ class ChartTypeListView(ListView):
         # DBから、全てのChartTypeを取得する
         all_chart_types = ChartType.objects.all().order_by('name') # 名前順に並べとくとキレイ
 
-        # カテゴリごとにグループ分けするための、空の辞書を準備
-        grouped_charts = collections.defaultdict(list)
+        # (1) 表示したいカテゴリの「順番」を、ここで定義する！
+        category_order = ['電源', '通信', '機能', '破損', '光', 'その他', '緊急対応']
 
-        # 全てのチャートタイプをループして、カテゴリごとに仕分けしていく
+        # (2) グループ分けするための、空の辞書を準備
+        #     今回は、順番を保持できる、普通の辞書でOK！
+        grouped_charts = {category: [] for category in category_order}
+
+        # (3) 全てのチャートタイプをループして、仕分け
         for chart_type in all_chart_types:
-            # get_category_display() を使うと、'power'じゃなくて'電源'が取れる！
             category_display_name = chart_type.get_category_display()
-            grouped_charts[category_display_name].append(chart_type)
+            # もし、万が一、category_orderにないカテゴリがあっても、エラーにならないように
+            if category_display_name in grouped_charts:
+                grouped_charts[category_display_name].append(chart_type)
         
-        # 仕分けが終わった辞書を、テンプレートに渡す
-        context['grouped_chart_types'] = dict(grouped_charts)
+        # (4) 空っぽのカテゴリは、表示しないように、辞書から削除する (任意)
+        #    例えば、「破損」カテゴリのチャートが一個も登録されてないなら、
+        #    そもそも「破損」っていうカード自体を表示しないようにする
+        final_grouped_charts = {cat: charts for cat, charts in grouped_charts.items() if charts}
+
+        context['grouped_chart_types'] = final_grouped_charts
+        # ▲▲▲ ここまで！ ▲▲▲
         
         return context
     # ▲▲▲ ここまでが、新しいメソッド！ ▲▲▲

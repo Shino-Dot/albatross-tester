@@ -15,11 +15,14 @@ class ChartType(models.Model):
         blank=True,
         verbose_name="チャート種別の説明",
     )
-    
+
     CATEGORY_CHOICES = [
         ('power', '電源'),
+        ('communication', '通信'), # ← マサ君案
         ('function', '機能'),
         ('network', '光'),
+        ('damage', '破損'),     # ← マサ君案！
+        ('emergency', '緊急対応'), # ← マイカのおすすめ！
         ('other', 'その他'),
     ]
     category = models.CharField(
