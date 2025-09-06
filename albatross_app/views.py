@@ -34,12 +34,33 @@ def some_test_view(request):
 class ChartTypeListView(ListView):
     model = ChartType
     template_name = "albatross_app/chart_type_list.html"
-    context_object_name = "chart_types"
 
     # (任意) もし、リストの並び順とかを細かく制御したい場合は、queryset をオーバーライド
     # def get_queryset(self):
     #     return ChartType.objects.order_by('name') # 例: 名前順に並べる
 
+    # ▼▼▼ get_context_dataメソッドを、自分で定義する！ ▼▼▼
+    def get_context_data(self, **kwargs):
+        # まず、親クラスのメソッドを呼び出して、基本的なコンテキストを取得
+        context = super().get_context_data(**kwargs)
+        
+        # DBから、全てのChartTypeを取得する
+        all_chart_types = ChartType.objects.all().order_by('name') # 名前順に並べとくとキレイ
+
+        # カテゴリごとにグループ分けするための、空の辞書を準備
+        grouped_charts = collections.defaultdict(list)
+
+        # 全てのチャートタイプをループして、カテゴリごとに仕分けしていく
+        for chart_type in all_chart_types:
+            # get_category_display() を使うと、'power'じゃなくて'電源'が取れる！
+            category_display_name = chart_type.get_category_display()
+            grouped_charts[category_display_name].append(chart_type)
+        
+        # 仕分けが終わった辞書を、テンプレートに渡す
+        context['grouped_chart_types'] = dict(grouped_charts)
+        
+        return context
+    # ▲▲▲ ここまでが、新しいメソッド！ ▲▲▲
 
 @login_required  # もちろんログイン必須！
 def start_chart_view(request, chart_type_id):  # URLから chart_type_id を受け取る

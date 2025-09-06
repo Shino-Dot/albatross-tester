@@ -21,80 +21,35 @@
         </a>
     </div>
 
-    {% if chart_types %}
+    {% if grouped_chart_types %}
+<div class="row g-3"> <!-- g-3 から g-4 にして、ボタン間の隙間を少し広げると見やすいかも -->
 
-<!-- ↓↓↓ ★★★ ここに、新しいグリッドシステムのHTML構造を入れる！ ★★★ ↓↓ -->
-    <div class="row g-3">
-            <div class="col-12 col-sm-6 col-md-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        電源 <!-- カテゴリ名 -->
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-grid gap-2 mb-2">
-                            <!--↓↓↓ href には、対応する ChartType のIDを使ったURLを入れる！  -->
-                            <!--  もし「電源断」が ChartType のID 1 に対応するなら… -->
-                            <a href="{% url 'albatross_app:start_chart' 1 %}" class="btn btn-outline-primary">★電源断</a>
+            <!-- (1) 外側のループ：カテゴリごとにカードを作る！ -->
+            {% for category_name, chart_types_in_category in grouped_chart_types.items %}
+                <div class="col-12 col-sm-6 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            {{ category_name }} <!-- ← '電源' とか '機能' が、ここに入る！ -->
                         </div>
-                        <div class="d-grid gap-2 mb-2">
-                            <a href="{% url 'albatross_app:start_chart' 5 %}" class="btn btn-outline-primary">充電不可</a> <!--IDは仮 -->
+                        <div class="card-body d-flex flex-column">
+                            
+                            <!-- (2) 内側のループ：そのカテゴリに属するボタンを全部作る！ -->
+                            {% for chart_type in chart_types_in_category %}
+                                <div class="d-grid gap-2 mb-2"> <!-- mb-2で、ボタン間に少し隙間をあける -->
+                                    <a href="{% url 'albatross_app:start_chart' chart_type.id %}" class="btn btn-outline-primary">
+                                        {{ chart_type.name }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+
                         </div>
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'albatross_app:start_chart' 5 %}" class="btn btn-outline-primary">再起動ループ</a> <!-- IDは仮 -->
-                        </div>
                     </div>
                 </div>
-            </div>
-
-
-        <!-- 「機能」カテゴリのブロック (同様に手打ち)  -->
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    機能
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div class="d-grid gap-2 mb-2">
-                        <a href="{% url 'albatross_app:start_chart' 3 %}" class="btn btn-outline-primary">カメラ使用不可</a> <!--IDは仮 -->
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'albatross_app:start_chart' 2 %}" class="btn btn-outline-primary">音不調</a> <!-- IDは仮 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 「その他」カテゴリのブロック (同様に手打ち)  -->
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    その他
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'albatross_app:start_chart' 5 %}" class="btn btn-outline-primary">挙動不審</a> <!-- IDは仮 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!--「光」カテゴリのブロック (同様に手打ち) -->
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    光
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'albatross_app:start_chart' 4 %}" class="btn btn-outline-primary">ネット接続不可</a> <!-- IDは仮 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-<!-- もしカテゴリが増えるなら、同じように col のブロックを追加していく -->
-    </div>
+            {% endfor %}
+            <!-- ★★★ 二重ループは、ここまで！ ★★★ -->
+</div>
 {% else %}
 <p class="text-center">現在利用可能なチャートはありません。</p>
 {% endif %}
-</div>
+
 {% endblock %}

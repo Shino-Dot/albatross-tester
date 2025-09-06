@@ -15,16 +15,19 @@ class ChartType(models.Model):
         blank=True,
         verbose_name="チャート種別の説明",
     )
-    # (任意) このチャート種別の開始ステップ (ChartStepモデルへのOneToOneField)
-    # これがあると、「この種類のチャートの最初の質問はコレ！」って直接指定できて便利かも
-    # starting_chart_step = models.OneToOneField(
-    #     'ChartStep',
-    #     on_delete=models.SET_NULL,
-    #     null=True,
-    #     blank=True,
-    #     related_name='starts_chart_type',
-    #     verbose_name="このチャートの開始ステップ"
-    # )
+    
+    CATEGORY_CHOICES = [
+        ('power', '電源'),
+        ('function', '機能'),
+        ('network', '光'),
+        ('other', 'その他'),
+    ]
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='other',
+        verbose_name="カテゴリ"
+    )
 
     def __str__(self):
         return self.name

@@ -110,11 +110,12 @@
         font-weight: bold;
     }
 
-    /* 「押せる」状態で、マウスが乗った時のスタイル */
-    #unresolved-trigger-button.is-active:hover {
+    /* 「押せる」状態で、マウスが乗った時【または、タップされた瞬間】のスタイル */
+    #unresolved-trigger-button.is-active:hover,
+    #unresolved-trigger-button.is-active:active {
         background-color: #bb2d3b; /* 少し暗めの赤 */
         border-color: #b02a37;
-        transform: translateY(-2px);
+        transform: translateY(-2px); /* :activeの時は、これを 0 にしてもいいかも */
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
 
