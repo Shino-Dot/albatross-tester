@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ChartStep, ChartType, TroubleshootingSession, SessionLog# さっき作った ChartStep モデルをインポート！
+from .models import ChartStep, ChartType, TroubleshootingSession, SessionLog, Category# さっき作った ChartStep モデルをインポート！
 
 
 
@@ -18,12 +18,10 @@ class ChartStepAdmin(admin.ModelAdmin):
             "fields": ("yes_next_step", "no_next_step")
         }),
         ("上級モード設定",{
-            "fields": ("keyword_advanced", "risk_level", "display_order"),
-            "classes": ("collapase",),# 最初は折りたたんでおく
+            "fields": ("keyword_advanced", "risk_level", "display_order")
         }),
         ("最終ステップ情報", {
-            "fields": ("solution_text", "solution_type"),
-            "classes": ("collapse",),# 最初は折りたたんでおく
+            "fields": ("solution_type",)
         }),
     )
 
@@ -39,3 +37,4 @@ admin.site.register(ChartStep, ChartStepAdmin) # 新しい設定で再登録！
 admin.site.register(ChartType)
 admin.site.register(TroubleshootingSession) #5/27---追記
 admin.site.register(SessionLog) #5/27---追記
+admin.site.register(Category) #9/7追加

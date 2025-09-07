@@ -7,7 +7,7 @@ from django.views.generic import ListView
 from .models import ChartType
 from django.shortcuts import render, get_object_or_404  # get_object_or_404 をインポート！
 # ChartStep もインポート！
-from .models import ChartType, ChartStep, TroubleshootingSession, SessionLog
+from .models import ChartType, ChartStep, TroubleshootingSession, SessionLog, Category
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
@@ -44,30 +44,17 @@ class ChartTypeListView(ListView):
         # まず、親クラスのメソッドを呼び出して、基本的なコンテキストを取得
         context = super().get_context_data(**kwargs)
         
-        # DBから、全てのChartTypeを取得する
-        all_chart_types = ChartType.objects.all().order_by('name') # 名前順に並べとくとキレイ
+        # ▼▼▼▼▼ ここから、ロジックを全面的に書き換える！ ▼▼▼▼▼
 
-        # (1) 表示したいカテゴリの「順番」を、ここで定義する！
-        category_order = ['電源', '通信', '機能', '破損', '光', 'その他', '緊急対応']
+        # (1) DBから、全ての「カテゴリ」を、表示順で取得する！
+        #    （関連するチャートタイプも、一緒に先読みしとくと、効率が良い！）
+        all_categories = Category.objects.prefetch_related('charttype_set').all()
 
-        # (2) グループ分けするための、空の辞書を準備
-        #     今回は、順番を保持できる、普通の辞書でOK！
-        grouped_charts = {category: [] for category in category_order}
-
-        # (3) 全てのチャートタイプをループして、仕分け
-        for chart_type in all_chart_types:
-            category_display_name = chart_type.get_category_display()
-            # もし、万が一、category_orderにないカテゴリがあっても、エラーにならないように
-            if category_display_name in grouped_charts:
-                grouped_charts[category_display_name].append(chart_type)
+        # (2) テンプレートに渡すための、最終的なデータ構造を準備
+        #    今回は、カテゴリのオブジェクトが、順番通りに入ったリストにするのが一番シンプル！
+        context['categories_with_charts'] = all_categories
         
-        # (4) 空っぽのカテゴリは、表示しないように、辞書から削除する (任意)
-        #    例えば、「破損」カテゴリのチャートが一個も登録されてないなら、
-        #    そもそも「破損」っていうカード自体を表示しないようにする
-        final_grouped_charts = {cat: charts for cat, charts in grouped_charts.items() if charts}
-
-        context['grouped_chart_types'] = final_grouped_charts
-        # ▲▲▲ ここまで！ ▲▲▲
+        # ▲▲▲▲▲ これだけで、OK！ ▲▲▲▲▲s
         
         return context
     # ▲▲▲ ここまでが、新しいメソッド！ ▲▲▲

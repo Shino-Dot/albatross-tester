@@ -4,6 +4,23 @@ from django.utils import timezone # timezoneをインポート
 
 # 5/27---timezoneと Userモデルをインポート
 
+        # ▼▼▼▼▼ ここから、まるっと追加！ ▼▼▼▼▼
+
+class Category(models.Model):
+    name = models.CharField(
+        max_length=50, 
+        unique=True, 
+        verbose_name="カテゴリ名"
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "カテゴリ枠"
+        verbose_name_plural = "カテゴリ枠"
+
+# ▲▲▲▲▲ ここまで、まるっと追加！ ▲▲▲▲▲
 
 class ChartType(models.Model):
     name = models.CharField(
@@ -16,19 +33,11 @@ class ChartType(models.Model):
         verbose_name="チャート種別の説明",
     )
 
-    CATEGORY_CHOICES = [
-        ('power', '電源'),
-        ('communication', '通信'), # ← マサ君案
-        ('function', '機能'),
-        ('network', '光'),
-        ('damage', '破損'),     # ← マサ君案！
-        ('emergency', '緊急対応'), # ← マイカのおすすめ！
-        ('other', 'その他'),
-    ]
-    category = models.CharField(
-        max_length=20,
-        choices=CATEGORY_CHOICES,
-        default='other',
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL, # カテゴリが削除されても、チャート自体は消えないように
+        null=True,
+        blank=True, # (任意) どのカテゴリにも属さない、っていうのを許容する場合
         verbose_name="カテゴリ"
     )
 
@@ -36,8 +45,10 @@ class ChartType(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = "チャート種別"
-        verbose_name_plural = "チャート種別"
+        verbose_name = "故障項目ボタン"
+        verbose_name_plural = "故障項目ボタン"
+
+
 
 class ChartStep(models.Model):
     chart_type = models.ForeignKey(
@@ -127,8 +138,8 @@ class ChartStep(models.Model):
 
     
     class Meta:
-        verbose_name = "チャートステップ"
-        verbose_name_plural = "チャートステップ" # 管理画面での複数形表示名
+        verbose_name = "チャート内容"
+        verbose_name_plural = "チャート内容" # 管理画面での複数形表示名
 
 # 以下6/4追加
     SOLUTION_TYPE_CHOICES = [
@@ -203,8 +214,8 @@ class TroubleshootingSession(models.Model):
         return f"{self.user.username} - {self.chart_type.name} ({formatted_time})"
     
     class Meta:
-        verbose_name = "トラブルシューティングセッション"
-        verbose_name_plural = "トラブルシューティングセッション"
+        verbose_name = "トラブルシューティングセッション（親）"
+        verbose_name_plural = "トラブルシューティングセッション（親）"
         ordering = ["-end_time"]
 
 
@@ -219,7 +230,7 @@ class SessionLog(models.Model):
         # get_answer_display() で choices の表示名を取れる
 
     class Meta:
-        verbose_name = "セッションログ"
-        verbose_name_plural = "セッションログ"
+        verbose_name = "セッションログ（子）"
+        verbose_name_plural = "セッションログ（子）"
         unique_together = ("session", "chart_step") # 同じセッションで同じ質問には1つのログだけ
         
