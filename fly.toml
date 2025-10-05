@@ -15,20 +15,14 @@ primary_region = 'nrt'
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = true  # ← true/false で指定
   auto_start_machines = true
   min_machines_running = 0
-  processes = ['app']
 
   [[http_service.checks]]
-    interval = '10s'
-    timeout = '2s'
-    grace_period = '5s'
-    method = 'GET'
-    path = '/accounts/login/'
-    protocol = 'http'
-
-[[vm]]
-  cpu_kind = 'shared'
-  cpus = 1
-  memory_mb = 256
+    interval = "15s"
+    timeout = "10s"
+    grace_period = "30s" # ← 念のため、猶予期間は、長めに！
+    method = "GET"
+    path = "/accounts/login/" # ログインページを、チェック
+    protocol = "http"
