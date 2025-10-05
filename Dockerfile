@@ -2,6 +2,10 @@
 # Python 3.11 の、スリムなバージョンのOSを土台にします
 FROM python:3.11-slim
 
+
+ENV CACHE_BUSTER=2025100601 
+
+
 # --- ★★★ ここからが、超重要！ ★★★ ---
 # psycopg2が、正しくインストールされるために必要な、OSのツールを、先にインストールする！
 RUN apt-get update -qq && \
