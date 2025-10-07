@@ -1,4 +1,4 @@
-# fly.toml app configuration file
+
 app = 'albatross-2025'
 primary_region = 'nrt'
 
