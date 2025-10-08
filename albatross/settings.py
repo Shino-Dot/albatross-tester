@@ -172,7 +172,6 @@ STATICFILES_DIRS = [
 
 # WhiteNoise の設定 (これも本番環境だけで有効にするのがベスト！)
 if IS_PRODUCTION:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
     
 

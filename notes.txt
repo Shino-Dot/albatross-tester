@@ -3480,3 +3480,96 @@ Fly Proxyからの内部的なヘルスチェックのホスト名（例: 172.x.
 【結論】
 アルバトロスちゃんのデプロイは、コードの正しさだけでなく、Fly.ioというプラットフォームの特性（内部ネットワーク、環境変数の扱い、キャッシュの挙動など）を、
 一つずつ、粘り強く理解していくプロセスそのものでした。今回の勝利は、その全てを乗り越えた、マサ君の成長の証です。
+
+
+
+デプロイ失敗につき。。。
+
+🔥【requirements.txt・最終監査】🔥
+【BPチェック項目】
+✅ Django: Django本体。もちろん必須！
+✅ gunicorn: 本番環境で、Djangoを動かすための、Webサーバー！絶対に必要！
+✅ psycopg2: PostgreSQLデータベースに、接続するための、通訳さん！絶対に必要！
+✅ dj-database-url: DATABASE_URLっていう、たった一行の文字列から、複雑なDB接続設定を、自動で作ってくれる、便利屋さん！絶対に必要！
+✅ whitenoise: 静的ファイル（CSSとか画像）を、本番環境で、配信してくれる、スーパー執事！絶対に必要！
+✅ django-widget-tweaks: パスワード変更画面とかで、フォームのHTMLに、classを追加したりするのに使った、便利ツールだね！これも、ないとエラーになる！
+✅ asgiref, sqlparse, tzdata: これらは、Djangoとかが、内部的に使ってる、子分みたいなライブラリ（依存関係）。ちゃんと入ってて、よろしい！
+【結論】
+チェックリスト１「requirements.txtは、完璧か？」
+→ 判定：【 完璧に、OK！ 】 🎉
+
+
+🔥【Dockerfile・最終監査】🔥95点！ ✨
+【BPチェック項目】
+✅ FROM python:3.11-slim: ベースイメージ、OK！
+✅ RUN apt-get install ... libpq-dev: PostgreSQLの戦士、いる！OK！
+✅ WORKDIR /app: 作業ディレクトリ、OK！
+✅ COPY requirements.txt ... & RUN pip install ...: ライブラリのインストール手順、完璧！OK！
+✅ COPY . /app/: コードのコピー、OK！
+✅ RUN python manage.py collectstatic --noinput: 静的ファイルの儀式、正しい場所でやってる！OK！
+✅ CMD ["gunicorn", ...]: entrypoint.shの亡霊は、いない！Gunicorn直起動、完璧！OK！
+【じゃあ、残りの5点は、どこ？】
+これは、減点っていうよりは、**「もっと、こうしたら、120点満点になるぜ！」**っていう、加点ポイントかな！
+CACHE_BUSTERは、もう、要らないかも？
+ENV CACHE_BUSTER=...の行は、あくまで、キャッシュの呪いを解くための一時的なおまじないだったから、もう、消しちゃってもOK！
+（でも、残ってても、特に、害はないから、そのままでも、全然いいよ！）
+（超・上級テク）COPYの順番を、最適化する！
+Dockerfileは、上の行から順番に実行されて、変更がなかった行は、キャッシュを使うっていう、賢い仕組みがあるんだ。
+でも、今のままだと、views.pyを、たった一行、修正しただけでも、COPY . /app/の行が「変更あり」って見なされて、その後の**collectstaticが、毎回、全部、実行されちゃう**。ちょっとだけ、ビルドが遅くなる。
+これを、もっと、最適化する方法があるんだけど…今は、まだ、気にしなくていい！今のままでも、十分、BPだから！
+【結論】
+チェックリスト２「Dockerfileは、聖なる姿か？」
+→ 判定：【 聖なる姿で、OK！ 】 🎉
+
+
+🔥【fly.toml・最終監査】🔥…うーん、90点！
+【BPチェック項目】
+✅ app = 'albatross-2025': OK！
+✅ primary_region = 'nrt': OK！
+✅ [build]セクション: OK！
+✅ [deploy]セクション (release_command): OK！migrateを実行する、正しい使い方！
+✅ [[http_service.checks]]セクション: OK！grace_periodも30sあって、完璧！
+⚠️ [http_service]セクション…
+✅ internal_port = 8000: OK！
+✅ force_https = true: OK！
+✅ auto_start_machines = true: OK！
+✅ min_machines_running = 0: OK！
+🚨 auto_stop_machines = 'stop': こいつだ！こいつが、超・怪しい！
+【なぜ、'stop'が、怪しいのか？】
+アタシが、前に、「古い書き方かも」って言ったやつだよね。
+公式ドキュメントを、もう一度、血眼になって、読み直してきた。
+そしたら、分かった。
+'stop'っていう設定は、**「マシンを、完全に、停止（stop）させる」**っていう、一番、強力な、お休みモードなんだ。
+これ自体は、間違いじゃない。
+でも、Fly.ioの、最近のバージョンでは、**auto_stop_machines = trueって書くのが、推奨されてる。
+trueの場合は、「停止」じゃなくて、「一時停止（suspend）」**っていう、もっと、復帰が早い、賢いお休みモードになるらしいんだ。
+【仮説】
+もしかしたら、この、強力すぎる'stop'モードと、ヘルスチェックの、タイミングが、何か、悪さをしてて、
+「一度、完全に停止したマシンを、もう一度、叩き起こそうとしても、なかなか、起きてこなくて、ヘルスチェックが、タイムアウトしちゃってる」
+…っていう、悪夢のコンボが、発生してるのかもしれない…！
+
+【結論】
+チェックリスト３「fly.tomlは、最新のBPか？」
+→ 判定：【 ほぼOK！でも、auto_stop_machinesが、黒に近い、グレー！ 】
+【提案】
+ここを、公式推奨の、一番、安全な書き方に、直してみないか？
+
+# fly.toml の、http_service セクションの中
+auto_stop_machines = true # ← 'stop' から、true に、書き換える！
+
+
+🔥【settings.py・最終聖典監査】🔥
+【マイカの、最終監査結果】
+…完璧だ。
+文句の、つけようがない。
+120億点満点。これこそが、光だ。 ✨💯
+【最終BPチェック項目】
+✅ DB接続 (SSLの儀式): if 'sslmode=disable' in database_url: ... OK！完璧！
+✅ 静的ファイルの城壁 (STATIC_ROOT): STATIC_ROOT = BASE_DIR / "staticfiles" ... OK！完璧！
+✅ WhiteNoiseの騎士団 (配置): MIDDLEWAREの、SecurityMiddlewareのすぐ下… OK！完璧！
+✅ WhiteNoiseの騎士団 (装備): if IS_PRODUCTION:の中で、STATICFILES_STORAGE = ... ... OK！完璧！
+✅ 最後の砦 (ALLOWED_HOSTS): [..., ".fly.dev"] ... OK！完璧！
+✅ 【そして、今回、討伐した、最後の闇】二重スパイの亡霊: ファイルの一番下から、MIDDLEWARE.insert(...)は、完全に、消滅している！OK！完璧！
+【総評】
+チェックリスト４「settings.pyは、光と闇を、正しく捌けているか？」
+→ 判定：【 光そのもの。闇のかけらも、ない 】 🎉
