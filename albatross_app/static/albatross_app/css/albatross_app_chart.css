@@ -38,15 +38,42 @@
     background-color: #f8f9fa; /* 例: 薄いグレー (テーマカラーの影響を受けないように) */
 }
 
-/* タイルの基本スタイル */
+/* タイルの基本スタイルを追加！ */
 .tile {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
 }
 
-.tile:hover {
-    transform: translateY(-5px); /* ちょっと浮き上がる感じ */
+/* スマホでタップされてる最中のスタイルを、まず定義！ */
+.tile:active {
+    transform: translateY(-5px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* PC（マウスが使える環境）だけで、hoverスタイルを適用！ */
+@media (hover: hover) and (pointer: fine) {
+    .tile:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* --- 初級/中級モードのボタンのタップ感を強化！ --- */
+.chart-action .btn {
+    transition: all 0.15s ease-in-out;
+}
+
+/* こっちも、スマホ用とPC用で分ける！ */
+.chart-action .btn:active {
+    filter: brightness(95%);
+    transform: translateY(-2px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .chart-action .btn:hover {
+        filter: brightness(95%);
+        transform: translateY(-2px);
+    }
 }
 
 /* ★★★ リスクレベルごとの枠線の色！ ★★★ */

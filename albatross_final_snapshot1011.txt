@@ -1,0 +1,1340 @@
+﻿--------------------------------------------------
+File: .dockerignore
+--------------------------------------------------
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+README.md
+venv/
+_venv/
+__pycache__/
+*.pyc
+db.sqlite3
+
+--------------------------------------------------
+File: docker-compose.yml
+--------------------------------------------------
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:14
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+volumes:
+  postgres_data:
+
+--------------------------------------------------
+File: Dockerfile
+--------------------------------------------------
+# --- 1. ベースとなるOSとPythonの環境を準備 ---
+# Python 3.11 の、スリムなバージョンのOSを土台にします
+FROM python:3.11-slim
+
+
+ENV CACHE_BUSTER=2025100601 
+
+
+# --- ★★★ ここからが、超重要！ ★★★ ---
+# psycopg2が、正しくインストールされるために必要な、OSのツールを、先にインストールする！
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    libpq-dev \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+# --- ★★★ ここまでが、超重要！ ★★★ ---
+
+# --- 2. 環境変数を設定 ---
+# Pythonが、pycファイルとかを作らないようにするおまじない
+ENV PYTHONDONTWRITEBYTECODE 1
+# Pythonのログが、ちゃんと表示されるようにするおまじない
+ENV PYTHONUNBUFFERED 1
+
+# --- 3. 作業ディレクトリを作成＆移動 ---
+# コンテナの中に、/app という名前のフォルダを作って、そこをメインの作業場所にする
+WORKDIR /app
+
+# --- 4. 必要なライブラリをインストール ---
+# まず、ライブラリの一覧表(requirements.txt)だけを先にコピーする
+COPY requirements.txt /app/
+# requirements.txtに書かれてるライブラリを、全部インストールする
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --- 5. プロジェクトの全ファイルをコピー ---
+# ローカルの、このプロジェクトのファイルを、全部コンテナの/appフォルダにコピーする
+COPY . /app/
+
+
+RUN python manage.py collectstatic --noinput
+# --- 6. アプリを起動するコマンドを設定 ---
+# このコンテナが起動した時に、このコマンドを実行してね！っていう命令
+# Gunicornという本番用のWebサーバーを使って、albatrossプロジェクトを動かす
+CMD ["gunicorn", "--bind", ":8000", "--workers", "2", "albatross.wsgi"]
+
+--------------------------------------------------
+File: fly.toml
+--------------------------------------------------
+# fly.toml app configuration file generated for albatross-2025 on 2025-10-08T11:30:41+09:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'albatross-2025'
+primary_region = 'nrt'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[deploy]
+  release_command = 'python manage.py migrate --no-input'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '10s'
+    grace_period = '30s'
+    method = 'GET'
+    path = '/accounts/login/'
+    protocol = 'http'
+
+
+--------------------------------------------------
+File: manage.py
+--------------------------------------------------
+#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+import os
+import sys
+
+
+def main():
+    """Run administrative tasks."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'albatross.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+
+if __name__ == '__main__':
+    main()
+
+
+--------------------------------------------------
+File: requirements.txt
+--------------------------------------------------
+asgiref==3.8.1
+dj-database-url==3.0.0
+Django==5.2.3
+django-widget-tweaks==1.5.0
+gunicorn==22.0.0
+packaging==25.0
+psycopg2-binary==2.9.11
+sqlparse==0.5.0
+typing_extensions==4.15.0
+tzdata==2024.1
+whitenoise==6.7.0
+
+
+--------------------------------------------------
+File: \accounts\migrations\__init__.py
+--------------------------------------------------
+
+--------------------------------------------------
+File: \accounts\static\accounts\css\accounts_styles.css
+--------------------------------------------------
+/* chart_styles.css (とか、マサ君が使ってるCSSファイル) のどこか分かりやすい場所に追記 */
+
+/* --------------------------------------------- */
+/* Accounts App - Account Delete Form Styles     */
+/* (アカウント削除フォームのスタイル)              */
+/* --------------------------------------------- */
+
+/* ユーザー名ラベルを折り返さないようにする */
+
+.username-label-nowrap {
+    white-space: nowrap; /* テキストを折り返さずに1行で表示する */
+} 
+
+ .form-card h2 { /* ← .login-form-card h2, .signup-form-card h2 の両方に適用されるように */
+      margin-top: 0; /* カードのパディングで調整するなら、h2自体のマージンは0にしたり */
+      margin-bottom: 1.5rem; /* 下のマージンはBootstrapのデフォルト (mb-4) と合わせるか調整 */
+    }
+
+
+    /* =============================================== */
+/* ヘルプテキスト (注意書き) のためのスタイル       */
+/* (主に signup.html で使う想定)                 */
+/* =============================================== */
+
+.help-text-custom {
+    /* 文字の大きさを少し小さくする */
+    font-size: 0.875em; /* Bootstrapの .form-text と同じくらいのサイズ感 */
+
+    /* 文字の色を少し薄いグレーにする */
+    color: #6c757d !important; /* Bootstrapの .text-muted と同じ色 */
+                            /* !important は、他のスタイルに負けないように念のため付けてるけど、
+                                  なくても効くなら外してもOK！ */
+
+    /* ブロック要素として表示して、入力欄の下に来るようにする */
+    /* (HTML側で <small> タグとか <p> タグで囲んでれば、
+       デフォルトでブロックっぽく表示されることも多いけど、念のため) */
+    display: block;
+
+    /* 上の要素 (入力欄とか) との間に少し余白を空ける */
+    margin-top: 0.25rem;
+
+    /* ★★★ ここが今回のキモ！ ★★★ */
+    /* 親要素の幅を超えないように、最大幅を100%に設定 */
+    width: 100%;
+    max-width: 100%;
+
+    /* もし、特定の幅で必ず折り返したいなら、こんな感じでピクセル指定もできるよ */
+    /* max-width: 300px; */ /* ← この値は、実際の入力欄の幅とかに合わせて調整してね！ */
+                           /*    でも、レスポンシブデザインを考えると、まずは 100% で試すのがオススメ！ */
+
+    /* 長い単語やURLなどがはみ出すのを防ぐために、強制的に折り返す設定 */
+    /* (基本的には、日本語ならあまり気にしなくても大丈夫だけど、念のため) */
+    word-wrap: break-word;     /* 古いブラウザ向け */
+    overflow-wrap: break-word; /* 新しい標準的な書き方 (両方書いとくと安心) */
+    /* background-color: yellow !important; 
+    border: 2px solid red !important;    */
+    width: 100%; 
+    box-sizing: border-box !important; 
+}
+
+/* もし、ヘルプテキストが ul > li 構造になってる場合 (パスワードの注意書きとか) のスタイル */
+.help-text-custom ul {
+    padding-left: 1.2rem;  /* 箇条書きの左側のインデントを調整 */
+    margin-bottom: 0;      /* 下の余白をなくす (もしあれば) */
+    list-style-type: disc; /* 点のマーカーにする (デフォルトかもだけど念のため) */
+}
+
+.help-text-custom ul li {
+    margin-bottom: 0.1rem; /* 各箇条書き項目の下の余白をほんの少し */
+}
+
+.password-change-form .d-grid .btn { /* パスワード変更フォーム内のボタンに限定 */
+    max-width: 150px; /* ← この値を調整 (例: 300ピクセル) */
+    margin-left: auto;  /* 中央揃えにするおまじない */
+    margin-right: auto; /* 中央揃えにするおまじない */
+}
+
+--------------------------------------------------
+File: \accounts\templates\accounts\account_delete_complete.html
+--------------------------------------------------
+{% extends "albatross_app/base.html" %} <!-- baseを継承するか、もっとシンプルなHTMLにするかはお好みで -->
+
+{% block title %}アカウント削除完了{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title text-success mb-4">
+                <i class="bi bi-check-circle-fill"></i> <!-- Bootstrap Iconsのチェックマーク -->
+                アカウントは正常に削除されました
+            </h2>
+            <p class="card-text">お疲れさまでした。ご利用ありがとうございました。</p>
+            <p class="card-text text-muted">このタブは5秒後に自動的に閉じられます。</p>
+            
+            <!-- ▼▼▼ ここからが追加・変更部分！ ▼▼▼ #} -->
+            <div class="mt-4">
+                <button id="close-window-btn" class="btn btn-secondary">
+                    今すぐタブを閉じる
+                </button>
+            </div>
+            <!-- ▲▲▲ ここまでが追加・変更部分！ ▲▲▲ #} -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- まず、手動で閉じるボタンの処理を定義 ---
+        const closeButton = document.getElementById('close-window-btn');
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                console.log("「今すぐタブを閉じる」ボタンが押されました。");
+                window.close();
+            });
+        }
+
+        // --- 次に、5秒後に自動で閉じる処理 ---
+        console.log("アカウント削除完了ページ表示中。5秒後にタブを閉じます。");
+        setTimeout(function () {
+            console.log("5秒経過。自動でタブを閉じます。");
+            window.close();
+        }, 5000); // 5000ミリ秒 = 5秒
+    });
+</script>
+{% endblock %}
+
+--------------------------------------------------
+File: \accounts\templates\accounts\account_delete_form.html
+--------------------------------------------------
+{% extends "albatross_app/base.html" %}
+
+{% block title %}アカウント削除{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <p class="text-end">こんにちは、{{ user.username }} さん！</p>
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="mb-0">アカウント削除</h2>
+                </div>
+                <div class="card-body">
+                    {% if user_deleted_and_needs_logout %}
+                    <!-- パスワードおっけーの場合 5/21---↑ユーザーが消えてない条件追加-->
+
+                    <!-- アカウント削除が完了した場合の表示 -->
+                    <div class="alert alert-success" role="alert">
+                        アカウントは正常に削除されました。
+                    </div>
+                    <p>お疲れさまでした。このタブは自動的に閉じられます。</p>
+                    <!-- <p><a href="{% url 'accounts:login' %}" class="btn btn-primary">ログインページへ</a></p> -->
+                    <!-- 上の行は自動で閉じる設定にするためコメントアウト -->
+
+                    <!-- ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ -->
+                    <!-- ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ダミー▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ -->
+                    {% elif show_delete_modal_on_load %}
+                    <p>アカウントを削除するには、セキュリティのため、現在のパスワードを入力してください。</p>
+                    <div class="row mb-3 align-items-baseline g-0">
+                        <label class="col-sm-3 col-form-label">ユーザー名：</label>
+                        <div class="col-sm-9">
+                        <strong>{{ request.user.username }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password_dummy" class="form-label">パスワード</label> 
+                        <!-- {# ↓↓↓ パスワード入力欄は表示するけど、入力不可 (readonly) にしておくとか、値を空にするとか #} -->
+                        <input type="password" class="form-control" id="id_password_dummy" readonly value="********">
+                        <!-- {#valueは適当なダミー #} -->
+                        <!-- {# または、単に {{ form.password }} を表示するだけ (ビューから空のフォームが渡ってれば) #} -->
+                    </div>
+                    <!-- {# <button type="submit" class="btn btn-warning">パスワード認証</button> ← このボタンは不要 #} -->
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href = '{% url 'accounts:account_delete' %}';">キャンセル（タブを閉じる）</button>
+                    <!-- {# </form> #}
+                    {# ▲▲▲ ここまでが「以前のパスワード入力画面」の再現 ▲▲▲ #} -->
+
+                    {% else %}
+                    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ダミー▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+                    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+
+                    <!-- 通常時入力フォーム表示 -->
+                    <p>アカウントを削除するには、セキュリティのため、現在のパスワードを入力してください。</p>
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <p>入力内容に誤りがあります：</p>
+                        {{ form.non_field_errors }}
+                        {% for field in form %}
+                        {% if field.name == "password" %}
+                        {% for error in field.errors %}
+                        <p>{{ field.label_tag }} {{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <!-- ↓はパスワード認証用のフォーム -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <!-- 5/19---ここからユーザー名表示部分変更 -->
+                        <div class="row mb-3 align-items-baseline g-0">
+                            <label class="col-sm-3 col-form-label">ユーザー名：</label>
+                        <div class="col-sm-9">
+                            <strong>{{ request.user.username }}</strong>
+                            <!-- ログイン中のユーザーを表示するだけに変更 -->
+                        </div>
+                        </div>
+                        <!-- 5/19---パスワード入力部分ラベル表示調整 -->
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">パスワード</label>
+                            <input type="password" name="password" class="form-control" required id="id_password">
+                        </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger w-50">パスワード認証</button>
+                        <button type="button" class="btn btn-secondary w-50" onclick="window.close();">キャンセル</button>
+                        <!-- キャンセルボタンのリンク先は、適切な場所（例：設定画面とか）に後で変更 -->
+                    </div>
+                    </form>
+                    {% endif %}
+                    <form method="post" id="actualDeleteForm" style="display: none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="execute_delete" value="true">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteAccountConfirmModal" tabindex="-1" aria-labelledby="deleteAccountConfirmModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountConfirmModalLabel">アカウント削除の最終確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                本当にアカウントを削除してもよろしいですか？<br>
+                この操作は取り消せません。
+            </div>
+            <div class="modal-footer">
+                <!-- {# ▼▼▼ モーダルのキャンセルボタンにidを付与！ ▼▼▼ #} -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    id="cancelDeleteFromModalButton">キャンセル</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteExecuteButton">はい、削除します</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- アカウント削除完了＆ログアウト処理 ---
+        {% if user_deleted_and_needs_logout %}
+        console.log("アカウント削除完了メッセージ表示中。5秒後にログアウトしてタブを閉じます。");
+        setTimeout(function () {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            fetch("{% url 'accounts:logout' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("ログアウトリクエスト成功。タブを閉じます。");
+                    } else {
+                        console.warn("ログアウトリクエストは成功しませんでしたが、タブを閉じます。Status:", response.status);
+                    }
+                    window.close();
+                })
+                .catch(error => {
+                    console.error('ログアウトリクエスト中にエラー:', error);
+                    window.close();
+                });
+        }, 5000);
+        {% endif %}
+
+        // --- パスワード認証成功時のモーダル自動表示 ---
+        {% if show_delete_modal_on_load %}
+        const deleteModalElement = document.getElementById('deleteAccountConfirmModal');
+        if (deleteModalElement) {
+            const deleteModal = new bootstrap.Modal(deleteModalElement);
+            deleteModal.show();
+            console.log("パスワード認証成功。アカウント削除確認モーダルを自動表示しました。");
+
+            // モーダル内の「キャンセル」ボタンが押された時の処理
+            const cancelBtnModal = document.getElementById('cancelDeleteFromModalButton');
+            if (cancelBtnModal) {
+                cancelBtnModal.addEventListener('click', function () {
+                    console.log("モーダルのキャンセルボタンが押されました。アカウント削除ページにリダイレクトします。");
+                    // モーダルを明示的に隠す (data-bs-dismiss="modal" があれば通常は不要だけど念のため)
+                    // const myModalInstance = bootstrap.Modal.getInstance(deleteModalElement);
+                    // if (myModalInstance) {
+                    //     myModalInstance.hide();
+                    // }
+                    // ページをリロードしてパスワード入力画面に戻る (ビューのGETが呼ばれる)
+                    window.location.href = "{% url 'accounts:account_delete' %}";
+                });
+            }
+            // (オプション) モーダルの右上の×ボタンやEscキーで閉じられた時の処理も入れたいなら、
+            // deleteModalElement.addEventListener('hidden.bs.modal', function (event) { ... }); を使う。
+            // ただし、その場合は「はい、削除します」で閉じられた場合と区別するロジックが必要になる。
+        }
+        {% endif %}
+
+        // --- モーダル内の「はい、削除します」ボタンの処理 (これは常時設定) ---
+        const confirmDeleteExecuteBtn = document.getElementById('confirmDeleteExecuteButton');
+        if (confirmDeleteExecuteBtn) {
+            confirmDeleteExecuteBtn.addEventListener('click', function () {
+                const actualDeleteForm = document.getElementById('actualDeleteForm');
+                if (actualDeleteForm) {
+                    console.log("モーダル経由でアカウント削除を実行します。");
+                    actualDeleteForm.submit();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+--------------------------------------------------
+File: \accounts\templates\accounts\login.html
+--------------------------------------------------
+{% extends "albatross_app/base.html" %}
+{% load static %}
+
+{% block body_class %}page-unauthenticated{% endblock %}
+
+{% block title %}ログイン{% endblock %}
+
+{% block content %}
+<div class="login-page-container d-flex flex-column justify-content-center align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="login-form-card p-4 p-sm-5">
+                    <h2 class="mb-4 text-center">ログイン</h2>
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        ユーザー名またはパスワードが正しくありません。
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <!-- {{ form.as_p }} -->
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label}}</label>
+                            <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" class="form-control" required>
+                            {% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}
+                            </div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label}}</label>
+                            <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" class="form-control" required>
+                            {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}
+                            </div>{% endfor %}
+                        </div>
+                        <!--  ↑↑↑ ここまで個別レンダリングの例。{{ form.as_p }} のままでもOK！ ↑↑↑  -->
+
+                        <!--  ↓↓↓ ボタンのd-gridのスペルミス修正！ (d-gird -> d-grid) ↓↓↓  -->
+                        <div class="d-grid gap-2 mt-4"> {# mt-3 -> mt-4 で少し上に余白増やしてもいいかも #}
+                            <button type="submit" class="btn btn-primary btn-lg">ログイン</button> {# btn-lgで少し大きくする例 #}
+                        </div>
+                    </form>
+                    <!-- 下記の波カッコの処理でユーザーがログイン状態かどうか判断、新規登録を表示するかどうかの処理 -->
+                    {% if not user.is_authenticated %}
+                    <p class="mt-3 text-center">
+                        アカウントをお持ちでないですか？ <a href="{% url 'accounts:signup' %}">新規登録はこちら</a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+
+--------------------------------------------------
+File: \accounts\templates\accounts\password_change_done.html
+--------------------------------------------------
+{% extends "albatross_app/base.html" %}
+
+{% block title %}パスワード変更完了{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7"> <!--少しだけ横幅広げてもいいかも -->
+            <!-- ▼▼▼ ここからが変更部分！ ▼▼▼ #} -->
+            <div class="card text-center">
+                <div class="card-body p-5"> <!--パディングを多めに取ってリッチに！ -->
+                    <h2 class="card-title text-success mb-4">
+                        <i class="bi bi-shield-lock-fill"></i> <!-- Bootstrap Iconsの盾と鍵アイコン -->
+                        パスワードを変更しました
+                    </h2>
+                    <p class="card-text">
+                        パスワードの変更が正常に完了しました。
+                    </p>
+                    <p class="card-text lead mt-4"> <!-- leadクラスで少し文字を大きく -->
+                        <strong>このタブを閉じて、<br class="d-sm-none">元の画面から再度ログインしてください。</strong>
+                        <!-- スマホサイズで改行入れると読みやすいかも #} -->
+                    </p>
+                    <div class="mt-4">
+                        <button id="close-window-btn" class="btn btn-secondary">
+                            今すぐタブを閉じる
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- ▲▲▲ ここまでが変更部分！ ▲▲▲ -->
+        </div>
+    </div>
+</div>
+
+<!--▼▼▼ JavaScriptも忘れずに追加！ ▼▼▼ -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const closeButton = document.getElementById('close-window-btn');
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                console.log("「今すぐタブを閉じる」ボタンが押されました。");
+                window.close();
+            });
+        }
+        
+        // パスワード変更完了ページでは、自動クローズはなくてもいいかも？
+        // ユーザーがメッセージを読む時間をちゃんと確保するためにね！
+        // もし入れたいなら、アカウント削除の時と同じ setTimeout をここに追加すればOK！
+    });
+</script>
+{% endblock %}
+
+--------------------------------------------------
+File: \accounts\templates\accounts\password_change_form.html
+--------------------------------------------------
+
+--------------------------------------------------
+File: \accounts\templates\accounts\signup.html
+--------------------------------------------------
+{% extends "albatross_app/base.html" %}
+{% load static %}
+
+{% block body_class %}page-unauthenticated{% endblock %}
+
+{% block title %}新規ユーザー登録{% endblock %}
+
+{% block content %}
+<div class="login-page-container d-flex flex-column justify-content-center align-items-center">
+    <div class="container"> <!-- container はあってもなくてもOKだけど、ログインと合わせるなら入れる -->
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="signup-form-card p-4 p-sm-5">
+                    <h2 class="mb-4 text-center">新規ユーザー登録</h2>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                    <!-- {{ form.as_p }}でユーザークリエイトフォーム表示 -->
+                    <!-- 下記は各登録の項目 -->
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                            <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}"
+                            class="form-control {% if form.username.errors %}is-invalid{% endif %}" required>
+                            {% if form.username.help_text %}
+                                <small class="form-text text-muted help-text-custom">{{ form.username.help_text|safe }}</small> <!-- ←
+                    ヘルプテキスト！ -->
+                            {% endif %}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    <!-- Password (最初の入力) フィールド -->
+                    <!-- UserCreationFormでは、これは password1 という名前のはず (ビューで使ってるフォームを確認してね！)
+                もし views.py で SignUpView(form_class=UserCreationForm) ってなってるなら、
+                form.password1 と form.password2 でアクセスできるはず！ -->
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">{{ form.password1.label }}</label> <!-- ← password1 に直すかも？ -->
+                            <input type="password" name="{{ form.password1.name }}" id="{{ form.password1.id_for_label }}"
+                            class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                        <!-- ← password1 に直すかも？ -->
+                            {% if form.password1.help_text %} <!-- ← password1 に直すかも？ -->
+                        <!-- ↓↓↓ ヘルプテキストの表示方法、箇条書き風にするならこう ↓↓↓ -->
+                                <small class="form-text text-muted help-text-custom">
+                                    {{ form.password1.help_text|safe }}
+                                </small>
+                            {% endif %}
+                            {% for error in form.password1.errors %} <!-- ← password1 に直すかも？ -->
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    <!-- --- Password (確認用) フィールド -->
+                    <!-- UserCreationFormでは、これは password2 という名前のはず -->
+                        <div class="mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">{{ form.password2.label }}</label> <!-- ← password2 に直すかも？ -->
+                            <input type="password" name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}"
+                            class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                        <!-- ← password2 に直すかも？ -->
+                            {% if form.password2.help_text %} <!-- ← password2 に直すかも？ -->
+                                <small class="form-text text-muted help-text-custom">{{ form.password2.help_text|safe }}</small> <!--
+                    ← ヘルプテキスト！ -->
+                            {% endif %}
+                            {% for error in form.password2.errors %} <!-- ← password2 に直すかも？ -->
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    <!-- ↑↑↑ ★★★ ここまでが個別レンダリング ★★★ ↑↑↑ -->
+
+                    <!-- ↓↓↓ ボタンのd-gridのスペルミス修正！ (d-gird gep-2 -> d-grid gap-2) ↓↓↓ -->
+                        <div class="d-grid gap-2 mt-4"> <!-- フォームとボタンの間に少し余白 (mt-3 から mt-4 へ) -->
+                            <button type="submit" class="btn btn-primary btn-lg">登録する</button> <!-- btn-lgで少し大きく -->
+                        </div>
+                    </form>
+
+                    <p class="mt-3 text-center"> <!-- ここは変更なしでもOK！ -->
+                        すでにアカウントをお持ちですか？ <a href="{% url 'accounts:login' %}">ログインはこちら</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+--------------------------------------------------
+File: \accounts\admin.py
+--------------------------------------------------
+from django.contrib import admin
+
+# Register your models here.
+
+
+--------------------------------------------------
+File: \accounts\apps.py
+--------------------------------------------------
+from django.apps import AppConfig
+
+
+class AccountsConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'accounts'
+
+
+--------------------------------------------------
+File: \accounts\models.py
+--------------------------------------------------
+from django.db import models
+
+# Create your models here.
+
+
+--------------------------------------------------
+File: \accounts\tests.py
+--------------------------------------------------
+from django.test import TestCase
+
+# Create your tests here.
+
+
+--------------------------------------------------
+File: \accounts\urls.py
+--------------------------------------------------
+from django.urls import path
+from . import views  # viewsモジュールをインポート
+
+app_name ="accounts"
+
+# 5/12---includeを追加
+# アカウントアプリにURLパイ引っ越し
+
+urlpatterns = [
+    path("login/", views.MyLoginView.as_view(), name="login"),
+    path("logout/", views.MyLogoutView.as_view(), name="logout"),
+    path("signup/", views.SignUpView.as_view(), name="signup"),
+    path("password_change/", views.MyPasswordChangeView.as_view(), name="password_change"),
+    path("password_change/done/", views.MyPasswordChangeDoneView.as_view(), name="password_change_done"),
+    path("delete/", views.AccountDeleteView.as_view(), name="account_delete"),
+    path('delete/complete/', views.AccountDeleteCompleteView.as_view(), name='account_delete_complete'),
+]
+# 後ほど新規登録などのURLも追加していく
+# 5/14---サインアップパス追加
+# ブラウザで /accounts/signup/ っていうURLにアクセスすると、さっき作った SignUpView が動いて、signup.html が表示されるようになる
+# 5/19---削除処理対応のURL追記
+
+--------------------------------------------------
+File: \accounts\views.py
+--------------------------------------------------
+from django.shortcuts import render, redirect
+from django.contrib.auth import views as auth_views
+from django.urls import reverse_lazy
+from django.views import generic
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.contrib.auth.views import PasswordChangeView
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate
+from django.views import View
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.conf import settings
+from django.contrib.auth import logout
+from django.contrib.auth.views import LoginView
+from django.views.generic import TemplateView
+from django.views.decorators.csrf import csrf_exempt
+
+
+# 5/13---reverse_lazy、generic、UserCreationForm、追加
+# 5/17---PasswordChangeViewとPasswordChangeForm追加
+# 5/19---AuthenticationFormとauthenticateとView追記、アカウント削除用
+# 5/21---redirectとsettingsインポート追記
+# 5/21---import logout追加
+# 5/26---LoginView追記
+# 6/21---CSRF追加
+
+
+# 新規登録
+class SignUpView(generic.CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy("accounts:login")
+    # success_url = "/accounts/login/"
+    template_name = "accounts/signup.html"
+
+# 上記は上から使うフォームの指定、登録成功したらログインページに飛ばす、表示するHTMLテンプレートを指定。
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            # ユーザーがログイン認証済みの場合
+            # settings.LOGIN_REDIRECT_URL にリダイレクトする
+            # LOGIN_REDIRECT_URL が設定されていなければ、サイトのルート ('/') にリダイレクト
+            # (もし LOGIN_REDIRECT_URL が未設定で、ルートがログインページの場合、
+            #  別の適切なログイン後ページURLを直接指定するのもアリ)    
+            redirect_url = getattr(settings, "LOGIN_REDIRECT_URL", "/")
+            if redirect_url == "/" and not request.user.has_perm(" some_permission_that_indicates_logged_in_area"):
+                # 例: ルートがログインページで、まだチャート選択画面のURLが決まってない場合など、
+                #     とりあえず '/admin/' など、確実に存在する場所に飛ばすのも手
+                # redirect_url = '/admin/' # (これはあくまで例！)
+                # もしくは、albatross_app のトップページのURL名を指定する (例: 'albatross_app:chart_list')
+                pass # ここはマサ君のアプリの構成に合わせて調整してね！★チャート画面に飛ばす処理をあとで書く。
+            
+            return redirect(redirect_url)
+        # ユーザーがログイン認証されていなければ、通常の新規登録処理を続行
+        return super().dispatch(request, *args, **kwargs)
+
+"""
+上記に入る可能性のあるコード
+        try:
+            redirect_url = reverse_lazy('albatross_app:chart_top') # チャートのトップ画面へ
+        except NoReverseMatch: # もし 'albatross_app:chart_top' がまだ無かったらフォールバック
+            redirect_url = getattr(settings, 'LOGIN_REDIRECT_URL', '/')
+        return redirect(redirect_url)
+"""
+
+
+# ログイン処理
+# 5/13---下記accounts/login.htmlのアカウント部分を_appからアカウントに修正
+# 5/14---スペルミス修正
+
+class MyLoginView(LoginView):
+    template_name = "accounts/login.html"
+    # success_url は settings.LOGIN_REDIRECT_URL が使われる
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            # 既にログイン済みの場合は、LOGIN_REDIRECT_URL にリダイレクト
+            return redirect(settings.LOGIN_REDIRECT_URL or "/")# or '/' は念のため
+        return super().dispatch(request, *args, **kwargs)
+
+
+
+# ログアウト処理
+class MyLogoutView(auth_views.LogoutView):
+    pass
+# ログアウト後のリダイレクト先は settings.py の LOGOUT_REDIRECT_URL で指定するのがおすすめ
+# (例: LOGOUT_REDIRECT_URL = '/login/')
+
+
+# パスワード変更（更新）処理
+class MyPasswordChangeView(PasswordChangeView):
+    template_name = "accounts/password_change_form.html"
+    success_url = reverse_lazy("accounts:password_change_done")
+
+# MyPasswordChangeView っていう名前で、さっきインポートした PasswordChangeView をカッコ () の中に書いて「継承」してる。
+# PasswordChangeView が持ってる便利な機能（パスワード変更処理とか、フォームの取り扱いとか）を、MyPasswordChangeView も使えるようになる
+
+
+# パスワード変更完了のためのページの処理
+class MyPasswordChangeDoneView(generic.TemplateView):
+    template_name = "accounts/password_change_done.html"
+
+
+# 5/19---削除系追記していく
+# アカウント削除ビュー
+
+@method_decorator(login_required, name="dispatch")
+class AccountDeleteView(View):
+    template_name = "accounts/account_delete_form.html"
+    # success_url = reverse_lazy("accounts:login")
+    # 削除再工事のリダイレクト先（今回はJSで制御かも）
+
+    def get(self, request,*args, **kwargs):
+        # GETリクエスト時 (最初にページを開いた時)
+        # 空の認証フォームをテンプレートに渡す (パスワード入力欄のため)
+        print("★★★ AccountDeleteView GET method CALLED! ★★★") # ← まずこれが呼ばれるか？
+        print(f"★★★ User authenticated in GET: {request.user.is_authenticated} ★★★") # ← ログイン状態は？
+        print(f"★★★ Session user_deleted_flag in GET: {request.session.get('user_deleted_and_needs_logout_flag')} ★★★") # ← セッションフラグは？
+        print(f"★★★ Session show_modal_flag in GET: {request.session.get('show_delete_modal_on_load_flag')} ★★★") # ← セッションフラグは？
+
+        form = AuthenticationForm()
+        show_deleted_message_and_logout = request.session.pop('user_deleted_and_needs_logout_flag', False)
+        # セッションから「モーダル自動表示」フラグを取得 (もしパスワード認証成功直後なら)
+        show_modal_on_load = request.session.pop('show_delete_modal_on_load_flag', False)
+        context = {
+            "form": form,
+            # "user_deleted_and_needs_logout": show_deleted_message_and_logout,
+            "show_delete_modal_on_load": show_modal_on_load, # モーダル表示用フラグも渡す
+        }
+        print(f"★★★ GET時 context: {context}") # デバッグログ
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        context = {}
+        print("--- ★1. AccountDeleteViewのPOSTメソッドが呼ばれました ---") # ★デバッグログ
+        # POSTリクエスト時 (ユーザーがフォームを送信した時)
+        # ここでパスワード認証と、最終確認後の削除処理を行う
+        if "execute_delete" in request.POST and request.POST.get("execute_delete") == "true":
+            print("--- ★2. execute_deleteリクエストを処理します ---") # ★デバッグログ
+            # 最終確認後の実行フェーズ
+            user_to_delete = request.user
+
+            if user_to_delete.is_authenticated: # 念のためログインしてるか確認
+                user_to_delete.is_active = False
+                user_to_delete.save()
+                # logout(request) # ここでログアウトしちゃう！
+                
+                print(f"--- ★3. ユーザー {user_to_delete.username} の is_active を False にしました ---") # ★デバッグログ★
+                request.session['account_successfully_deleted_flag'] = True # 新しいセッションフラグ名
+                print("--- ★4. 削除完了フラグをセッションにセットしました ---") # ★デバッグログ★
+                return redirect('accounts:account_delete_complete') # ← 同じページにリダイレクトして、GETでフラグを読み込む
+            else:
+                print("★★★ 削除実行フェーズ: ユーザーが認証されていません (通常ありえない)")
+                # 何らかのエラー処理 (ログインページへリダイレクトなど)
+                return redirect('accounts:login')
+
+
+        else:
+            print(">>> パスワード認証フェーズ")
+            # パスワード認証フェーズ
+            form_data = request.POST.copy()
+            form_data["username"] = request.user.username
+            form = AuthenticationForm(request, data=form_data)
+
+
+        if form.is_valid():
+            # パスワード認証OK！
+            print("★★★ パスワード認証成功！ ★★★") # デバッグ用
+            # ここで、JavaScriptに「認証OKだよ」って伝えるか、
+            # もしくは、特定のフラグを立てて再度同じテンプレートを表示し、
+            # テンプレート側でJavaScriptのconfirmを出す、みたいな流れになるかな。
+            request.session['show_delete_modal_on_load_flag'] = True
+            return redirect('accounts:account_delete') # 同じページにリダイレクトしてGETでモーダル表示
+        else:
+                print("★★★ パスワード認証失敗… ★★★")
+                context["form"] = form # エラーメッセージ付きのフォーム
+                # ↓↓↓ ★変更点５：エラー時も context をちゃんと渡してrender ★↓↓↓
+                return render(request, self.template_name, context)
+
+            # 今回は、まず「パスワード認証が通った」ということを確認したいので、
+            # 一旦、コンソールにメッセージを出すだけにしてみようか！
+
+            # TODO: ここに最終確認ポップアップ表示のトリガーと、実際の削除処理を書く！
+            # (Ajax使うか、もう一度POSTさせるか、など設計による)
+
+            # 仮に、認証成功したら、メッセージ付きで同じページを再表示する例
+            # (実際には、ここでJSを動かすための工夫が必要になる)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AccountDeleteCompleteView(View): # ← ★★★ このクラスがちゃんと存在してるか？ ★★★
+    template_name = "accounts/account_delete_complete.html"
+
+    def get(self, request, *args, **kwargs):
+        print("★★★ AccountDeleteCompleteView GET method CALLED! ★★★")
+        account_successfully_deleted = request.session.pop('account_successfully_deleted_flag', False)
+        if not account_successfully_deleted:
+            print(">>> 削除完了フラグなしでアクセスされました。リダイレクトします。")
+            return redirect('accounts:login')
+
+        context = {
+            'user_deleted_and_needs_logout': True,
+        }
+        print(f"★★★ 削除完了ページ表示: context = {context}")
+        return render(request, self.template_name, context)
+
+--------------------------------------------------
+File: \accounts\__init__.py
+--------------------------------------------------
+
+--------------------------------------------------
+File: \albatross_app\migrations\0001_initial.py
+--------------------------------------------------
+# Generated by Django 5.2.3 on 2025-09-06 16:22
+
+import django.db.models.deletion
+import django.utils.timezone
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Category',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=50, unique=True, verbose_name='カテゴリ名')),
+            ],
+            options={
+                'verbose_name': 'カテゴリ',
+                'verbose_name_plural': 'カテゴリ',
+            },
+        ),
+        migrations.CreateModel(
+            name='ChartType',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100, unique=True, verbose_name='チャート種別名')),
+                ('description', models.TextField(blank=True, verbose_name='チャート種別の説明')),
+                ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='albatross_app.category', verbose_name='カテゴリ')),
+            ],
+            options={
+                'verbose_name': 'チャート種別',
+                'verbose_name_plural': 'チャート種別',
+            },
+        ),
+        migrations.CreateModel(
+            name='ChartStep',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('question_text_beginner', models.TextField(blank=True, verbose_name='質問文（初級）')),
+                ('question_text_intermediate', models.TextField(blank=True, verbose_name='質問文（中級）')),
+                ('is_starting_step', models.BooleanField(default=False, verbose_name='開始ステップか')),
+                ('is_final_step', models.BooleanField(default=False, verbose_name='最終ステップか')),
+                ('solution_text', models.TextField(blank=True, null=True, verbose_name='解決策/メッセージ')),
+                ('detailed_explanation', models.TextField(blank=True, verbose_name='詳細解説（アコーディオン用）')),
+                ('solution_type', models.CharField(blank=True, choices=[('improved', '解決/改善'), ('unresolved', '未解決/改善なし'), ('info', '情報/その他')], default=None, max_length=20, null=True, verbose_name='解決タイプ')),
+                ('keyword_advanced', models.CharField(blank=True, max_length=100, verbose_name='キーワード（上級）')),
+                ('risk_level', models.CharField(choices=[('low', '低'), ('medium', '中'), ('high', '高')], default='low', max_length=10, verbose_name='リスクレベル（上級）')),
+                ('display_order', models.IntegerField(default=0, help_text='数字が小さいものから順に表示されます。', verbose_name='表示順序（上級）')),
+                ('no_next_step', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='goes_to_no', to='albatross_app.chartstep', verbose_name='「いいえ」の場合の次のステップ')),
+                ('yes_next_step', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='goes_to_yes', to='albatross_app.chartstep', verbose_name='「はい」次のステップ')),
+                ('chart_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='albatross_app.charttype', verbose_name='チャート種別')),
+            ],
+            options={
+                'verbose_name': 'チャートステップ',
+                'verbose_name_plural': 'チャートステップ',
+            },
+        ),
+        migrations.CreateModel(
+            name='TroubleshootingSession',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('end_time', models.DateTimeField(default=django.utils.timezone.now, verbose_name='完了日時')),
+                ('is_resolved', models.BooleanField(default=True, verbose_name='解決済みフラグ')),
+                ('chart_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='albatross_app.charttype', verbose_name='チャート種別')),
+                ('resolved_step', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='albatross_app.chartstep', verbose_name='解決ステップ')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='ユーザー')),
+            ],
+            options={
+                'verbose_name': 'トラブルシューティングセッション',
+                'verbose_name_plural': 'トラブルシューティングセッション',
+                'ordering': ['-end_time'],
+            },
+        ),
+        migrations.CreateModel(
+            name='SessionLog',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('answer', models.CharField(choices=[('yes', 'はい'), ('no', 'いいえ'), ('unknown', '不明')], max_length=10, verbose_name='回答')),
+                ('chart_step', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='albatross_app.chartstep', verbose_name='チャートステップ')),
+                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='albatross_app.troubleshootingsession', verbose_name='セッション')),
+            ],
+            options={
+                'verbose_name': 'セッションログ',
+                'verbose_name_plural': 'セッションログ',
+                'unique_together': {('session', 'chart_step')},
+            },
+        ),
+    ]
+
+
+--------------------------------------------------
+File: \albatross_app\migrations\0002_alter_category_options_alter_chartstep_options_and_more.py
+--------------------------------------------------
+# Generated by Django 5.2.3 on 2025-10-05 09:21
+
+from django.db import migrations
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('albatross_app', '0001_initial'),
+    ]
+
+    operations = [
+        migrations.AlterModelOptions(
+            name='category',
+            options={'verbose_name': 'カテゴリ枠', 'verbose_name_plural': 'カテゴリ枠'},
+        ),
+        migrations.AlterModelOptions(
+            name='chartstep',
+            options={'verbose_name': 'チャート内容', 'verbose_name_plural': 'チャート内容'},
+        ),
+        migrations.AlterModelOptions(
+            name='charttype',
+            options={'verbose_name': '故障項目ボタン', 'verbose_name_plural': '故障項目ボタン'},
+        ),
+        migrations.AlterModelOptions(
+            name='sessionlog',
+            options={'verbose_name': 'セッションログ（子）', 'verbose_name_plural': 'セッションログ（子）'},
+        ),
+        migrations.AlterModelOptions(
+            name='troubleshootingsession',
+            options={'ordering': ['-end_time'], 'verbose_name': 'トラブルシューティングセッション（親）', 'verbose_name_plural': 'トラブルシューティングセッション（親）'},
+        ),
+    ]
+
+
+--------------------------------------------------
+File: \albatross_app\migrations\__init__.py
+--------------------------------------------------
+
+--------------------------------------------------
+File: \albatross_app\static\albatross_app\css\albatross_app_chart.css
+--------------------------------------------------
+/* albatross_app/static/albatross_app/css/chart_display_styles.css */
+
+/* =============================================== */
+/* Chart Display Page Styles (チャート表示画面のスタイル) */
+/* =============================================== */
+
+/* --- 回答済みの質問ステップのスタイル --- */
+.chart-step.answered-step {
+    opacity: 0.6;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* --- 選択されたボタンのスタイル --- */
+.btn.selected-button {
+    background-color: #0d6efd; /* 例：青色 */
+    border-color: #0a58ca;
+    color: white !important;
+}
+
+/* 改善が見つかった最終ステップのスタイル */
+.chart-step.final-step-improved { /* またはカード全体 .final-step-improved に直接 */
+    border: 3px solid #198754 !important; /* 緑色の太枠 */
+    /* (他のスタイル: 背景色とか、角丸とか、お好みで) */
+}
+
+/* 解決しない最終ステップのスタイル (デフォルトで適用されるイメージ) */
+.chart-step.final-step-unresolved { /* またはカード全体 .final-step-unresolved に直接 */
+    border: 3px solid #dc3545 !important; /* 赤色の太枠 */
+    /* (他のスタイル) */
+}
+
+/* albatross_app/static/albatross_app/css/chart_styles.css */
+
+/* --- 上級モード専用スタイル --- */
+
+/* 全体を囲む枠 */
+.advanced-chart-wrapper {
+    background-color: #f8f9fa; /* 例: 薄いグレー (テーマカラーの影響を受けないように) */
+}
+
+/* タイルの基本スタイル */
+.tile {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.tile:hover {
+    transform: translateY(-5px); /* ちょっと浮き上がる感じ */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ★★★ リスクレベルごとの枠線の色！ ★★★ */
+.tile.tile-risk-low {
+    border-color: #0d6efd; /* 青 (情報) */
+}
+.tile.tile-risk-medium {
+    border-color: #ffc107; /* 黄 (警告) */
+}
+.tile.tile-risk-high {
+    border-color: #dc3545; /* 赤 (危険) */
+}
+
+/* ★★★ アイコンの色も、リスクレベルに合わせる！ ★★★ */
+.tile.tile-risk-low .tile-icon::before {
+    content: "\f431"; /* bi-info-circle-fill */
+    color: #0d6efd;
+}
+.tile.tile-risk-medium .tile-icon::before {
+    content: "\f33b"; /* bi-exclamation-triangle-fill */
+    color: #ffc107;
+}
+.tile.tile-risk-high .tile-icon::before {
+    content: "\f570"; /* bi-radioactive とか、もっと危険そうなやつ！ */
+    color: #dc3545;
+}
+
+
+/* タイル内の各要素のスタイル */
+.tile-order-number {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.5rem;
+    font-size: 0.8em;
+    color: #6c757d; /* グレー */
+}
+
+.tile-icon {
+    font-size: 2rem; 
+    margin-bottom: 0.5rem;
+}
+
+.tile-keyword {
+    font-weight: 500;
+}
+
+/* albatross_app/static/albatross_app/css/chart_styles.css */
+
+/* --- タブ関連のスタイル調整 --- */
+
+/* タブ全体のコンテナを、左寄せにする */
+#chart-tab-container {
+    width: 100%; /* 横幅いっぱいを使うように明示 */
+    display: flex; /* Flexboxを強制的に適用 */
+    justify-content: flex-start !important; /* 何がなんでも左寄せ！ */
+}
+
+/* ulタグ自体のマージンをリセット */
+#chart-tab-container > ul.nav-pills {
+    margin-left: 0;
+    margin-right: auto;
+}
+/* 各タブボタンのスタイルを調整 */
+#pills-tab .nav-link {
+    padding: 0.5rem 0.8rem; /* パディングを少し狭くして、タブの幅を詰める (値はお好みで調整してね！) */
+    font-size: 0.9rem;     /* 文字の大きさを少しだけ小さくする (これも任意) */
+}
+
+/* --- 詳細解説アコーディオンのボタンスタイル調整 --- */
+.accordion-button.collapsed {
+    color: #6c757d; /* 閉じてる時の文字色を、Bootstrapの .text-muted と同じ、少し薄いグレーに！ */
+    background-color: #f8f9fa; /* 閉じてる時の背景色も、ほんのりグレーにすると馴染むかも (任意) */
+}
+
+/* (任意) 開いた時のスタイルも変えたいなら、これも追加 */
+.accordion-button:not(.collapsed) {
+    color: #0c63e4; /* 開いた時の文字色 (Bootstrapのデフォルトの青っぽい色) */
+    background-color: #e7f1ff; /* 開いた時の背景色 (Bootstrapのデフォルト) */
+    box-shadow: none; /* 開いた時の周りの影を消して、スッキリさせる (任意) */
+}
+
+/* (任意) ボタンにマウスを乗せた時に、下線が出ないようにする */
+.accordion-button:hover {
+    text-decoration: none;
+}
+
+/* --- 診断完了ボタンのスタイル調整 --- */
+#save-log-button {
+    /* ▼▼▼ 幅を、画面の横幅の50%にする！ ▼▼▼ */
+    width: 50%; /* 画面幅の半分！ */
+    max-width: 600px; /* でも、PCの大画面で見た時に、広がりすぎないように上限も付けとく */
+    min-width: 300px; /* 逆に、スマホとかで見た時に、小さくなりすぎないように下限も！ */
+
+    /* ▼▼▼ 高さと文字サイズも、もっとデカく！ ▼▼▼ */
+    font-size: 1.8rem; /* もう、h2タグくらいのデカさ！ */
+    padding: 1rem 1.5rem; /* 内側の余白も、超たっぷり取る！ */
+    font-weight: bold;
+    letter-spacing: 2px; /* 文字間も広げて、堂々とした感じに！ */
+
+    /* ▼▼▼ 見た目は、さっきのカプセル型を継承！ ▼▼▼ */
+    border-radius: 50px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+    border: none; /* (任意) 枠線はいらないかも？ */
+}
+
+/* (任意) マウスを乗せた時の動きも、もっとダイナミックに！ */
+#save-log-button:hover {
+    transform: translateY(-3px) scale(1.02); /* ちょっと拡大もさせちゃう！ */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+/* ... (既存のCSS) ... */
+
+/* --- チェック済みのタイルのスタイル --- */
+.tile.tile-checked {
+    /* opacity: 0.5; */
+    /* 代わりに、背景色を、白にする！ */
+    background-color: white !important;
+
+    transform: scale(0.95); /* ちょっとだけ小さくして、押した感を出す */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.tile.tile-checked:hover {
+    transform: scale(0.95); /* ホバーしても大きくならないように */
+}
+/* --- タイムスタンプのスタイル調整 --- */
+.tile-timestamp {
+    color: #FF0000 !important; /* Bootstrapの「危険」を示す赤色！ !importantで確実に上書き！ */
+    font-weight: bold; /* (任意) 文字を太くして、もっと目立たせる！ */
+    
+}
+
+/* チェックされたタイルの中の、「キーワード」だけを、薄くする！ */
+.tile.tile-checked .tile-keyword {
+    color: #adb5bd; /* Bootstrapの、いい感じの薄いグレー！ */
+    transition: color 0.3s ease;
+}
+
+/* チェックされたタイルの中の、「表示順の数字」も、薄くする！ */
+.tile.tile-checked .tile-order-number {
+    color: #adb5bd; /* キーワードと同じ色に！ */
+    transition: color 0.3s ease;
+}
+
+/* 上級モードのボタン専用のスタイル */
+#advanced-save-button {
+    min-width: 400px; /* 例えば、最低幅だけ指定するとか */
+    /* 他にも、好きなスタイルを追加できるよ！ */
+}
+
+--------------------------------------------------
