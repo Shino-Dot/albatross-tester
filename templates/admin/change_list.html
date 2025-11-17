@@ -1,0 +1,51 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        /* フィルターパネルを折りたためるようにする魔法のCSS */
+        #changelist-filter {
+            transition: all 0.3s ease;
+        }
+        #changelist-filter.collapsed {
+            margin-right: -260px; /* パネルの幅＋α、右に隠す！ */
+        }
+        #filter-toggle-btn {
+            position: fixed;
+            top: 100px; /* 画面の上から、いい感じの位置に */
+            right: 15px; /* 右端に固定 */
+            z-index: 1000;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {{ block.super }}
+    
+    <!-- ▼▼▼ フィルターパネルを出し入れする、魔法のボタン！ ▼▼▼ -->
+    <button id="filter-toggle-btn" class="btn btn-sm btn-outline-secondary">
+        &raquo;
+    </button>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterPanel = document.getElementById('changelist-filter');
+            const toggleBtn = document.getElementById('filter-toggle-btn');
+
+            if (filterPanel && toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    filterPanel.classList.toggle('collapsed');
+                    
+                    // ボタンの文字も、いい感じに変える
+                    if (filterPanel.classList.contains('collapsed')) {
+                        toggleBtn.innerHTML = '&laquo;';
+                    } else {
+                        toggleBtn.innerHTML = '&raquo;';
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

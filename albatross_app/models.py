@@ -134,7 +134,13 @@ class ChartStep(models.Model):
         final_display_text = display_text[:50] if display_text else "(内容未設定)"
         
         type_name = self.chart_type.name if self.chart_type else "(種別未設定)"
-        return f"ID: {self.id} - {final_display_text}..."
+        # ★★★ ここが、今回のキモ！ ★★★
+        # display_order を、4桁のゼロ埋めで、カッコ付きで表示！
+        # (例: 101 → [0101], 205 → [0205])
+        order_str = f"[{self.display_order:04}]"
+        
+        # 最終的に、ぜーんぶ合体させて、返す！
+        return f"{order_str} {final_display_text}"
 
     
     class Meta:

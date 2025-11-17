@@ -16,17 +16,19 @@
 
     <!-- タブ切り替えボタン  -->
     <div class="chart-tab-container">
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-beginner-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">初級</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-intermediate-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">中級</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-advanced-tab" data-bs-toggle="pill" data-bs-target="#pills-advanced" type="button" role="tab">上級</button>
-            </li>
-        </ul>
+        <div id="tab-toggle-switch-wrapper">
+            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-beginner-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">初級</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-intermediate-tab" data-bs-toggle="pill" data-bs-target="#pills-chart-area" type="button" role="tab">中級</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-advanced-tab" data-bs-toggle="pill" data-bs-target="#pills-advanced" type="button" role="tab">上級</button>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <!-- タブの中身のエリア -->
@@ -111,7 +113,7 @@
                                 <!-- ... (タイル表示のループ部分は変更なし) ... #} -->
                                 {% for step in steps_in_risk_group %}
                                     <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                        <div class="tile card h-100 tile-risk-{{ step.risk_level }}" data-step-id="{{ step.id }}">
+                                        <div class="tile card h-100 tile-risk-{{ step.risk_level }}" data-step-id="{{ step.id }}"data-display-order="{{ step.display_order }}">
                                             <div class="card-body text-center d-flex flex-column justify-content-center">
                                                 <span class="tile-order-number">{{ step.display_order }}</span>
                                                 <p class="tile-keyword card-title mb-0">
@@ -386,89 +388,63 @@ allTabs.forEach(function(tab) {
         const unresolvedTriggerButton = document.getElementById('unresolved-trigger-button');
         const advancedSaveButton = document.getElementById('advanced-save-button');
         
-        let advancedAnswers = {}; // これが本体！ { '1': 'unknown', '2': 'yes', ... }
+        let checkedSteps = {}; // { stepId: true/false } を管理するオブジェクト
         let isUnresolvedMode = false;
 
-        // --- (2) タイルの見た目を、一括で更新する関数 ---
-        function updateAllTileStyles() {
-            allNormalTiles.forEach(tile => {
-                const stepId = tile.dataset.stepId;
-                const answer = advancedAnswers[stepId];
-                
-                // answer が 'unknown' じゃなければ、操作済み！
-                if (answer !== 'unknown') {
-                    // だから、青枠（チェック済み）を付ける！
-                    tile.classList.add('tile-checked');
-                } else {
-                    // 'unknown' に戻ったら（＝キャンセルされたら）、青枠を外す！
-                    tile.classList.remove('tile-checked');
-                }
-            });
+        // ▼▼▼ 見た目を更新する関数 (リニューアル版) ▼▼▼
+function updateAllTileStyles() {
+    allNormalTiles.forEach(tile => {
+        const stepId = tile.dataset.stepId;
+        if (checkedSteps[stepId]) {
+            tile.classList.add('tile-checked');
+        } else {
+            tile.classList.remove('tile-checked');
+        }
+    });
+}
+
+function checkUnresolvedButtonState() {
+    // checkedSteps の中で、true のものの数を数える
+    const checkedCount = Object.values(checkedSteps).filter(isChecked => isChecked).length;
+    
+    if (checkedCount === allNormalTiles.length) {
+        unresolvedTriggerButton.disabled = false;
+        unresolvedTriggerButton.classList.add('is-active'); 
+    } else {
+        unresolvedTriggerButton.disabled = true;
+        unresolvedTriggerButton.classList.remove('is-active');
+    }
+}
+
+        // ▼▼▼ クリックイベント (超シンプル版) ▼▼▼
+allNormalTiles.forEach(tile => {
+    const stepId = tile.dataset.stepId;
+    const timestampElement = tile.querySelector('.tile-timestamp');
+
+    // 初期状態をセット
+    checkedSteps[stepId] = false;
+
+    tile.addEventListener('click', function() {
+        // true と false を、ただ入れ替えるだけ！
+        checkedSteps[stepId] = !checkedSteps[stepId];
+        
+        // タイムスタンプを管理
+        if (checkedSteps[stepId]) {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            timestampElement.textContent = `${hours}:${minutes}`;
+        } else {
+            timestampElement.textContent = '';
         }
         
-        // --- (3) 全タイルクリックをチェックして、未改善ボタンを制御する関数 ---
-        function checkUnresolvedButtonState(allNormalTiles) {
-            // ★★★ isUnresolvedModeがtrue（＝ユーザーがすでに未改善モードにした）なら、何もしない！ ★★★
-            if (isUnresolvedMode) {
-                console.log("未改善モードなので、チェックをスキップします。");
-                return; // この関数を、ここで強制終了！
-            }
-            const clickedCount = Object.values(advancedAnswers).filter(v => v !== 'unknown').length;
-
-            console.log("--- ボタン状態チェック ---");
-            console.log("クリックされた数:", clickedCount);
-            console.log("タイルの総数:", allNormalTiles.length);
-            console.log("比較結果:", clickedCount === allNormalTiles.length);
-
-            if (clickedCount === allNormalTiles.length) {
-                unresolvedTriggerButton.disabled = false;
-                console.log("→ ボタンを活性化します！");
-                unresolvedTriggerButton.classList.add('is-active'); 
-            } else {
-                unresolvedTriggerButton.disabled = true;
-                console.log("→ ボタンは非活性のままです。");
-                unresolvedTriggerButton.classList.remove('is-active');
-            }
-        }
-
-        // --- (4) まず、advancedAnswers を 'unknown' で初期化 ---
-        allNormalTiles.forEach(tile => {
-            advancedAnswers[tile.dataset.stepId] = 'unknown';
-        });
-        console.log("初期状態:", advancedAnswers);
-
-        // --- (5) 各タイルに、クリックイベントを設定 ---
-        allNormalTiles.forEach(tile => {
-            const stepId = tile.dataset.stepId;
-            const timestampElement = tile.querySelector('.tile-timestamp');
-
-            tile.addEventListener('click', function() {
-                const isCurrentlyYes = (advancedAnswers[stepId] === 'yes');
-
-                // 'yes'か'no'のタイルを、全部'no'にリセット
-                Object.keys(advancedAnswers).forEach(key => {
-                    if (advancedAnswers[key] !== 'unknown') {
-                        advancedAnswers[key] = 'no';
-                    }
-                });
-
-                if (!isCurrentlyYes) {
-                    advancedAnswers[stepId] = 'yes'; // 新規クリックなら'yes'
-                    // タイムスタンプを更新
-                    const now = new Date();
-                    const hours = now.getHours().toString().padStart(2, '0');
-                    const minutes = now.getMinutes().toString().padStart(2, '0');
-                    timestampElement.textContent = `${hours}:${minutes}`;
-                } else {
-                    advancedAnswers[stepId] = 'unknown'; // キャンセルなら'unknown'
-                    timestampElement.textContent = ''; // タイムスタンプを消す
-                }
-
-                updateAllTileStyles(); // 全タイルの見た目を更新
-                checkUnresolvedButtonState(allNormalTiles); // 未改善ボタンの状態をチェック
-                console.log("クリック後:", advancedAnswers);
-            });
-        });
+        // 最後に、見た目を更新
+        updateAllTileStyles();
+        checkUnresolvedButtonState();
+        
+        console.log("クリック後 (チェック状態):", checkedSteps);
+    });
+});
 
         // --- (6) 未解決トリガーボタンの処理 ---
         if (unresolvedTriggerButton) {
@@ -489,24 +465,68 @@ allTabs.forEach(function(tab) {
             });
         }
 
-        // --- (7) メインのログ保存ボタンの処理 ---
+                // 【新しいコード（手術後）】
+
         if (advancedSaveButton && confirmSaveModal) {
             advancedSaveButton.addEventListener('click', function() {
-                if (isUnresolvedMode) {
-                    Object.keys(advancedAnswers).forEach(key => {
-                        if (advancedAnswers[key] !== 'unknown') {
-                            advancedAnswers[key] = 'no';
-                        }
+                // --- ▼▼▼ ここからが、新しいロジック！ ▼▼▼ ---
+                
+                // 1. チェックされているタイルのIDを、配列として全部抜き出す
+                const checkedTileIds = Object.keys(checkedSteps).filter(id => checkedSteps[id]);
+
+                // 2. もし、チェックが一個もなくて、未解決モードでもないなら、処理を中断
+                if (checkedTileIds.length === 0 && !isUnresolvedMode) {
+                    if(messageModal) { // 丁寧なエラーメッセージを出す
+                        messageModalLabel.textContent = '情報';
+                        messageModalText.textContent = '記録するには、少なくとも1つの操作タイルを選択してください。';
+                        messageModal.show();
+                    }
+                    return; // ここで、関数を強制終了！
+                }
+
+                // 3. チェック済みのタイルの中から、一番 display_order が大きいものを探す
+                let lastStepId = null;
+                if (checkedTileIds.length > 0) {
+                    lastStepId = checkedTileIds.reduce((lastId, currentId) => {
+                        const lastTile = document.querySelector(`.tile[data-step-id="${lastId}"]`);
+                        const currentTile = document.querySelector(`.tile[data-step-id="${currentId}"]`);
+                        // nullチェックを追加して、より安全に！
+                        if (!lastTile) return currentId;
+                        if (!currentTile) return lastId;
+                        
+                        const lastOrder = parseInt(lastTile.dataset.displayOrder);
+                        const currentOrder = parseInt(currentTile.dataset.displayOrder);
+                        return currentOrder > lastOrder ? currentId : lastId;
                     });
                 }
-                confirmSaveModal.show();
+                
+                // 4. バックエンドに送るための、最終的なデータ(answersForBackend)を作る
+                const answersForBackend = {};
+                allNormalTiles.forEach(tile => {
+                    const stepId = tile.dataset.stepId;
+                    if (checkedSteps[stepId]) {
+                        answersForBackend[stepId] = 'no'; // まずは、チェック済みを全部 'no' に
+                    } else {
+                        answersForBackend[stepId] = 'unknown'; // 未チェックは 'unknown'
+                    }
+                });
 
+                // 5. もし「未解決モード」じゃなければ、一番最後のやつだけ 'yes' に上書き！
+                if (lastStepId && !isUnresolvedMode) {
+                    answersForBackend[lastStepId] = 'yes';
+                }
+                
+                // --- ▲▲▲ 新しいロジック、ここまで！ ▲▲▲ ---
+
+                // 6. 確認モーダルを表示して、完成したデータを送信する (ここは、ほぼ今まで通り)
+                confirmSaveModal.show();
                 const newConfirmBtn = confirmSaveButton.cloneNode(true);
                 confirmSaveButton.parentNode.replaceChild(newConfirmBtn, confirmSaveButton);
 
                 newConfirmBtn.addEventListener('click', () => {
                     confirmSaveModal.hide();
-                    fetchDataForAdvanced(advancedAnswers);
+                    // ★★★ ちゃんと、新しい賢いデータ(answersForBackend)を渡す！ ★★★
+                    fetchDataForAdvanced(answersForBackend);
                 }, { once: true });
             });
         }

@@ -223,3 +223,55 @@
     min-width: 400px; /* 例えば、最低幅だけ指定するとか */
     /* 他にも、好きなスタイルを追加できるよ！ */
 }
+
+/* --- 【画竜点睛Ver.】ID指定・呪い返しタブUIスタイル --- */
+
+/* (1) 全体を囲む、背景 */
+#tab-toggle-switch-wrapper {
+    display: inline-block;
+    
+    /* ▼▼▼ (要望③) 背景色を、もっと暗いグレーにする！ ▼▼▼ */
+    background-color: #dee2e6; /* Bootstrapの、もっと濃いグレー！ */
+    /* ▲▲▲ #f8f9fa から変更！ ▲▲▲ */
+
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* (2) Bootstrap変数の上書き */
+#tab-toggle-switch-wrapper .nav-pills {
+    --bs-nav-pills-link-active-bg: #ffffff !important;
+
+    /* ▼▼▼ (要望①) アクティブ文字色を、テーマカラーと連動させる！ ▼▼▼ */
+    --bs-nav-pills-link-active-color: var(--theme-header-text-color) !important;
+    /* ▲▲▲ #0d6efd から変更！ ▲▲▲ */
+    
+    --bs-nav-link-color: #6c757d !important;
+
+    /* ▼▼▼ (要望①) マウスオーバー文字色も、テーマカラーと連動！ ▼▼▼ */
+    --bs-nav-link-hover-color: var(--theme-header-text-color) !important;
+    /* ▲▲▲ #0d6efd から変更！ ▲▲▲ */
+
+    margin-bottom: 0 !important;
+}
+
+/* (3) ボタン自体のスタイル */
+#tab-toggle-switch-wrapper .nav-pills .nav-link {
+    border-radius: 0.25rem;
+    background-color: transparent !important;
+    transition: all 0.2s ease-in-out;
+    opacity: 0.7;
+}
+
+/* (4) 選択中のボタンのスタイル */
+#tab-toggle-switch-wrapper .nav-pills .nav-link.active {
+    background: #f8f9fa !important; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+}
+
+/* (5) マウスオーバー時のスタイル */
+#tab-toggle-switch-wrapper .nav-pills .nav-link:not(.active):hover {
+    opacity: 1;
+}
