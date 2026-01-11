@@ -91,8 +91,10 @@
                     {% endfor %}
 
                     <!-- --- 診断完了ボタン --- -->
-                    <div class="mt-5 text-center">
-                        <button type="button" id="save-log-button" class="btn btn-lg btn-primary custom-log-button"><i class="bi bi-pencil-square"></i> 診断を完了して記録する</button>
+                    <div class="mt-5 d-flex justify-content-center">
+                        <button type="button" id="save-log-button" class="btn btn-lg btn-primary custom-log-button">
+                            <i class="bi bi-pencil-square"></i> 診断を完了して記録する
+                        </button>
                     </div>
                 </div>
             {% else %}
@@ -152,24 +154,51 @@
                 {% endif %}
 
                 <div class="mt-4 text-center">
-                <!-- (1) ★★★ 未解決トリガーボタンを追加！ ★★★ -->
-                    <div class="mb-3 text-center">
-                        <button id="unresolved-trigger-button" class="btn btn-outline-secondary btn-sm" disabled>
-                            <i class="bi bi-exclamation-triangle"></i> 全て試しても未改善の場合はこちら
-                        </button>
+                    <!-- (1) 未解決の時だけ使う隠しボタン -->
+                    <div class="row justify-content-center g-3 mb-4">
+                        <div class="col-12 col-md-5">
+                            <div class="d-grid">
+                                <button type="button" id="save-unresolved-log-btn" class="btn btn-lg btn-secondary custom-log-button">
+                                    <i class="bi bi-x-circle"></i> 未解決で記録する
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- (2) 解決した時に使うメインボタン -->
+                        <div class="col-12 col-md-5">
+                            <div class="d-grid">
+                                <button type="button" id="save-resolved-log-btn" class="btn btn-lg btn-primary custom-log-button">
+                                    <i class="bi bi-check2-circle"></i> 解決して記録する
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                </div>
+        </div>
+    <!-- ★★★ 完成形コードはここまで！ ★★★ -->
 
-                <!-- --- ▼▼▼ ログ記録ボタンは、両方のifの外、一番下に置く！ ▼▼▼ --- #} -->
-                    <button type="button" id="advanced-save-button" class="btn btn-primary custom-log-button">
-                        <i class="bi bi-pencil-square"></i> この内容で記録する
-                    </button>
+
+    <!-- メッセージ表示モーダル -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageModalLabel">情報</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="messageModalText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkButton">OK</button>
                 </div>
             </div>
         </div>
-    <!-- ★★★ 完成形コードはここまで！ ★★★ #} -->
+    </div>
 
+</div>
 
-    <!-- ↓↓↓ メッセージ表示モーダルのHTML ↓↓↓ -->
+<!-- ↓↓↓ メッセージ表示モーダルのHTML ↓↓↓ -->
     <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered"> <!-- ← modal-dialog-centered で上下中央寄せ！ -->
             <div class="modal-content">
@@ -205,28 +234,6 @@
             </div>
         </div>
     </div>
-
-    <!-- メッセージ表示モーダル -->
-    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="messageModalLabel">情報</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="messageModalText"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkButton">OK</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-
 
 {% endblock %}
 

@@ -118,17 +118,23 @@ if (savedTabId) {
         if (beginnerTab) beginnerTab.addEventListener('click', () => switchChartText('beginner'));
         if (intermediateTab) intermediateTab.addEventListener('click', () => switchChartText('intermediate'));
 
-        const saveLogButton = document.getElementById('save-log-button');
+    const saveLogButton = document.getElementById('save-log-button');
+    console.log("初級保存ボタンの存在チェック:", saveLogButton ? "OK" : "見つからないよ！");
         if (saveLogButton && confirmSaveModal) {
-            saveLogButton.addEventListener('click', function() {
+            // 念のため、古いイベントを一度リセットする書き方にしよっか！
+            saveLogButton.onclick = function() {
+                console.log("初級・中級の保存ボタンが押されました！モーダルを出します✨");
+                
+                // 1. モーダルを表示
                 confirmSaveModal.show();
-                const newConfirmBtn = confirmSaveButton.cloneNode(true);
-                confirmSaveButton.parentNode.replaceChild(newConfirmBtn, confirmSaveButton);
-                newConfirmBtn.addEventListener('click', () => {
+                
+                // 2. モーダル内の「はい、記録する」ボタンに、この時だけの仕事を教える
+                confirmSaveButton.onclick = function() {
+                    console.log("モーダルで『はい』が押されました。送信を開始します🚀");
                     confirmSaveModal.hide();
-                    fetchData(userAnswers);
-                }, { once: true });
-            });
+                    fetchData(userAnswers); // 初級・中級用の送信関数
+                };
+            };
         }
         
         switchChartText('beginner');
@@ -150,176 +156,99 @@ allTabs.forEach(function(tab) {
 });
 
 // ▲▲▲ ここまで追加！ ▲▲▲
-    // ----------------------------------------------------------
-    // B. 上級モード用の処理
-    // ----------------------------------------------------------
-    if (advancedTabPane) {
-        console.log("上級モード用のJavaScriptを初期化します。");
 
-        // --- (1) 使う要素と、状態管理変数を準備 ---
-        const allNormalTiles = advancedTabPane.querySelectorAll('.tile[data-step-id]');
-        const unresolvedTriggerButton = document.getElementById('unresolved-trigger-button');
-        const advancedSaveButton = document.getElementById('advanced-save-button');
-        
-        let checkedSteps = {}; // { stepId: true/false } を管理するオブジェクト
-        let isUnresolvedMode = false;
+// --- 🛡️ 上級モード：状態管理 ---
+    let checkedSteps = {}; // { stepId: true/false } を管理
+    const allNormalTiles = document.querySelectorAll('.tile[data-step-id]');
 
-        // ▼▼▼ 見た目を更新する関数 (リニューアル版) ▼▼▼
-function updateAllTileStyles() {
+    // タイルをクリックした時の動き
     allNormalTiles.forEach(tile => {
         const stepId = tile.dataset.stepId;
-        if (checkedSteps[stepId]) {
-            tile.classList.add('tile-checked');
-        } else {
-            tile.classList.remove('tile-checked');
-        }
-    });
-}
+        checkedSteps[stepId] = false; // 初期化
 
-function checkUnresolvedButtonState() {
-    // checkedSteps の中で、true のものの数を数える
-    const checkedCount = Object.values(checkedSteps).filter(isChecked => isChecked).length;
-    
-    if (checkedCount === allNormalTiles.length) {
-        unresolvedTriggerButton.disabled = false;
-        unresolvedTriggerButton.classList.add('is-active'); 
-    } else {
-        unresolvedTriggerButton.disabled = true;
-        unresolvedTriggerButton.classList.remove('is-active');
+        tile.addEventListener('click', function() {
+            checkedSteps[stepId] = !checkedSteps[stepId]; // チェック状態を反転
+            
+            // 見た目の切り替え（グレーアウトと時間表示）
+            if (checkedSteps[stepId]) {
+                this.classList.add('tile-checked'); // CSSでグレーにする
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                this.querySelector('.tile-timestamp').textContent = timeStr;
+            } else {
+                this.classList.remove('tile-checked');
+                this.querySelector('.tile-timestamp').textContent = '';
+            }
+        });
+    });
+
+    // --- 🛡️ 上級モード：保存実行のトリガー ---
+    const saveResolvedBtn = document.getElementById('save-resolved-log-btn');
+    const saveUnresolvedBtn = document.getElementById('save-unresolved-log-btn');
+
+    if (saveResolvedBtn) {
+        saveResolvedBtn.addEventListener('click', () => triggerSaveProcess(false));
     }
-}
+    if (saveUnresolvedBtn) {
+        saveUnresolvedBtn.addEventListener('click', () => triggerSaveProcess(true));
+    }
 
-        // ▼▼▼ クリックイベント (超シンプル版) ▼▼▼
-allNormalTiles.forEach(tile => {
-    const stepId = tile.dataset.stepId;
-    const timestampElement = tile.querySelector('.tile-timestamp');
+    // 🚀 【マサ君の最強ロジック】データを整えて送信する関数（モーダル連動版！）
+    function triggerSaveProcess(isUnresolved) {
+        const answersForBackend = {};
+        const checkedTileIds = Object.keys(checkedSteps).filter(id => checkedSteps[id]);
 
-    // 初期状態をセット
-    checkedSteps[stepId] = false;
-
-    tile.addEventListener('click', function() {
-        // true と false を、ただ入れ替えるだけ！
-        checkedSteps[stepId] = !checkedSteps[stepId];
-        
-        // タイムスタンプを管理
-        if (checkedSteps[stepId]) {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            timestampElement.textContent = `${hours}:${minutes}`;
-        } else {
-            timestampElement.textContent = '';
+        // 1. 何もしてないならモーダルを出さずに警告
+        if (checkedTileIds.length === 0 && !isUnresolved) {
+            messageModalText.textContent = "操作タイルを少なくとも1つ選択してください！";
+            messageModal.show();
+            return;
         }
-        
-        // 最後に、見た目を更新
-        updateAllTileStyles();
-        checkUnresolvedButtonState();
-        
-        console.log("クリック後 (チェック状態):", checkedSteps);
-    });
-});
 
-        // --- (6) 未解決トリガーボタンの処理 ---
-        if (unresolvedTriggerButton) {
-            unresolvedTriggerButton.addEventListener('click', function() {
-                isUnresolvedMode = !isUnresolvedMode;
-                if (isUnresolvedMode) {
-                    advancedSaveButton.innerHTML = `
-                        <i class="bi bi-exclamation-circle-fill"></i> 
-                        <span style="color: #fff; background-color: #dc3545; padding: 2px 6px; border-radius: 4px; font-weight: bold;">未解決</span>
-                        として記録する`;
-                        unresolvedTriggerButton.classList.remove('is-active'); // 「押せる」クラスは、もう用済みだから消す
-                        unresolvedTriggerButton.classList.add('is-confirmed'); // 「押された後」クラスを追加！
-                } else {
-                    advancedSaveButton.innerHTML = `<i class="bi bi-pencil-square"></i> この内容で記録する`; // (元に戻すHTMLは省略)
-                    unresolvedTriggerButton.classList.remove('is-confirmed'); // 「押された後」クラスを消して
-                    unresolvedTriggerButton.classList.add('is-active'); // 「押せる」クラスに戻す！
-                }
+        // 2. 全てのタイルの基本回答をセット
+        allNormalTiles.forEach(tile => {
+            const stepId = tile.dataset.stepId;
+            answersForBackend[stepId] = checkedSteps[stepId] ? 'no' : 'unknown';
+        });
+
+        let resolvedStepId = null;
+
+        // 3. 「解決」ボタンなら、一番最後の display_order を「yes」にする
+        if (!isUnresolved && checkedTileIds.length > 0) {
+            const lastId = checkedTileIds.reduce((a, b) => {
+                const orderA = parseInt(document.querySelector(`.tile[data-step-id="${a}"]`).dataset.displayOrder);
+                const orderB = parseInt(document.querySelector(`.tile[data-step-id="${b}"]`).dataset.displayOrder);
+                return orderB > orderA ? b : a;
             });
+            answersForBackend[lastId] = 'yes';
+            resolvedStepId = lastId;
         }
 
-                // 【新しいコード（手術後）】
+        // 4. ★ここが重要！★ ブラウザのconfirmじゃなく、Bootstrapモーダルを表示！
+        confirmSaveModal.show();
 
-        if (advancedSaveButton && confirmSaveModal) {
-            advancedSaveButton.addEventListener('click', function() {
-                // --- ▼▼▼ ここからが、新しいロジック！ ▼▼▼ ---
-                
-                // 1. チェックされているタイルのIDを、配列として全部抜き出す
-                const checkedTileIds = Object.keys(checkedSteps).filter(id => checkedSteps[id]);
-
-                // 2. もし、チェックが一個もなくて、未解決モードでもないなら、処理を中断
-                if (checkedTileIds.length === 0 && !isUnresolvedMode) {
-                    if(messageModal) { // 丁寧なエラーメッセージを出す
-                        messageModalLabel.textContent = '情報';
-                        messageModalText.textContent = '記録するには、少なくとも1つの操作タイルを選択してください。';
-                        messageModal.show();
-                    }
-                    return; // ここで、関数を強制終了！
-                }
-
-                // 3. チェック済みのタイルの中から、一番 display_order が大きいものを探す
-                let lastStepId = null;
-                if (checkedTileIds.length > 0) {
-                    lastStepId = checkedTileIds.reduce((lastId, currentId) => {
-                        const lastTile = document.querySelector(`.tile[data-step-id="${lastId}"]`);
-                        const currentTile = document.querySelector(`.tile[data-step-id="${currentId}"]`);
-                        // nullチェックを追加して、より安全に！
-                        if (!lastTile) return currentId;
-                        if (!currentTile) return lastId;
-                        
-                        const lastOrder = parseInt(lastTile.dataset.displayOrder);
-                        const currentOrder = parseInt(currentTile.dataset.displayOrder);
-                        return currentOrder > lastOrder ? currentId : lastId;
-                    });
-                }
-                
-                // 4. バックエンドに送るための、最終的なデータ(answersForBackend)を作る
-                const answersForBackend = {};
-                allNormalTiles.forEach(tile => {
-                    const stepId = tile.dataset.stepId;
-                    if (checkedSteps[stepId]) {
-                        answersForBackend[stepId] = 'no'; // まずは、チェック済みを全部 'no' に
-                    } else {
-                        answersForBackend[stepId] = 'unknown'; // 未チェックは 'unknown'
-                    }
-                });
-
-                // 5. もし「未解決モード」じゃなければ、一番最後のやつだけ 'yes' に上書き！
-                if (lastStepId && !isUnresolvedMode) {
-                    answersForBackend[lastStepId] = 'yes';
-                }
-                
-                // --- ▲▲▲ 新しいロジック、ここまで！ ▲▲▲ ---
-
-                // 6. 確認モーダルを表示して、完成したデータを送信する (ここは、ほぼ今まで通り)
-                confirmSaveModal.show();
-                const newConfirmBtn = confirmSaveButton.cloneNode(true);
-                confirmSaveButton.parentNode.replaceChild(newConfirmBtn, confirmSaveButton);
-
-                newConfirmBtn.addEventListener('click', () => {
-                    confirmSaveModal.hide();
-                    // ★★★ ちゃんと、新しい賢いデータ(answersForBackend)を渡す！ ★★★
-                    fetchDataForAdvanced(answersForBackend);
-                }, { once: true });
-            });
-        }
+        // 5. モーダル内の「はい、記録する」ボタンが押された時の動きをセット
+        confirmSaveButton.onclick = function() {
+            confirmSaveModal.hide(); // モーダルを閉じて
+            fetchDataForAdvanced(answersForBackend, !isUnresolved, resolvedStepId); // 送信！
+        };
     }
     
     // ----------------------------------------------------------
     // C. 共通ヘルパー関数 (fetch処理を共通化！)
     // ----------------------------------------------------------
     function fetchData(answers) {
-        fetch("{% url 'albatross_app:save_chart_log' %}", {
+        fetch(ALBATROSS_CONFIG.saveLogUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({ chart_type_id: "{{ chart_type.id }}", answers: answers })
+            body: JSON.stringify({ chart_type_id: ALBATROSS_CONFIG.chartTypeId, answers: answers })
         })
         .then(response => {
             // ▼▼▼ ここを修正！ ▼▼▼
             if (response.ok) {
                 // 成功したら、もう何もせずに、すぐにリダイレクト！
                 console.log("ログの保存に成功しました。チャート選択画面に戻ります。");
-                window.location.href = "{% url 'albatross_app:chart_type_list' %}";
+                window.location.href = ALBATROSS_CONFIG.chartListUrl;
             } else {
                 // 失敗した時だけ、エラーモーダルを出すようにする
                 return response.json().then(data => {

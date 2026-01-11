@@ -146,6 +146,7 @@ class ChartStep(models.Model):
     class Meta:
         verbose_name = "チャート内容"
         verbose_name_plural = "チャート内容" # 管理画面での複数形表示名
+        ordering = ["display_order"]
 
 # 以下6/4追加
     SOLUTION_TYPE_CHOICES = [
@@ -239,4 +240,4 @@ class SessionLog(models.Model):
         verbose_name = "セッションログ（子）"
         verbose_name_plural = "セッションログ（子）"
         unique_together = ("session", "chart_step") # 同じセッションで同じ質問には1つのログだけ
-        
+        ordering = ["chart_step__display_order"]

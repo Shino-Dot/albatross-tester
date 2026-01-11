@@ -131,27 +131,46 @@
         box-shadow: none; /* 影もリセット */
     }
 
-/* --- ボタン共通の「強力魔法」スタイル --- */
-    .custom-log-button {
-        width: 50%;
-        max-width: 600px;
-        min-width: 300px;
-        font-size: 1.8rem;
-        padding: 1rem 1.5rem;
-        font-weight: bold;
-        letter-spacing: 2px;
-        border-radius: 50px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease-in-out;
-        border: none;
-    }
+/* --- ボタン共通の「強力魔法」：レスポンシブ強化版 --- */
+.custom-log-button {
+    /* 1. 幅は親（Bootstrapのcol）に任せて100%にする！ */
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto;
+    margin-right: auto;
+    
+    /* 2. 文字サイズを少しだけ調整（1.8remだと大きすぎて改行されやすいから） */
+    font-size: 1.4rem; 
+    
+    /* 3. 内側の余白を上下にしっかり取る */
+    padding: 0.8rem 1.2rem; 
+    
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 50px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+    border: none;
 
-    /* --- 上級ボタン専用の「プチ可愛い」上書き魔法 --- */
-    #advanced-save-button {
-        width: 40%;
-        max-width: 450px;
-        min-width: 250px;
+    /* 4. 文字が途中で改行されないようにするおまじない */
+    white-space: nowrap; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* アイコンと文字の間隔 */
+}
+
+/* 画面が小さい時（スマホとか）は文字を少し小さくして溢れないようにする */
+@media (max-width: 576px) {
+    .custom-log-button {
         font-size: 1.1rem;
-        padding: 0.6rem 1.2rem;
-        letter-spacing: 1px;
+        padding: 0.6rem 1rem;
     }
+}
+
+/* ホバー時の演出（マサ君のこだわりを継続！） */
+.custom-log-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    filter: brightness(1.1);
+}
