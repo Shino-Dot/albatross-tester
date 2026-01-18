@@ -1,67 +1,97 @@
+/* ==========================================================================
+    枝（ん）アルバトロス：統合デザインシステム (help_filter.css)
+   ========================================================================== */
+
 :root {
-    /* --- デフォルトテーマ (ライトグレー系とか、無難な色で) --- */
-    --theme-header-bg: #e9ecef;         /* ヘッダー/フッター用の少し濃い色 (Bootstrapの .bg-light に近い色) */
-    --theme-body-bg: #f8f9fa;           /* 背景用のすごく淡い色 (Bootstrapの .bg-light よりさらに薄い感じ) */
-    --theme-accent: #0d6efd;            /* (任意) アクセント用の色 (Bootstrapのプライマリブルー) */
-    --theme-header-text-color: #212529; /* ヘッダーの文字色 (デフォルトは暗い色) */
-    --theme-footer-text-color: #6c757d; /* フッターの文字色 (デフォルトは .text-muted) */
+    /* --- 1. マサ君・基本カラーパレット (定数) --- */
+    --color-main-pink: #ff69b4;
+    --color-main-blue: #0d6efd;
+    --color-main-red: #dc3545;
+    --color-main-gray: #6c757d;
+    --color-white: #ffffff;
+    --color-black-transparent: rgba(0, 0, 0, 0.6);
 
-    /* --- 質問カードの背景色 (これはテーマに関わらず固定！) --- */
-    --theme-card-bg: #ffffff; /* カード背景は白 */
+    /* --- 2. ボタン状態別の色 (未解決トリガー用など) --- */
+    --color-danger-hover: #bb2d3b;
+    --color-danger-border: #b02a37;
+    --color-danger-light-bg: #f8d7da;
+    --color-danger-dark-text: #842029;
+    --color-danger-light-border: #f5c2c7;
+    --color-disabled-bg: #f8f9fa;
+    --color-disabled-text: #adb5bd;
 
-    /* ★★★ タブ用の変数の定義を復活させる！ ★★★ */
-    --theme-tab-text: #0d6efd;
-    --theme-tab-bg-active: #0d6efd;
-    --theme-tab-text-active: #ffffff;
+    /* --- 3. 共通デザイン・ルール (共通設定) --- */
+    --border-radius-pill: 50px;
+    --border-radius-card: 10px;
+    --shadow-standard: 0 4px 10px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 6px 15px rgba(0, 0, 0, 0.2);
+    --transition-speed: 0.2s ease-in-out;
 
-    /* --- マサ君パレット：基本の色 --- */
-    --main-pink: #ff69b4;         /* メインのテーマカラー */
-    --main-blue: #0d6efd;         /* 決定・ポジティブ */
-    --main-red: #dc3545;          /* 警告・ネガティブ */
-    --main-gray: #6c757d;         /* キャンセル・標準 */
-    --bg-light-gray: #f8f9fa;     /* 背景用の薄いグレー */
-    
-    /* 補助的な色 */
-    --bg-light: #f8f9fa;          /* 薄いグレー背景 */
-    --border-color: #dee2e6;      /* 標準的な枠線の色 */
+    /* --- 4. 使い方フィルター専用 --- */
+    --help-overlay-bg: var(--color-black-transparent);
+    --help-tooltip-bg: #333333;
+    --help-tooltip-text: var(--color-white);
 
-    /* --- 使い方フィルター専用の色 --- */
-    --help-overlay-bg: rgba(0, 0, 0, 0.7); /* フィルターの暗さ */
-    --help-tooltip-bg: #333333;           /* 吹き出しの背景 */
-    --help-tooltip-text: #ffffff;         /* 吹き出しの文字 */
+    /* --- 5. テーマカラー (動的切替用 - base.htmlから継承) --- */
+    /* これらは JS で書き換わる可能性があるから、デフォルト値を設定しておくよ */
+    --theme-header-bg: #e9ecef;
+    --theme-body-bg: #f8f9fa;
+    --theme-header-text-color: #212529;
+    --theme-footer-text-color: #6c757d;
+    --theme-card-bg: #ffffff;
+    --theme-tab-text: var(--color-main-blue);
+    --theme-tab-bg-active: var(--color-main-blue);
+    --theme-tab-text-active: var(--color-white);
 }
 
-/* 動作確認用のテストスタイル（後で消すよ！） */
-/* body { border: 5px solid var(--main-pink); } */
+/* ==========================================================================
+    A. 基本レイアウト ＆ テーマ適用
+   ========================================================================== */
 
-/* =============================================== */
-/* 使い方ヘルプ機能のスタイル（お化粧）             */
-/* =============================================== */
+body:not(.page-unauthenticated) {
+    background-color: var(--theme-body-bg);
+    color: var(--bs-body-color);
+    transition: background-color var(--transition-speed);
+}
 
-/* 1. 全体を覆う黒い幕：普段は display: none で隠す！ */
+header .navbar {
+    background-color: var(--theme-header-bg) !important;
+    transition: background-color var(--transition-speed);
+}
+
+header .navbar-brand, header .nav-link, header .btn {
+    color: var(--theme-header-text-color) !important;
+}
+
+/* 質問カード */
+.chart-step.card {
+    background-color: var(--theme-card-bg) !important;
+}
+
+/* ==========================================================================
+    B. 使い方ヘルプ機能 (オーバーレイ & 吹き出し)
+   ========================================================================== */
+
 #help-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--help-overlay); /* パレットの半透明黒 */
-    z-index: 9999; /* モーダル(1050)よりさらに前に出すなら調整 */
-    display: none; /* ★これで、さっきの生出し文字が消えるよ！ */
+    background-color: var(--help-overlay-bg);
+    z-index: 9999;
+    display: none;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-speed);
 }
 
-/* 幕がアクティブになった時の設定 */
 #help-overlay.is-active {
-    display: block !important; /* 強制的に表示！ */
+    display: block !important;
     opacity: 1 !important;
-    background-color: rgba(0, 0, 0, 0.6) !important; /* ほどよい暗さに */
 }
 
-/* 2. 吹き出し（ツールチップ）の見た目 */
 .help-tooltip {
-    position: absolute; /* JSで座標を決めるための設定 */
+    position: absolute;
     background-color: var(--help-tooltip-bg);
     color: var(--help-tooltip-text);
     padding: 12px 16px;
@@ -71,216 +101,138 @@
     max-width: 250px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     z-index: 10000;
-    pointer-events: none; /* 吹き出しが邪魔で下のボタンが押せないのを防ぐ */
+    pointer-events: none;
+    visibility: hidden; /* 初期状態 */
+    opacity: 0;
+    transition: opacity var(--transition-speed), transform var(--transition-speed);
 }
 
-/* 吹き出しの「ちょび（三角）」 */
+/* 吹き出しの「ちょび（三角）」共通 */
 .help-tooltip::after {
     content: '';
     position: absolute;
     border: 8px solid transparent;
 }
 
-/* 下向きの三角（ターゲットの上に吹き出しがある時） */
 .help-tooltip.position-top::after {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 100%; left: 50%; transform: translateX(-50%);
     border-top-color: var(--help-tooltip-bg);
 }
-
-/* 上向きの三角（ターゲットの下に吹き出しがある時） */
 .help-tooltip.position-bottom::after {
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 100%; left: 50%; transform: translateX(-50%);
     border-bottom-color: var(--help-tooltip-bg);
 }
-
-/* 3. ターゲットの「右」に吹き出しがある時（ターゲットを指差す左向きのちょび） */
 .help-tooltip.position-right::after {
-    right: 100%; /* 吹き出しの左端の外側に出す */
-    top: 50%;
-    transform: translateY(-50%);
-    border-right-color: var(--help-tooltip-bg); /* 右側だけ色を付けて「左」を指す三角に！ */
+    right: 100%; top: 50%; transform: translateY(-50%);
+    border-right-color: var(--help-tooltip-bg);
 }
-
-/* 4. ターゲットの「左」に吹き出しがある時（ターゲットを指差す右向きのちょび） */
 .help-tooltip.position-left::after {
-    left: 100%; /* 吹き出しの右端の外側に出す */
-    top: 50%;
-    transform: translateY(-50%);
-    border-left-color: var(--help-tooltip-bg); /* 左側だけ色を付けて「右」を指す三角に！ */
+    left: 100%; top: 50%; transform: translateY(-50%);
+    border-left-color: var(--help-tooltip-bg);
 }
 
-    /* --- テーマカラーの適用 --- */
-    body:not(.page-unauthenticated) {
-        background-color: var(--theme-body-bg);
-        color: var(--bs-body-color); /* 文字色はBootstrapのデフォルトを基本に */
-        transition: background-color 0.3s ease; /* 背景色が変わるときにフワッとアニメーション (任意) */
-    }
+/* ==========================================================================
+    C. ボタン類 (メインアクション ＆ 使い方ボタン)
+   ========================================================================== */
 
-    body:not(.page-unauthenticated) header .navbar { /* Bootstrapのnavbarクラスが付いてるヘッダーの場合 */
-        background-color: var(--theme-header-bg) !important; /* !important は状況に応じて */
-        transition: background-color 0.3s ease;
-    }
-    body:not(.page-unauthenticated) header .navbar-brand,
-    body:not(.page-unauthenticated) header .nav-link,
-    body:not(.page-unauthenticated) header .btn { /* ヘッダー内の文字やボタンの色も調整 */
-        color: var(--theme-header-text-color) !important; /* !important は状況に応じて */
-    }
-                /* ヘッダーのアウトラインボタンのスタイル */
-        body:not(.page-unauthenticated) header .btn-outline-secondary {
-            /* 通常時のスタイルを直接指定！ */
-            color: var(--theme-header-text-color) !important;
-            border-color: var(--theme-header-text-color) !important;
-            background-color: transparent !important; /* 通常時は背景透明を明示 */
-
-            /* BootstrapのCSS変数を上書きする試みは、ここでは一旦やめる */
-            /* --bs-btn-color: var(--theme-header-text-color) !important; */
-            /* --bs-btn-border-color: var(--theme-header-text-color) !important; */
-            /* --bs-btn-hover-color: #FFFFFF !important; */
-            /* --bs-btn-hover-bg: var(--theme-header-text-color) !important; */
-            /* --bs-btn-hover-border-color: var(--theme-header-text-color) !important; */
-        }
-
-        /* ヘッダーのアウトラインボタンがホバーされた時のスタイルを直接指定！ */
-        body:not(.page-unauthenticated) header .btn-outline-secondary:hover {
-            color: var(--theme-body-bg) !important; /* ★ホバー時の文字色は白に固定！ */
-            background-color: var(--theme-header-text-color) !important; /* ★背景はテーマの濃い色 (ショッキングカラー)！ */
-            border-color: var(--theme-header-text-color) !important; /* ★枠線もテーマの濃い色！ */
-        }
-
-
-    body:not(.page-unauthenticated) footer.bg-light { /* Bootstrapの .bg-light クラスが付いてるフッターの場合 */
-        background-color: var(--theme-header-bg) !important; /* ヘッダーと同じ色を使う例 */
-        transition: background-color 0.3s ease;
-    }
-    body:not(.page-unauthenticated) footer .text-muted { /* フッターの text-muted の色も調整 */
-        color: var(--theme-footer-text-color) !important;
-    }
-
-    /* 質問カードの背景を白に固定 */
-    .chart-step.card { /* albatross_app_chart.css にあるセレクタと合わせる */
-        background-color: var(--theme-card-bg) !important;
-        /* 枠線の色は、テーマカラーに影響されない固定色にするか、
-            あるいはテーマのアクセントカラーにしても面白いかも？ (今回は固定色を想定) */
-        /* border-color: #dee2e6 !important; */
-    }
-
-
-
-    /* ボタンの基本設定（変化を滑らかにするアニメーション） */
-    #unresolved-trigger-button {
-        transition: all 0.2s ease-in-out;
-    }
- /* /* 「押せる」状態になった時のスタイル */
-    #unresolved-trigger-button.is-active {
-        background-color: #dc3545; /* Bootstrapの危険色（濃い赤） */
-        color: #fff; /* 文字は白 */
-        border-color: #dc3545;
-        font-weight: bold;
-    }
-
-    /* 「押せる」状態で、マウスが乗った時【または、タップされた瞬間】のスタイル */
-    #unresolved-trigger-button.is-active:hover,
-    #unresolved-trigger-button.is-active:active {
-        background-color: #bb2d3b; /* 少し暗めの赤 */
-        border-color: #b02a37;
-        transform: translateY(-2px); /* :activeの時は、これを 0 にしてもいいかも */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    /* 普段（押せない）状態のボタン */
-    #unresolved-trigger-button:disabled {
-        background-color: #f8f9fa; /* Bootstrapの薄いグレー */
-        border-color: #dee2e6;
-        color: #adb5bd;
-        opacity: 1; /* ★重要：disabledのデフォルトの透明度をリセット */
-        cursor: not-allowed;
-    }
-
-    /* 「押された後」のスタイル */
-    #unresolved-trigger-button.is-confirmed {
-        background-color: #f8d7da; /* Bootstrapの、薄い赤色 */
-        color: #842029; /* 濃い赤色の文字 */
-        border-color: #f5c2c7;
-        font-weight: bold;
-        transform: none; /* 浮き上がりとかをリセット */
-        box-shadow: none; /* 影もリセット */
-    }
-
-/* --- ボタン共通の「強力魔法」：レスポンシブ強化版 --- */
+/* 1. メインログボタン (共通強力魔法) */
 .custom-log-button {
-    /* 1. 幅は親（Bootstrapのcol）に任せて100%にする！ */
-    width: 100%; 
-    max-width: 500px; 
+    width: 100%;
+    max-width: 500px;
     margin-left: auto;
     margin-right: auto;
-    
-    /* 2. 文字サイズを少しだけ調整（1.8remだと大きすぎて改行されやすいから） */
-    font-size: 1.4rem; 
-    
-    /* 3. 内側の余白を上下にしっかり取る */
-    padding: 0.8rem 1.2rem; 
-    
+    font-size: 1.4rem;
+    padding: 0.8rem 1.2rem;
     font-weight: bold;
     letter-spacing: 1px;
-    border-radius: 50px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease-in-out;
+    border-radius: var(--border-radius-pill);
+    box-shadow: var(--shadow-standard);
+    transition: all var(--transition-speed);
     border: none;
-
-    /* 4. 文字が途中で改行されないようにするおまじない */
-    white-space: nowrap; 
+    white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px; /* アイコンと文字の間隔 */
+    gap: 10px;
 }
 
-/* 画面が小さい時（スマホとか）は文字を少し小さくして溢れないようにする */
+.custom-log-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    filter: brightness(1.1);
+}
+
+/* 2. 未解決トリガーボタン (詳細制御) */
+#unresolved-trigger-button {
+    transition: all var(--transition-speed);
+}
+
+#unresolved-trigger-button.is-active {
+    background-color: var(--color-main-red);
+    color: var(--color-white);
+    border-color: var(--color-main-red);
+    font-weight: bold;
+}
+
+#unresolved-trigger-button.is-active:hover {
+    background-color: var(--color-danger-hover);
+    border-color: var(--color-danger-border);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#unresolved-trigger-button:disabled {
+    background-color: var(--color-disabled-bg);
+    border-color: var(--border-color);
+    color: var(--color-disabled-text);
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+#unresolved-trigger-button.is-confirmed {
+    background-color: var(--color-danger-light-bg);
+    color: var(--color-danger-dark-text);
+    border-color: var(--color-danger-light-border);
+    font-weight: bold;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 3. 使い方ボタン (画面右下固定) */
+.help-toggle-link {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    z-index: 10001;
+    display: block;
+    width: 50px;
+    height: 70px;
+    background-color: var(--color-main-pink);
+    color: var(--help-tooltip-text);
+    text-decoration: none;
+    border-radius: var(--border-radius-card);
+    box-shadow: var(--shadow-standard);
+    writing-mode: vertical-rl;
+    text-align: center;
+    line-height: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+.help-toggle-link:hover {
+    transform: scale(1.1) translateY(-5px);
+    background-color: var(--color-main-blue);
+    color: var(--color-white);
+}
+
+/* ==========================================================================
+    D. レスポンシブ対応
+   ========================================================================== */
+
 @media (max-width: 576px) {
     .custom-log-button {
         font-size: 1.1rem;
         padding: 0.6rem 1rem;
     }
-}
-
-/* ホバー時の演出（マサ君のこだわりを継続！） */
-.custom-log-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-    filter: brightness(1.1);
-}
-
-/* --- 使い方ボタンのスタイル（画面右下に固定） --- */
-.help-toggle-link {
-    position: fixed;
-    right: 20px;
-    bottom: 80px; /* フッターに被らないように調整 */
-    z-index: 10001; /* 何よりも一番前に出す！ */
-    
-    display: block;
-    width: 50px;
-    height: 70px;
-    background-color: var(--main-pink); /* マサ君パレットのピンク！ */
-    color: var(--help-tooltip-text);
-    text-decoration: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    
-    /* 縦書きの魔法✨ */
-    writing-mode: vertical-rl;
-    text-align: center;
-    line-height: 50px; /* 横幅と合わせると中央に来るよ */
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.help-toggle-link:hover {
-    transform: scale(1.1) translateY(-5px);
-    background-color: var(--main-blue); /* ホバーで青に変身！ */
-    color: #fff;
 }
