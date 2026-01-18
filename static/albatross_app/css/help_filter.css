@@ -34,6 +34,85 @@
 /* 動作確認用のテストスタイル（後で消すよ！） */
 /* body { border: 5px solid var(--main-pink); } */
 
+/* =============================================== */
+/* 使い方ヘルプ機能のスタイル（お化粧）             */
+/* =============================================== */
+
+/* 1. 全体を覆う黒い幕：普段は display: none で隠す！ */
+#help-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--help-overlay); /* パレットの半透明黒 */
+    z-index: 9999; /* モーダル(1050)よりさらに前に出すなら調整 */
+    display: none; /* ★これで、さっきの生出し文字が消えるよ！ */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* 幕がアクティブになった時の設定 */
+#help-overlay.is-active {
+    display: block !important; /* 強制的に表示！ */
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.6) !important; /* ほどよい暗さに */
+}
+
+/* 2. 吹き出し（ツールチップ）の見た目 */
+.help-tooltip {
+    position: absolute; /* JSで座標を決めるための設定 */
+    background-color: var(--help-tooltip-bg);
+    color: var(--help-tooltip-text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    max-width: 250px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 10000;
+    pointer-events: none; /* 吹き出しが邪魔で下のボタンが押せないのを防ぐ */
+}
+
+/* 吹き出しの「ちょび（三角）」 */
+.help-tooltip::after {
+    content: '';
+    position: absolute;
+    border: 8px solid transparent;
+}
+
+/* 下向きの三角（ターゲットの上に吹き出しがある時） */
+.help-tooltip.position-top::after {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: var(--help-tooltip-bg);
+}
+
+/* 上向きの三角（ターゲットの下に吹き出しがある時） */
+.help-tooltip.position-bottom::after {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: var(--help-tooltip-bg);
+}
+
+/* 3. ターゲットの「右」に吹き出しがある時（ターゲットを指差す左向きのちょび） */
+.help-tooltip.position-right::after {
+    right: 100%; /* 吹き出しの左端の外側に出す */
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: var(--help-tooltip-bg); /* 右側だけ色を付けて「左」を指す三角に！ */
+}
+
+/* 4. ターゲットの「左」に吹き出しがある時（ターゲットを指差す右向きのちょび） */
+.help-tooltip.position-left::after {
+    left: 100%; /* 吹き出しの右端の外側に出す */
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: var(--help-tooltip-bg); /* 左側だけ色を付けて「右」を指す三角に！ */
+}
+
     /* --- テーマカラーの適用 --- */
     body:not(.page-unauthenticated) {
         background-color: var(--theme-body-bg);
@@ -173,4 +252,35 @@
     transform: translateY(-3px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     filter: brightness(1.1);
+}
+
+/* --- 使い方ボタンのスタイル（画面右下に固定） --- */
+.help-toggle-link {
+    position: fixed;
+    right: 20px;
+    bottom: 80px; /* フッターに被らないように調整 */
+    z-index: 10001; /* 何よりも一番前に出す！ */
+    
+    display: block;
+    width: 50px;
+    height: 70px;
+    background-color: var(--main-pink); /* マサ君パレットのピンク！ */
+    color: var(--help-tooltip-text);
+    text-decoration: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    
+    /* 縦書きの魔法✨ */
+    writing-mode: vertical-rl;
+    text-align: center;
+    line-height: 50px; /* 横幅と合わせると中央に来るよ */
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.help-toggle-link:hover {
+    transform: scale(1.1) translateY(-5px);
+    background-color: var(--main-blue); /* ホバーで青に変身！ */
+    color: #fff;
 }

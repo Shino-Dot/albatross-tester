@@ -317,4 +317,145 @@ allTabs.forEach(function(tab) {
         }
         return cookieValue;
     }
+
+// --- 使い方フィルター：BP版ロジック（マサ君専用✨） ---
+    const helpToggleBtn = document.getElementById('help-toggle-link');
+    const helpOverlay = document.getElementById('help-overlay');
+
+    if (helpToggleBtn && helpOverlay) {
+        let isHelpActive = false;
+
+        // 1. 全ての吹き出しを隠す「初期化（リセット）」関数
+        function resetAllTooltips() {
+            const groups = helpOverlay.querySelectorAll('.help-tooltip-group');
+            groups.forEach(g => g.style.display = 'none');
+            const tooltips = helpOverlay.querySelectorAll('.help-tooltip');
+            tooltips.forEach(t => {
+                t.style.visibility = 'hidden';
+                t.style.opacity = '0';
+            });
+        }
+
+        function updateTooltipsPosition() {
+            if (!isHelpActive) return;
+
+            // 今光ってるタブボタンを特定
+            const activeTabBtn = document.querySelector('#pills-tab .nav-link.active');
+            if (!activeTabBtn) return;
+            const currentTabId = activeTabBtn.id;
+
+            // デバッグ：今何のIDを読み取ってるか確認（これ大事！）
+            console.log("今アクティブなタブID:", currentTabId);
+
+            const allTooltipGroups = helpOverlay.querySelectorAll('.help-tooltip-group');
+            
+            allTooltipGroups.forEach(group => {
+                // ★ここがポイント！：スペースで区切られた名前をバラバラにしてチェックする
+                const targets = group.dataset.tabTarget.split(' '); 
+                
+                if (targets.includes(currentTabId)) {
+                    // 一致するグループだけ表示！
+                    group.style.display = 'block'; 
+                    
+                    const tooltips = group.querySelectorAll('.help-tooltip');
+                    tooltips.forEach(tooltip => {
+                        const targetSelector = tooltip.dataset.targetSelector;
+                        const targetElement = document.querySelector(targetSelector);
+
+                        if (targetElement && targetElement.offsetParent !== null) {
+                            const targetRect = targetElement.getBoundingClientRect();
+                            const position = tooltip.dataset.position || 'top-center';
+
+                            // 座標計算ロジック（ここは今のままでOK！）
+                            let top = targetRect.top;
+                            let left = targetRect.left;
+
+                            if (position.includes('top')) {
+                                top -= (tooltip.offsetHeight + 15);
+                            } else if (position.includes('bottom')) {
+                                top += (targetRect.height + 15);
+                            } else {
+                                top += (targetRect.height / 2) - (tooltip.offsetHeight / 2);
+                            }
+
+                            if (position.includes('center')) {
+                                left += (targetRect.width / 2) - (tooltip.offsetWidth / 2);
+                            } else if (position.includes('left')) {
+                                left -= (tooltip.offsetWidth + 15);
+                            } else if (position.includes('right')) {
+                                left += (targetRect.width + 15);
+                            }
+
+                            tooltip.style.top = `${top}px`;
+                            tooltip.style.left = `${left}px`;
+
+                            // ★ここを追加！ 吹き出しに「今の向き」を教えてあげる魔法の3行✨
+                            tooltip.classList.remove('position-top', 'position-bottom', 'position-right', 'position-left'); // 一旦脱がせて
+                            const finalPos = position.split('-')[0]; // 'top' とか 'right' を取り出す
+                            tooltip.classList.add('position-' + finalPos); // 新しい衣装を着せる！
+
+                            tooltip.style.visibility = 'visible';
+                            tooltip.style.opacity = '1';
+                        }
+                    });
+                } else {
+                    // 当てはまらないグループは「絶対に」隠す！
+                    group.style.display = 'none'; 
+                }
+            });
+        }
+
+        // --- 監視マジック（ここも重要！） ---
+
+        // スクロール中も「ぬるぬる」追いかけるための命令
+        window.addEventListener('scroll', () => {
+            if (isHelpActive) {
+                // requestAnimationFrameを使うと、ブラウザの描画に合わせてスムーズに更新されるよ✨
+                window.requestAnimationFrame(updateTooltipsPosition);
+            }
+        }, { passive: true }); // パフォーマンス向上のためのおまじない
+
+        window.addEventListener('resize', () => {
+            if (isHelpActive) window.requestAnimationFrame(updateTooltipsPosition);
+        });
+
+        // 3. 使い方ボタンを押した時の動き
+        helpToggleBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            isHelpActive = !isHelpActive;
+
+            if (isHelpActive) {
+                helpOverlay.style.display = 'block';
+                setTimeout(() => {
+                    helpOverlay.classList.add('is-active');
+                    updateTooltipsPosition();
+                }, 10);
+            } else {
+                helpOverlay.classList.remove('is-active');
+                setTimeout(() => {
+                    helpOverlay.style.display = 'none';
+                    resetAllTooltips();
+                }, 300);
+            }
+        });
+
+        // 背景クリックで閉じる
+        helpOverlay.addEventListener('click', () => {
+            isHelpActive = false;
+            helpOverlay.classList.remove('is-active');
+            setTimeout(() => helpOverlay.style.display = 'none', 300);
+        });
+
+        // 4. 監視マジック（リサイズ・スクロール）
+        window.addEventListener('resize', updateTooltipsPosition);
+        window.addEventListener('scroll', updateTooltipsPosition);
+        
+        // ★重要：タブが切り替わったら再計算！
+        document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', () => {
+                if (isHelpActive) updateTooltipsPosition();
+            });
+        });
+    }
+
 });

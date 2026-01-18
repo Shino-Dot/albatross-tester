@@ -47,7 +47,10 @@
                                     {% if step.detailed_explanation %}
                                         <div class="accordion accordion-flush" id="accordion-{{ step.id }}">
                                             <div class="accordion-item">
-                                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ step.id }}">詳細解説</button></h2>
+                                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ step.id }}">
+                                                <span class="detail-text-anchor">詳細解説</span>
+                                                </button>
+                                                </h2>
                                                 <div id="collapse-{{ step.id }}" class="accordion-collapse collapse" data-bs-parent="#accordion-{{ step.id }}"><div class="accordion-body">{{ step.detailed_explanation|linebreaksbr }}</div></div>
                                             </div>
                                         </div>
@@ -175,65 +178,83 @@
                     </div>
                 </div>
         </div>
-    <!-- ★★★ 完成形コードはここまで！ ★★★ -->
-
-
-    <!-- メッセージ表示モーダル -->
-    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="messageModalLabel">情報</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="messageModalText"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkButton">OK</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
 
-<!-- ↓↓↓ メッセージ表示モーダルのHTML ↓↓↓ -->
-    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered"> <!-- ← modal-dialog-centered で上下中央寄せ！ -->
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="messageModalLabel">情報</h5> <!-- ← タイトルは固定でも、JSで変えてもOK -->
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="messageModalText"></p> <!-- ← メッセージ本文はJSでここに入れる！ -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
-                        id="messageModalOkButton">OK</button> <!-- ← OKボタン -->
-                </div>
+<!-- 1. メッセージ表示モーダル（情報・エラー通知用） -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">情報</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkButton">OK</button>
             </div>
         </div>
     </div>
-    <!-- 確認モーダル -->
-    <div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmSaveModalLabel">確認</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>この診断結果を記録しますか？</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">いいえ</button>
-                    <button type="button" class="btn btn-primary" id="confirmSaveButton">はい、記録する</button>
-                </div>
+</div>
+
+<!-- 2. 保存確認モーダル -->
+<div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmSaveModalLabel">確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>この診断結果を記録しますか？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">いいえ</button>
+                <button type="button" class="btn btn-primary" id="confirmSaveButton">はい、記録する</button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- 💡 使い方ボタン：この画面専用！ -->
+<a id="help-toggle-link" class="help-toggle-link" href="javascript:void(0);">
+    使い方
+</a>
+
+<!-- ▼▼▼ 使い方ヘルプ機能：ここから ▼▼▼ -->
+<div id="help-overlay">
+    <!-- 初級・中級モード用の吹き出しグループ -->
+    <div class="help-tooltip-group" data-tab-target="pills-beginner-tab pills-intermediate-tab">
+        <div class="help-tooltip" data-target-selector="#tab-toggle-switch-wrapper" data-position="top-center">
+            <p>ここで「初級・中級・上級」を切り替えられます</p>
+        </div>
+        <div class="help-tooltip" data-target-selector=".detail-text-anchor" data-position="right">
+            <p>ここのバーをクリックで解説を確認</p>
+        </div>
+        <div class="help-tooltip" data-target-selector="#save-log-button" data-position="top-center">
+            <p>全部終わったらここで記録します</p>
+        </div>
+        <!-- 他にも足したい場所があれば、後でここに追加していけるよ！ -->
+    </div>
+
+    <!-- 上級モード用の吹き出しグループ -->
+    <div class="help-tooltip-group" data-tab-target="pills-advanced-tab">
+        <div class="help-tooltip" data-target-selector="#tab-toggle-switch-wrapper" data-position="top-center">
+            <p>ここで「初級・中級・上級」を切り替えられます</p>
+        </div>
+        <div class="help-tooltip" data-target-selector=".advanced-chart-wrapper" data-position="top-center">
+            <p>「実施済み」はタイル押下！赤字で実施時間</p>
+        </div>
+        <div class="help-tooltip" data-target-selector="#save-resolved-log-btn" data-position="top-center">
+            <p>解決済み〇記録はこっちの青いボタン！</p>
+        </div>
+        <div class="help-tooltip" data-target-selector="#save-unresolved-log-btn" data-position="top-center">
+            <p>解決しない✖記録はこっちのグレーのボタン！</p>
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 使い方ヘルプ機能：ここまで ▲▲▲ -->
 
 {% endblock %}
 
