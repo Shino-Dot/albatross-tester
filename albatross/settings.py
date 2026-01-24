@@ -37,7 +37,7 @@ IS_PRODUCTION = "FLY_APP_NAME" in os.environ
 if IS_PRODUCTION:
     DEBUG = False
     app_name = os.environ.get("FLY_APP_NAME")
-    ALLOWED_HOSTS = [f"{app_name}.fly.dev"]
+    ALLOWED_HOSTS = [".onrender.com", os.environ.get("RENDER_EXTERNAL_HOSTNAME")]
     CSRF_TRUSTED_ORIGINS = ["https://albatross-2025.fly.dev"]
 else:
     # 開発環境用の設定
