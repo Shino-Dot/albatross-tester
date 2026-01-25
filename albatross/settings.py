@@ -34,16 +34,26 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "maika_daisuki_secret_key")
 # 本番環境 (Fly.io) かどうかを判定
 IS_PRODUCTION = "FLY_APP_NAME" in os.environ
 
+IS_PRODUCTION = "RENDER" in os.environ or "FLY_APP_NAME" in os.environ
+
 if IS_PRODUCTION:
     DEBUG = False
-    # Renderの環境変数から読み込むか、うまくいかなければ '*' (全部許可) にする
-    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
-    # CSRFの許可リストも、今のRenderのURLに合わせて追加
+    # 一番確実な設定！全てのホストを許可しちゃうよ✨
+    ALLOWED_HOSTS = ["*"]
+    
+    # CSRFの設定（RenderのURLを自動で許可）
     RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL")
     if RENDER_EXTERNAL_URL:
+        # https:// を付けてリストにするよ
         CSRF_TRUSTED_ORIGINS = [RENDER_EXTERNAL_URL]
     else:
-        CSRF_TRUSTED_ORIGINS = ["https://albatross-w6pr.onrender.com"] # 今のURLを直接指定
+        # 万が一のために今のURLも入れておくね
+        CSRF_TRUSTED_ORIGINS = ["https://albatross-w6pr.onrender.com"]
+else:
+    # 開発環境用の設定
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+    CSRF_TRUSTED_ORIGINS = []
 
 
 INSTALLED_APPS = [
