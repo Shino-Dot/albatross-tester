@@ -36,14 +36,14 @@ IS_PRODUCTION = "FLY_APP_NAME" in os.environ
 
 if IS_PRODUCTION:
     DEBUG = False
-    app_name = os.environ.get("FLY_APP_NAME")
-    ALLOWED_HOSTS = [".onrender.com", os.environ.get("RENDER_EXTERNAL_HOSTNAME")]
-    CSRF_TRUSTED_ORIGINS = ["https://albatross-2025.fly.dev"]
-else:
-    # 開発環境用の設定
-    DEBUG = True
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-    CSRF_TRUSTED_ORIGINS = []
+    # Renderの環境変数から読み込むか、うまくいかなければ '*' (全部許可) にする
+    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+    # CSRFの許可リストも、今のRenderのURLに合わせて追加
+    RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL")
+    if RENDER_EXTERNAL_URL:
+        CSRF_TRUSTED_ORIGINS = [RENDER_EXTERNAL_URL]
+    else:
+        CSRF_TRUSTED_ORIGINS = ["https://albatross-w6pr.onrender.com"] # 今のURLを直接指定
 
 
 INSTALLED_APPS = [
