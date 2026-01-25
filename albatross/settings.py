@@ -183,7 +183,9 @@ STATICFILES_DIRS = [
 
 # WhiteNoise の設定 (これも本番環境だけで有効にするのがベスト！)
 if IS_PRODUCTION:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    # Manifest（目録）を作らない、シンプルな圧縮モードに変更！
+    # これなら、多少ファイルが足りなくても 500エラーで落ちることはないわ✨
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
     
 
 # 5/9...Djangoプロジェクト内のあちこちにある静的ファイルを、一箇所に集めるためのフォルダの場所を指定する
