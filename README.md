@@ -9,7 +9,7 @@
 ---
 
 ## 🔗 Links
-- **Live Demo:** [https://albatross-2025.fly.dev](https://albatross-2025.fly.dev)
+- **Live Demo:** [https://albatross-w6pr.onrender.com](https://albatross-w6pr.onrender.com)
 - **Concept:** オペレーターの習熟度に合わせた「3段階の診断体験」の提供
 
 ---
