@@ -183,18 +183,28 @@ class AccountDeleteView(View):
             # 仮に、認証成功したら、メッセージ付きで同じページを再表示する例
             # (実際には、ここでJSを動かすための工夫が必要になる)
 
-class AccountDeleteCompleteView(View): # ← ★★★ このクラスがちゃんと存在してるか？ ★★★
+class AccountDeleteCompleteView(View):
     template_name = "accounts/account_delete_complete.html"
 
     def get(self, request, *args, **kwargs):
-        print("★★★ AccountDeleteCompleteView GET method CALLED! ★★★")
-        account_successfully_deleted = request.session.pop('account_successfully_deleted_flag', False)
+        # セッションから削除完了フラグを取得（取得と同時に削除）
+        account_successfully_deleted = request.session.pop(
+            'account_successfully_deleted_flag', False
+        )
+
+        # 【改善内容】フラグがない場合はログインページへリダイレクト
+        # 【改善理由】URLを直打ちされた場合でも、
+        #             正規のフローを経ていないアクセスを弾く
         if not account_successfully_deleted:
-            print(">>> 削除完了フラグなしでアクセスされました。リダイレクトします。")
             return redirect('accounts:login')
 
-        context = {
-            'user_deleted_and_needs_logout': True,
-        }
-        print(f"★★★ 削除完了ページ表示: context = {context}")
+        # 【改善内容】削除完了後に即座にログアウト処理を実行
+        # 【改善理由】is_activeをFalseにしただけではセッションが残るため、
+        #             削除済みユーザーとして認証状態が継続してしまう。
+        #             logout()でセッションを破棄することで
+        #             「削除完了後も操作できる」状態を防ぐ。
+        from django.contrib.auth import logout
+        logout(request)
+
+        context = {'user_deleted_and_needs_logout': True}
         return render(request, self.template_name, context)
