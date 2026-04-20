@@ -185,9 +185,15 @@ header .navbar-brand, header .nav-link, header .btn {
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
+/* After：未定義変数を実際の値に置き換える */
+/* 【改善内容】未定義のCSS変数を明示的な値に置き換え */
+/* 【改善理由】未定義のCSS変数はブラウザに無視されるため、
+   意図した無効化スタイルが適用されない可能性がある。
+   Bootstrapのborder-colorの実値を直接指定することで
+   全ブラウザで一貫した表示を保証する。 */
 #unresolved-trigger-button:disabled {
     background-color: var(--color-disabled-bg);
-    border-color: var(--border-color);
+    border-color: #dee2e6;
     color: var(--color-disabled-text);
     opacity: 1;
     cursor: not-allowed;
