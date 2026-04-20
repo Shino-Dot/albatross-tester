@@ -275,17 +275,23 @@ document.addEventListener('DOMContentLoaded', function() {
         helpToggleBtn.addEventListener('click', function(event) {
             event.preventDefault();
             isHelpActive = !isHelpActive;
+
             if (isHelpActive) {
-                helpOverlay.style.display = 'block'; 
-                setTimeout(() => {
-                    helpOverlay.classList.add('is-active');
-                    updateTooltipsPosition();
-                }, 10);
+                // 【改善内容】style.display操作を廃止しクラスの付け外しのみで制御
+                // 【改善理由】表示制御のロジックをCSS側に一本化することで、
+                //             JSはクラスを付け外しするだけでよくなり、
+                //             setTimeoutによるタイミング制御も不要になる。
+                helpOverlay.classList.add('is-active');
+                updateTooltipsPosition();
             } else {
                 helpOverlay.classList.remove('is-active');
-                setTimeout(() => helpOverlay.style.display = 'none', 300);
             }
         });
+
+helpOverlay.addEventListener('click', () => {
+    isHelpActive = false;
+    helpOverlay.classList.remove('is-active');
+});
 
         helpOverlay.addEventListener('click', () => {
             isHelpActive = false;

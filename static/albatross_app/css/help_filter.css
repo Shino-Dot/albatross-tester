@@ -72,6 +72,10 @@ header .navbar-brand, header .nav-link, header .btn {
     B. 使い方ヘルプ機能 (オーバーレイ & 吹き出し)
    ========================================================================== */
 
+/* 【改善内容】display:noneをvisibility:hiddenに変更 */
+/* 【改善理由】display:none→display:blockの切り替えはCSSのtransitionが効かない。
+　　visibility:hiddenはレイアウト領域を保持したまま非表示にできるため、
+   opacityのtransitionと組み合わせてなめらかなフェードが実現できる。 */
 #help-overlay {
     position: fixed;
     top: 0;
@@ -80,14 +84,14 @@ header .navbar-brand, header .nav-link, header .btn {
     height: 100vh;
     background-color: var(--help-overlay-bg);
     z-index: 9999;
-    display: none;
+    visibility: hidden;
     opacity: 0;
-    transition: opacity var(--transition-speed);
+    transition: opacity var(--transition-speed), visibility var(--transition-speed);
 }
 
 #help-overlay.is-active {
-    display: block !important;
-    opacity: 1 !important;
+    visibility: visible;
+    opacity: 1;
 }
 
 .help-tooltip {
