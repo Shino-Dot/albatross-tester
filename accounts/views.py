@@ -13,7 +13,6 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView
-from django.views.decorators.csrf import csrf_exempt
 
 
 # 5/13---reverse_lazy、generic、UserCreationForm、追加
@@ -103,7 +102,6 @@ class MyPasswordChangeDoneView(generic.TemplateView):
 # 5/19---削除系追記していく
 # アカウント削除ビュー
 
-@method_decorator(login_required, name="dispatch")
 class AccountDeleteView(View):
     template_name = "accounts/account_delete_form.html"
     # success_url = reverse_lazy("accounts:login")
@@ -185,7 +183,6 @@ class AccountDeleteView(View):
             # 仮に、認証成功したら、メッセージ付きで同じページを再表示する例
             # (実際には、ここでJSを動かすための工夫が必要になる)
 
-@method_decorator(csrf_exempt, name='dispatch')
 class AccountDeleteCompleteView(View): # ← ★★★ このクラスがちゃんと存在してるか？ ★★★
     template_name = "accounts/account_delete_complete.html"
 
