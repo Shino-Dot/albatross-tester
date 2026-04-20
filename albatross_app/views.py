@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.db.models import Case, When
 
 from .models import ChartType, ChartStep, TroubleshootingSession, SessionLog, Category
+from django.db import transaction
 
 # ==========================================================
 # 1. チャート種別一覧ビュー
@@ -87,7 +88,10 @@ def save_chart_log_view(request):
 
         if chart_type_id is None:
             return JsonResponse({"status": "error", "message": "チャート種別が指定されていません。"}, status=400)
-        
+
+        if not isinstance(answers, dict):
+            return JsonResponse({"status": "error", "message": "回答データの形式が不正です。"}, status=400)
+
         chart_type_obj = get_object_or_404(ChartType, id=int(chart_type_id))
 
         # 解決ステップの取得（存在する場合）
@@ -95,38 +99,37 @@ def save_chart_log_view(request):
         if resolved_step_id:
             resolved_step_obj = ChartStep.objects.filter(id=int(resolved_step_id)).first()
 
-        # 1. セッションの作成
-        session = TroubleshootingSession.objects.create(
-            user=request.user,
-            chart_type=chart_type_obj,
-            is_resolved=is_resolved,
-            resolved_step=resolved_step_obj
-        )
-
-        # 2. 個別のログを保存
-        if not isinstance(answers, dict):
-            return JsonResponse({"status": "error", "message": "回答データの形式が不正です。"}, status=400)
-
+        # 1. 先にログリストを組み立てる
         logs_to_create = []
         for step_id_str, answer_value in answers.items():
             try:
                 chart_step_obj = ChartStep.objects.get(id=int(step_id_str))
                 user_answer = answer_value if answer_value is not None else "unknown"
-                
-                # Bulk Create用のリストに溜める（パフォーマンス向上のためのプロの技！）
                 logs_to_create.append(SessionLog(
-                    session=session,
                     chart_step=chart_step_obj,
                     answer=user_answer
                 ))
             except (ChartStep.DoesNotExist, ValueError):
                 continue
-        
-        # 一括保存実行！
-        SessionLog.objects.bulk_create(logs_to_create)
-        
+
+        # 【改善内容】SessionとSessionLogの保存をatomic()で一括化
+        # 【改善理由】どちらか一方の保存が失敗した場合に
+        #             両方まとめてロールバックされるため、
+        #             「親だけ存在して子が0件」というデータ不整合を防ぐ。
+        with transaction.atomic():
+            session = TroubleshootingSession.objects.create(
+                user=request.user,
+                chart_type=chart_type_obj,
+                is_resolved=is_resolved,
+                resolved_step=resolved_step_obj
+            )
+            # sessionが確定してからlogに紐付けて一括保存
+            for log in logs_to_create:
+                log.session = session
+            SessionLog.objects.bulk_create(logs_to_create)
+
         return JsonResponse({
-            "status": "success", 
+            "status": "success",
             "message": f"結果を記録しました。（{len(logs_to_create)}件のログ）"
         })
 
