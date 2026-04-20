@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 import re
 from django.urls import reverse_lazy
 import dj_database_url # ★★★ インポート文を、ここ（ファイル上部）に移動！ ★★★
@@ -25,16 +26,25 @@ import dj_database_url # ★★★ インポート文を、ここ（ファイル
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "maika_daisuki_secret_key")
-
-# 本番環境 (Fly.io) かどうかを判定
-IS_PRODUCTION = "FLY_APP_NAME" in os.environ
-
+# 【改善内容①】IS_PRODUCTIONの二重定義を解消し、先に定義する
+# 【改善理由】SECRET_KEYのチェックでIS_PRODUCTIONを使うため、
+#             必ずSECRET_KEYより前に定義する必要がある。
+#             また、同じ変数を2回定義していた冗長なコードを1行に整理した。
 IS_PRODUCTION = "RENDER" in os.environ or "FLY_APP_NAME" in os.environ
+
+# 【改善内容②】SECRET_KEYのハードコーディングを廃止
+# 【改善理由】フォールバック値がソースコードに残ると、
+#             GitHubに公開した瞬間にセッション偽造のリスクが生まれる。
+#             本番環境では未設定時に即時終了、開発環境では警告のみとすることで
+#             「本番での設定漏れ」を構造的に防ぐ。
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key:
+    if IS_PRODUCTION:
+        sys.exit("致命的エラー: 環境変数 SECRET_KEY が設定されていません。")
+    else:
+        _secret_key = "dev-only-insecure-key-do-not-use-in-production"
+
+SECRET_KEY = _secret_key
 
 if IS_PRODUCTION:
     DEBUG = False
