@@ -10,6 +10,10 @@
 
 **Live Demo:** https://albatross-w6pr.onrender.com
 
+| ロール | ユーザー名 | パスワード |
+| :--- | :--- | :--- |
+| デモユーザー | demo | demo1234 |
+
 ---
 
 ## 概要
