@@ -34,12 +34,12 @@ if IS_PRODUCTION:
     DEBUG = False
     ALLOWED_HOSTS = ["*"]
 
-    # CSRFの設定（RenderのURLを自動で許可）
-    RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL")
-    if RENDER_EXTERNAL_URL:
-        CSRF_TRUSTED_ORIGINS = [RENDER_EXTERNAL_URL]
+    # CSRF設定（環境変数でデプロイ先URLを指定）
+    CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+    if CSRF_TRUSTED_ORIGINS_ENV:
+        CSRF_TRUSTED_ORIGINS = [CSRF_TRUSTED_ORIGINS_ENV]
     else:
-        CSRF_TRUSTED_ORIGINS = ["https://albatross-w6pr.onrender.com"]
+        CSRF_TRUSTED_ORIGINS = []
 else:
     DEBUG = True
     ALLOWED_HOSTS = ["127.0.0.1", "localhost"]

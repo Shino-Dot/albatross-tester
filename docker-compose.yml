@@ -7,9 +7,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      # Django設定（.envから読み込む）
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
     depends_on:
       db:
         condition: service_healthy
