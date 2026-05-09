@@ -1,140 +1,124 @@
-# Albatross
+# Albatross — Deployment Package
 
-故障診断チャート・プラットフォーム  
-オペレーターの習熟度に応じて診断UIを動的に切り替える、カスタマーサポート向けWebアプリケーション。
+## アプリケーション概要
 
-[![Django](https://img.shields.io/badge/Django-4.2-092E20?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=for-the-badge&logo=javascript)](https://developer.mozilla.org/ja/docs/Web/JavaScript)
-[![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=for-the-badge&logo=render)](https://render.com/)
+コールセンターのオペレーター向け、故障診断サポートツール。
 
-**Live Demo:** https://albatross-w6pr.onrender.com
+Yes/No形式の選択式UIで、オペレーターが質問に答えるだけで解決策にたどり着ける設計。  
+電話対応中でも迷わず使えることを最優先としている。
 
-| ロール       | ユーザー名 | パスワード |
-| :----------- | :--------- | :--------- |
-| デモユーザー | demo       | demo1234   |
+### 主な仕様
 
----
+| 項目           | 内容                                                                     |
+| :------------- | :----------------------------------------------------------------------- |
+| 同時接続数     | 50人同時接続を想定                                                       |
+| データ保存     | 診断セッションごとに質問・回答・結果をDBに記録                           |
+| ログ確認       | Webアプリ内からログ一覧を確認可能                                        |
+| コンテンツ管理 | Django管理画面からカテゴリ・質問・選択肢を管理                           |
+| データ可搬性   | コンテンツはJSONファイルでエクスポート可能。DB移行時もデータを維持できる |
 
-## 概要
+蓄積したログは後々の分析・マニュアル改善サイクルに活用できる構成。
 
-紙マニュアルや静的フローチャートの運用課題として、
-「初学者が途中で迷子になる」「習熟者には冗長すぎて非効率」という相反する問題がある。
+故障診断チャート・プラットフォームのデプロイ用パッケージ。  
+サーバー構築の練習・検証用途を想定したクリーンな状態のコードベース。
 
-Albatross はこの課題に対して、同一の診断ロジックから
-**初級・中級・上級の3種類のUIをリアルタイムで切り替えて提供する**アプローチで解決を図った。
-
----
-
-## 主要機能
-
-### レベル別アダプティブUI
-
-同一の診断データから、3段階のUIをレンダリングする。
-
-- **初級:** ステップごとに丁寧な説明と選択肢を提示
-- **中級:** 要点のみを表示し、操作ステップを圧縮
-- **上級:** 全ステップをタイル表示。任意の順序で診断を進められる自由選択フロー。
-  信号機コンセプト（赤・黄・青）でリスクを色分け表示し、タイムスタンプを自動記録。
-
-### 診断ログ
-
-全診断プロセスをセッション単位でログ化。「解決 / 未解決 / 途中終了」のステータスと
-各ステップの操作履歴を記録し、期間・ステータスでの検索・ソートに対応。
-ログデータはマニュアル自体の改善サイクルに活用できる構成としている。
-
-### アクセシビリティ設定
-
-4段階の文字サイズ変更と5種のカラーテーマを `localStorage` で永続化。
-長時間業務での疲労軽減を考慮したUX設計。
-
-### アカウント管理
-
-二段階の退会フロー（認証 → 確認）と論理削除によるデータ整合性の保護を実装。
+[![Django](https://img.shields.io/badge/Django-4.2-092E20?style=flat-square&logo=django)](https://www.djangoproject.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-336791?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
 
 ---
 
-## 技術スタック
+## このリポジトリについて
 
-| 区分     | 技術                     | 選定理由                                   |
-| :------- | :----------------------- | :----------------------------------------- |
-| Backend  | Django 4.2 (Python)      | ORM と Admin による診断データの保守性      |
-| Database | PostgreSQL               | 商用グレードの信頼性                       |
-| Frontend | Vanilla JS / Bootstrap 5 | フレームワーク依存を排除した軽量動作       |
-| Storage  | WhiteNoise               | 本番環境での静的ファイル配信の簡略化       |
-| Infra    | Render / Docker          | コンテナ化による開発・本番環境の差異を排除 |
+特定のデプロイ先（PaaS等）に依存しない、汎用的なデプロイパッケージです。  
+`.env` に環境変数を設定するだけで、任意のサーバー・コンテナ環境で動作します。
 
 ---
 
-## 技術的な課題と解決
+## 必要な環境
 
-### 多階層データモデルの設計
-
-チャート種別・ステップ・セッションログという3層のリレーションにおいて、
-クエリパフォーマンスを維持するモデル構成を設計した。
-`select_related` と `prefetch_related` の使い分けによるN+1問題への対処を含む。
-
-### デプロイ時の SSL 接続エラー
-
-PostgreSQL 接続時に `SSL SYSCALL error` が発生。
-ログ解析の結果、自動生成される `DATABASE_URL` のパラメータと
-Django の `OPTIONS` 設定の競合が原因と特定。
-`settings.py` 内でURL文字列を動的にパースし、SSL設定を上書きするロジックを実装して解決。
-
-### Fetch API と CSRF 対策
-
-フォーム外からの非同期送信において、DjangoのCSRFミドルウェアと整合するよう、
-Cookie からトークンを取得しリクエストヘッダに付与する実装を行った。
+- Docker / Docker Compose
+- PostgreSQL 14以上
 
 ---
 
-## コード品質の改善
+## 環境構築手順
 
-本番運用前にコードレビューを実施し、以下の問題を特定・修正した。
-
-**セキュリティ修正**
-
-| 対象                | 修正内容                                                                                      |
-| :------------------ | :-------------------------------------------------------------------------------------------- |
-| `settings.py`       | `SECRET_KEY` のハードコーディングを廃止。本番環境では環境変数未設定時に即時終了する設計に変更 |
-| `settings.py`       | `IS_PRODUCTION` の二重定義を解消                                                              |
-| `accounts/views.py` | `csrf_exempt` の誤適用（本来不要な箇所への適用）を削除                                        |
-| `accounts/views.py` | `print()` によるユーザー情報のログ出力を全削除                                                |
-| `accounts/views.py` | `login_required` の適用漏れを修正                                                             |
-
-**コード整理**
-
-| 対象                | 修正内容                                         |
-| :------------------ | :----------------------------------------------- |
-| `accounts/views.py` | 不要なimport・未使用コメントの整理               |
-| `log_list.html`     | HTMLタグのタイポ修正（`</slabel>` → `</label>`） |
-| `help_filter.css`   | `display` / `opacity` の競合を解消               |
-| `help_filter.css`   | 未定義CSS変数 `--border-color` を実値に置き換え  |
-
----
-
-## AI活用について
-
-設計・開発フェーズで LLM（主に Claude）を以下の用途で使用した。
-
-| 用途           | 具体的な内容                                             |
-| :------------- | :------------------------------------------------------- |
-| 設計レビュー   | 多階層モデルのリレーション設計における複数案の比較検討   |
-| コードレビュー | セキュリティ問題・未使用コードの洗い出しと修正方針の確認 |
-| デバッグ補助   | SSL接続エラーの原因仮説の列挙と絞り込み                  |
-| 実装調査       | Fetch API + Django CSRF 対策の実装パターンの整理         |
-
-コードの自動生成には使用していない。
-意思決定の高速化と見落としの防止が主な活用目的。
-実装・デバッグ・本番確認はすべて自分で実施している。
-
----
-
-## ローカル起動
+### 1. クローン
 
 ```bash
-git clone https://github.com/amamiya-works/albatross.git
-cd albatross
-cp .env.example .env   # 環境変数を設定
+git clone https://github.com/amamiya-works/albatross-tester.git
+cd albatross-tester
+```
+
+### 2. 環境変数の設定
+
+```bash
+cp .env.example .env
+```
+
+`.env` を開き、以下の3項目を設定する。
+
+| 変数名                 | 内容                                                  |
+| :--------------------- | :---------------------------------------------------- |
+| `SECRET_KEY`           | Djangoのシークレットキー（任意の強力な文字列）        |
+| `DATABASE_URL`         | PostgreSQL接続URL                                     |
+| `CSRF_TRUSTED_ORIGINS` | デプロイ先のURL（例: `https://your-app.example.com`） |
+
+### 3. ビルド・起動
+
+```bash
 docker compose up --build
 ```
+
+### 4. テーブル作成
+
+```bash
+docker compose exec web python manage.py migrate
+```
+
+### 5. データ投入
+
+```bash
+docker compose exec web python manage.py loaddata albatross_app/fixtures/initial_data.json
+```
+
+### 6. 管理者アカウント作成
+
+```bash
+docker compose exec web python manage.py createsuperuser
+```
+
+---
+
+## 動作確認
+
+ブラウザで `http://localhost:8000` にアクセスして起動を確認する。  
+管理画面は `http://localhost:8000/admin` から利用可能。
+
+---
+
+## ファイル構成
+
+```
+albatross-tester/
+├── accounts/                  # アカウント管理アプリ
+├── albatross/                 # Djangoプロジェクト設定
+├── albatross_app/             # メインアプリ
+│   └── fixtures/
+│       └── initial_data.json  # 初期データ（loaddata で投入）
+├── docker-compose.yml
+├── Dockerfile
+├── manage.py
+├── requirements.txt
+├── runtime.txt
+└── .env.example
+```
+
+---
+
+## 本番運用時の注意
+
+- `DEBUG=False` にする（`settings.py` の `IS_PRODUCTION` は環境変数 `RENDER` で制御）
+- `CSRF_TRUSTED_ORIGINS` に本番URLを必ず設定する
+- `SECRET_KEY` は十分な長さのランダム文字列を使用する
