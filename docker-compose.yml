@@ -1,32 +1,82 @@
 services:
+
   web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
+    build:
+      context: .
+    command: gunicorn albatross.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    expose:
+      - "8000"
+    env_file:
+      - .env
     environment:
-      # Django設定（.envから読み込む）
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
+      - DATABASE_URL=mysql://root:${MYSQL_PASSWORD}@db:3306/albatross
     depends_on:
       db:
         condition: service_healthy
+    restart: always
+    volumes:
+      - static_volume:/app/staticfiles
+
   db:
-    image: postgres:14
+    image: mariadb:latest
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - mariadb_data:/var/lib/mysql
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=albatross
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/app/staticfiles:ro
+    depends_on:
+      - web
+    restart: always
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN} --url http://nginx:80
+    depends_on:
+      - nginx
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    expose:
+      - "9090"
+    restart: always
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    expose:
+      - "9100"
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+    expose:
+      - "3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    restart: always
 
 volumes:
-  postgres_data:
+  mariadb_data:
+  static_volume:
+  prometheus_data:
+  grafana_data:
+
