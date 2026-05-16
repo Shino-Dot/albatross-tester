@@ -39,11 +39,11 @@ if IS_PRODUCTION:
     if CSRF_TRUSTED_ORIGINS_ENV:
         CSRF_TRUSTED_ORIGINS = [CSRF_TRUSTED_ORIGINS_ENV]
     else:
-        CSRF_TRUSTED_ORIGINS = []
+        CSRF_TRUSTED_ORIGINS = ["https://albatross-app.com"]
 else:
     DEBUG = True
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-    CSRF_TRUSTED_ORIGINS = []
+    ALLOWED_HOSTS = ["*"]
+    CSRF_TRUSTED_ORIGINS = ["https://albatross-app.com"]
 
 
 INSTALLED_APPS = [
